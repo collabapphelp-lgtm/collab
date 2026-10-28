@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { StepScreen, stepStyles } from '@/components/onboarding/StepScreen';
 import { CitySearch, type PickedCity } from '@/components/onboarding/CitySearch';
+import { Quote, QUOTES } from '@/components/Quote';
 import { useOnboarding } from '@/lib/onboarding-context';
 import { DEFAULT_RADIUS_MILES } from '@/lib/onboarding-data';
 import { colors, fonts, radius } from '@/lib/theme';
@@ -85,6 +86,8 @@ export default function LocationStep() {
           accessibilityLabel="Open to global collabs"
         />
       </Pressable>
+
+      <Quote quote={QUOTES.keller} style={{ marginTop: 28 }} />
     </StepScreen>
   );
 }

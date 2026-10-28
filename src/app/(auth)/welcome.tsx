@@ -13,7 +13,7 @@ const SINGER_PHOTO = require('../../../assets/welcome/singer-card.jpg');
 // The three reasons to sign up. Keep each to one short line so the page stays scannable.
 const BENEFITS = [
   { icon: '🎯', title: 'Find the right fit', body: 'Musicians and creators of every kind, near you or worldwide' },
-  { icon: '💡', title: 'Share snippets', body: "Tracks, clips, your style and what you're looking for" },
+  { icon: '💡', title: 'Share snippets', body: "Showcase your style, any projects, and what you're looking for" },
   { icon: '💬', title: 'Match, then make something', body: "When you're both in, start talking and start creating" },
 ];
 

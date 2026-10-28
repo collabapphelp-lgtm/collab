@@ -75,6 +75,7 @@ export default function ShowcaseStep() {
   return (
     <StepScreen
       step="showcase"
+      onSkip={() => router.push('/onboarding/bio')}
       emoji="🎨"
       title="Show off your best work"
       subtitle="Add snippets and answer prompts so people can see what you’re about. Fill at least one to continue."
