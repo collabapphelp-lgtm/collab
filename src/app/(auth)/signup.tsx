@@ -16,6 +16,13 @@ import { ErrorText } from '@/components/ErrorText';
 import { TextField } from '@/components/TextField';
 import { colors, fonts } from '@/lib/theme';
 
+// Shows people what signing up leads to. The first step (this screen) is highlighted.
+const STEPS = [
+  { icon: '✍️', title: 'Sign up', body: 'Takes 30 seconds' },
+  { icon: '🎨', title: 'Build your profile', body: 'Your craft, sound and best work' },
+  { icon: '🤝', title: 'Match & collab', body: 'Meet creatives who fit' },
+];
+
 export default function Signup() {
   const { setSignupInProgress } = useAuth();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -89,6 +96,16 @@ export default function Signup() {
             <Text style={styles.subtitle}>Create your profile and start connecting with creators</Text>
           </View>
 
+          <View style={styles.steps} accessibilityLabel="How Collab works: create your account, build your creative profile, then get matched and start collaborating">
+            {STEPS.map((step, i) => (
+              <View key={step.title} style={[styles.step, i === 0 && styles.stepActive]}>
+                <Text style={styles.stepEmoji}>{step.icon}</Text>
+                <Text style={[styles.stepTitle, i === 0 && styles.stepTitleActive]}>{step.title}</Text>
+                <Text style={styles.stepBody}>{step.body}</Text>
+              </View>
+            ))}
+          </View>
+
           <View style={styles.topRow}>
             <Pressable onPress={pickPhoto} accessibilityRole="button" accessibilityLabel="Add a profile photo" style={styles.photo}>
               {photoUri ? (
@@ -142,7 +159,7 @@ export default function Signup() {
               label="Password"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              password
               autoComplete="new-password"
               textContentType="newPassword"
               placeholder="At least 6 characters"
@@ -173,6 +190,21 @@ const styles = StyleSheet.create({
   header: { gap: 6, marginTop: 4 },
   title: { fontFamily: fonts.heading, fontSize: 32, color: colors.text },
   subtitle: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.textSecondary },
+  steps: { flexDirection: 'row', gap: 8 },
+  step: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 14,
+    backgroundColor: colors.bgSecondary,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    gap: 2,
+  },
+  stepActive: { borderColor: colors.blue, backgroundColor: 'rgba(75,163,199,0.08)' },
+  stepEmoji: { fontSize: 18, marginBottom: 2 },
+  stepTitle: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.text },
+  stepTitleActive: { color: colors.blue },
+  stepBody: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 15, color: colors.textSecondary },
   topRow: { flexDirection: 'row', gap: 16, alignItems: 'center' },
   photo: {
     width: 104,

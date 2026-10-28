@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -9,42 +10,83 @@ import { colors, fonts, gradients, radius } from '@/lib/theme';
 const PRODUCER_PHOTO = 'https://images.unsplash.com/photo-1531384441138-2736e62e0919?w=400&h=500&fit=crop&crop=face';
 const SINGER_PHOTO = 'https://images.unsplash.com/photo-1516575869333-e9d8e43b0e33?w=400&h=500&fit=crop&crop=face';
 
+// The three reasons to sign up. Keep each to one short line so the page stays scannable.
+const BENEFITS = [
+  { icon: '🎯', title: 'Find the right people', body: 'Producers, vocalists, videographers and more, near you or worldwide' },
+  { icon: '🎧', title: 'Lead with your work', body: 'Your profile shows your tracks, clips and style, not just a bio' },
+  { icon: '💬', title: 'Match, then make something', body: "When you're both in, start a conversation and get to work" },
+];
+
 export default function Welcome() {
   return (
     <LinearGradient colors={gradients.welcome} style={styles.flex}>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.hero}>
+      <SafeAreaView style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} bounces={false}>
+          <View style={styles.brandRow}>
+            <Image source={require('../../../assets/logo.png')} style={styles.logo} contentFit="contain" />
+            <Text style={styles.brand}>Collab</Text>
+          </View>
+
           <View style={styles.cards}>
-            <ProfileCard photo={PRODUCER_PHOTO} icon="🎹" role="Producer" genre="Indie" tilt="-6deg" tagColor={colors.blue} />
+            <ProfileCard photo={PRODUCER_PHOTO} icon="🎹" role="Producer" genre="Indie" tilt="-6deg" accent={colors.blue} />
             <View style={styles.connector}>
               <Text style={styles.connectorIcon}>🤝</Text>
             </View>
-            <ProfileCard photo={SINGER_PHOTO} icon="🎤" role="Singer" genre="R&B" tilt="6deg" tagColor={colors.purple} />
+            <ProfileCard photo={SINGER_PHOTO} icon="🎤" role="Singer" genre="R&B" tilt="6deg" accent={colors.purple} />
           </View>
 
-          <Image source={require('../../../assets/logo.png')} style={styles.logo} contentFit="contain" />
-          <Text style={styles.title}>Collab</Text>
-          <Text style={styles.tagline}>Join a community of artists looking to collaborate</Text>
-        </View>
+          <Text style={styles.headline}>Find your next creative collab</Text>
+          <Text style={styles.subhead}>
+            Collab connects musicians and content creators who want to make something together.
+          </Text>
 
-        <View style={styles.actions}>
-          <Button title="Create an account" onPress={() => router.push('/signup')} />
-          <Button title="Log in" variant="secondary" onPress={() => router.push('/login')} />
-        </View>
+          <View style={styles.benefits}>
+            {BENEFITS.map((b) => (
+              <View key={b.title} style={styles.benefit}>
+                <View style={styles.benefitIcon}>
+                  <Text style={styles.benefitEmoji}>{b.icon}</Text>
+                </View>
+                <View style={styles.benefitText}>
+                  <Text style={styles.benefitTitle}>{b.title}</Text>
+                  <Text style={styles.benefitBody}>{b.body}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.actions}>
+            <Button title="Create an account" onPress={() => router.push('/signup')} />
+            <Button title="Log in" variant="secondary" onPress={() => router.push('/login')} />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
 }
 
-function ProfileCard(props: { photo: string; icon: string; role: string; genre: string; tilt: string; tagColor: string }) {
+function ProfileCard(props: { photo: string; icon: string; role: string; genre: string; tilt: string; accent: string }) {
+  const [failed, setFailed] = useState(false);
   return (
-    <View style={[styles.card, { transform: [{ rotate: props.tilt }] }]}>
-      <Image source={{ uri: props.photo }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
+    <View style={[styles.card, { backgroundColor: props.accent, transform: [{ rotate: props.tilt }] }]}>
+      {failed ? (
+        // If the photo can't load, show a styled placeholder instead of an empty card.
+        <LinearGradient colors={[props.accent, colors.yellow]} style={[StyleSheet.absoluteFill, styles.fallback]}>
+          <Text style={styles.fallbackIcon}>{props.icon}</Text>
+        </LinearGradient>
+      ) : (
+        <Image
+          source={{ uri: props.photo }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={300}
+          onError={() => setFailed(true)}
+        />
+      )}
       <View style={styles.badge}>
         <Text style={styles.badgeIcon}>{props.icon}</Text>
         <Text style={styles.badgeText}>{props.role}</Text>
       </View>
-      <View style={[styles.tag, { backgroundColor: props.tagColor }]}>
+      <View style={[styles.tag, { backgroundColor: props.accent }]}>
         <Text style={styles.tagText}>{props.genre}</Text>
       </View>
     </View>
@@ -53,25 +95,29 @@ function ProfileCard(props: { photo: string; icon: string; role: string; genre: 
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  container: { flex: 1, paddingHorizontal: 24, paddingBottom: 16 },
-  hero: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  cards: { flexDirection: 'row', alignItems: 'center', marginBottom: 36 },
+  content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 8, paddingBottom: 16 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  logo: { width: 40, height: 24 },
+  brand: { fontFamily: fonts.heading, fontSize: 22, color: colors.text },
+
+  cards: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, marginBottom: 24 },
   card: {
-    width: 136,
-    height: 176,
+    width: 124,
+    height: 158,
     borderRadius: radius.md,
     overflow: 'hidden',
-    backgroundColor: colors.purple,
     shadowColor: '#000',
     shadowOpacity: 0.18,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
   },
+  fallback: { alignItems: 'center', justifyContent: 'center' },
+  fallbackIcon: { fontSize: 44, marginBottom: 30 },
   connector: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     marginHorizontal: -10,
     zIndex: 2,
     backgroundColor: colors.white,
@@ -82,33 +128,72 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  connectorIcon: { fontSize: 20 },
+  connectorIcon: { fontSize: 19 },
   badge: {
     position: 'absolute',
-    bottom: 36,
+    bottom: 34,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: 'rgba(255,255,255,0.95)',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: radius.full,
   },
-  badgeIcon: { fontSize: 13 },
+  badgeIcon: { fontSize: 12 },
   badgeText: { fontFamily: fonts.bodySemibold, fontSize: 12, color: colors.text },
-  tag: { position: 'absolute', bottom: 8, alignSelf: 'center', paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.full },
+  tag: {
+    position: 'absolute',
+    bottom: 8,
+    alignSelf: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.9)',
+  },
   tagText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.white },
-  logo: { width: 96, height: 56, marginBottom: 4 },
-  title: { fontFamily: fonts.heading, fontSize: 40, color: colors.text, letterSpacing: -0.5 },
-  tagline: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 18,
-    lineHeight: 26,
+
+  headline: {
+    fontFamily: fonts.heading,
+    fontSize: 30,
+    lineHeight: 35,
     color: colors.text,
     textAlign: 'center',
-    maxWidth: 290,
-    marginTop: 8,
+    letterSpacing: -0.5,
   },
-  actions: { gap: 12 },
+  subhead: {
+    fontFamily: fonts.body,
+    fontSize: 16,
+    lineHeight: 23,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+    marginHorizontal: 8,
+  },
+
+  benefits: {
+    marginTop: 20,
+    marginBottom: 24,
+    gap: 14,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: radius.md,
+    padding: 16,
+  },
+  benefit: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  benefitIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  benefitEmoji: { fontSize: 19 },
+  benefitText: { flex: 1 },
+  benefitTitle: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
+  benefitBody: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textSecondary, marginTop: 1 },
+
+  actions: { gap: 12, marginTop: 'auto' },
 });
