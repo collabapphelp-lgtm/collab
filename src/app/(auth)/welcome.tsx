@@ -7,14 +7,14 @@ import { Button } from '@/components/Button';
 import { colors, fonts, gradients, radius } from '@/lib/theme';
 
 // Built into the app (not loaded from the internet) so they always show instantly.
-const PRODUCER_PHOTO = require('../../../assets/welcome/producer.jpg');
-const SINGER_PHOTO = require('../../../assets/welcome/singer.jpg');
+const PRODUCER_PHOTO = require('../../../assets/welcome/producer-card.jpg');
+const SINGER_PHOTO = require('../../../assets/welcome/singer-card.jpg');
 
 // The three reasons to sign up. Keep each to one short line so the page stays scannable.
 const BENEFITS = [
-  { icon: '🎯', title: 'Find the right people', body: 'Producers, vocalists, instrumentalists, videographers and more, near you or worldwide' },
-  { icon: '💡', title: 'Share your ideas', body: "Post snippets of your work / what you're looking for in a collab" },
-  { icon: '💬', title: 'Match and create', body: "Browse other creatives, match when it's mutual, then start working together" },
+  { icon: '🎯', title: 'Find the right fit', body: 'Musicians and creators of every kind, near you or worldwide' },
+  { icon: '💡', title: 'Share snippets', body: "Tracks, clips, your style and what you're looking for" },
+  { icon: '💬', title: 'Match, then make something', body: "When you're both in, start talking and start creating" },
 ];
 
 export default function Welcome() {
@@ -35,10 +35,8 @@ export default function Welcome() {
             <ProfileCard photo={SINGER_PHOTO} icon="🎤" role="Singer" genre="R&B" tilt="6deg" accent={colors.purple} />
           </View>
 
-          <Text style={styles.headline}>Find your next creative collab partner</Text>
-          <Text style={styles.subhead}>
-            Collab connects creatives of every kind with the right people to work with.
-          </Text>
+          <Text style={styles.headline}>{'Find creatives\nto collab with'}</Text>
+          <Text style={styles.subhead}>Bringing artists together.</Text>
 
           <View style={styles.benefits}>
             {BENEFITS.map((b) => (

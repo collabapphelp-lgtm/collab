@@ -51,6 +51,7 @@ export default function LookingStep() {
   return (
     <StepScreen
       step="looking"
+      onSkip={() => router.push('/onboarding/taste')}
       title="Looking to collab with..."
       subtitle="What kind of creative are you looking to Collab with? Pick as many as you like."
       onContinue={next}

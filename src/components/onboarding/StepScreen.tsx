@@ -24,6 +24,8 @@ type Props = {
   onContinue: () => void;
   /** Hide the back button (first step). */
   hideBack?: boolean;
+  /** Shows a "Skip" link at the top right. */
+  onSkip?: () => void;
 };
 
 /** Shared layout for every onboarding step: progress bar, back, title, scrolling body, pinned Continue. */
@@ -49,9 +51,16 @@ export function StepScreen(props: Props) {
             ) : (
               <BackButton onPress={() => router.back()} />
             )}
-            <Text style={styles.stepCount}>
-              {index + 1} of {ONBOARDING_STEPS.length}
-            </Text>
+            <View style={styles.topRight}>
+              <Text style={styles.stepCount}>
+                {index + 1} of {ONBOARDING_STEPS.length}
+              </Text>
+              {props.onSkip ? (
+                <Pressable onPress={props.onSkip} hitSlop={10} accessibilityRole="button" disabled={props.saving}>
+                  <Text style={styles.skip}>Skip</Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
 
           <View style={styles.header}>
@@ -86,6 +95,8 @@ const styles = StyleSheet.create({
   content: { padding: 24, paddingTop: 12, paddingBottom: 32, gap: 20 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   logout: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textSecondary, paddingVertical: 12 },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  skip: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.blue, paddingVertical: 10 },
   stepCount: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   header: { gap: 6 },
   emoji: { fontSize: 36, marginBottom: 2 },

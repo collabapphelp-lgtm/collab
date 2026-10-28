@@ -38,6 +38,7 @@ export default function TasteStep() {
   return (
     <StepScreen
       step="taste"
+      onSkip={() => router.push('/onboarding/showcase')}
       title={isMusician ? 'Your sound 🎶' : 'Your vibe 🎯'}
       subtitle={
         isMusician

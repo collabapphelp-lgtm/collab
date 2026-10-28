@@ -36,9 +36,22 @@ export default function LocationStep() {
     }
   }
 
+  async function skip() {
+    setSaving(true);
+    try {
+      await saveStep({ global: true });
+    } catch {
+      // Not critical; they can set location later.
+    } finally {
+      setSaving(false);
+    }
+    router.push('/onboarding/type');
+  }
+
   return (
     <StepScreen
       step="location"
+      onSkip={skip}
       hideBack
       emoji="📍"
       title="Where are you based?"

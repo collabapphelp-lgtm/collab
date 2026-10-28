@@ -40,6 +40,7 @@ export default function SkillsStep() {
   return (
     <StepScreen
       step="skills"
+      onSkip={() => router.push('/onboarding/looking')}
       title={isMusician ? 'What kind of musician are you?' : 'What kind of content do you make?'}
       subtitle="Pick everything that fits ✨"
       onContinue={next}

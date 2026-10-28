@@ -35,8 +35,8 @@ function PreviewAuthProvider({ children }: { children: ReactNode }) {
   });
   const value: AuthState = {
     initializing: false,
-    user: { uid: 'preview', email: profile.email } as User,
-    profile,
+    user: UI_PREVIEW_STAGE === 'auth' ? null : ({ uid: 'preview', email: profile.email } as User),
+    profile: UI_PREVIEW_STAGE === 'auth' ? null : profile,
     signOutUser: async () => {},
     signupInProgress: false,
     setSignupInProgress: () => {},
