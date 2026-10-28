@@ -37,7 +37,7 @@ export default function Welcome() {
 
           <Text style={styles.headline}>Find your next creative collab partner</Text>
           <Text style={styles.subhead}>
-            Collab helps you find collaboration partners for a variety of creatives.
+            Collab connects creatives of every kind with the right people to work with.
           </Text>
 
           <View style={styles.benefits}>

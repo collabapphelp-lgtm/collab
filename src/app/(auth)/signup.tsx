@@ -93,7 +93,7 @@ export default function Signup() {
 
           <View style={styles.header}>
             <Text style={styles.title}>Get started</Text>
-            <Text style={styles.subtitle}>Create your profile and start connecting with creators</Text>
+            <Text style={styles.subtitle}>Meet creatives who complement your sound, your style and your goals.</Text>
           </View>
 
           <View style={styles.steps} accessibilityLabel="How Collab works: create your account, build your creative profile, then get matched and start collaborating">
