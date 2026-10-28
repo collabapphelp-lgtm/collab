@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,8 +6,9 @@ import { router } from 'expo-router';
 import { Button } from '@/components/Button';
 import { colors, fonts, gradients, radius } from '@/lib/theme';
 
-const PRODUCER_PHOTO = 'https://images.unsplash.com/photo-1531384441138-2736e62e0919?w=400&h=500&fit=crop&crop=face';
-const SINGER_PHOTO = 'https://images.unsplash.com/photo-1516575869333-e9d8e43b0e33?w=400&h=500&fit=crop&crop=face';
+// Built into the app (not loaded from the internet) so they always show instantly.
+const PRODUCER_PHOTO = require('../../../assets/welcome/producer.jpg');
+const SINGER_PHOTO = require('../../../assets/welcome/singer.jpg');
 
 // The three reasons to sign up. Keep each to one short line so the page stays scannable.
 const BENEFITS = [
@@ -64,24 +64,10 @@ export default function Welcome() {
   );
 }
 
-function ProfileCard(props: { photo: string; icon: string; role: string; genre: string; tilt: string; accent: string }) {
-  const [failed, setFailed] = useState(false);
+function ProfileCard(props: { photo: number; icon: string; role: string; genre: string; tilt: string; accent: string }) {
   return (
     <View style={[styles.card, { backgroundColor: props.accent, transform: [{ rotate: props.tilt }] }]}>
-      {failed ? (
-        // If the photo can't load, show a styled placeholder instead of an empty card.
-        <LinearGradient colors={[props.accent, colors.yellow]} style={[StyleSheet.absoluteFill, styles.fallback]}>
-          <Text style={styles.fallbackIcon}>{props.icon}</Text>
-        </LinearGradient>
-      ) : (
-        <Image
-          source={{ uri: props.photo }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          transition={300}
-          onError={() => setFailed(true)}
-        />
-      )}
+      <Image source={props.photo} style={StyleSheet.absoluteFill} contentFit="cover" />
       <View style={styles.badge}>
         <Text style={styles.badgeIcon}>{props.icon}</Text>
         <Text style={styles.badgeText}>{props.role}</Text>
@@ -112,8 +98,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
   },
-  fallback: { alignItems: 'center', justifyContent: 'center' },
-  fallbackIcon: { fontSize: 44, marginBottom: 30 },
   connector: {
     width: 42,
     height: 42,
