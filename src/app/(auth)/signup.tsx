@@ -20,7 +20,7 @@ import { colors, fonts } from '@/lib/theme';
 const STEPS = [
   { icon: '✍️', title: 'Sign up', body: 'Takes 30 seconds' },
   { icon: '🎨', title: 'Build your profile', body: 'Your craft, sound and best work' },
-  { icon: '🤝', title: 'Match & collab', body: 'Meet creatives who fit' },
+  { icon: '🤝', title: 'Match & collab', body: 'Start working together' },
 ];
 
 export default function Signup() {
