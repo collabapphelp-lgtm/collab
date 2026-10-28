@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import * as FirebaseAuth from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // Same Firebase project as the web prototype, so existing test accounts keep working.
@@ -33,5 +33,6 @@ function createAuth() {
 }
 
 export const auth = createAuth();
-export const db = getFirestore(app);
+// ignoreUndefinedProperties: optional fields left blank are skipped instead of rejecting the whole save.
+export const db = isFirstInit ? initializeFirestore(app, { ignoreUndefinedProperties: true }) : getFirestore(app);
 export const storage = getStorage(app);

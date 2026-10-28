@@ -3,6 +3,7 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import type { UserProfile } from './types';
+import { UI_PREVIEW, UI_PREVIEW_STAGE } from './preview';
 
 type AuthState = {
   /** True until Firebase has told us whether someone is signed in. */
@@ -21,6 +22,29 @@ type AuthState = {
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  if (UI_PREVIEW) return <PreviewAuthProvider>{children}</PreviewAuthProvider>;
+  return <FirebaseAuthProvider>{children}</FirebaseAuthProvider>;
+}
+
+function PreviewAuthProvider({ children }: { children: ReactNode }) {
+  const [profile] = useState<UserProfile>({
+    id: 'preview',
+    firstName: 'Kam',
+    email: 'preview@collab.app',
+    onboardingComplete: UI_PREVIEW_STAGE === 'app',
+  });
+  const value: AuthState = {
+    initializing: false,
+    user: { uid: 'preview', email: profile.email } as User,
+    profile,
+    signOutUser: async () => {},
+    signupInProgress: false,
+    setSignupInProgress: () => {},
+  };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [authReady, setAuthReady] = useState(false);
