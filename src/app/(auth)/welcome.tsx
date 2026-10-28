@@ -66,16 +66,24 @@ export default function Welcome() {
 
 function ProfileCard(props: { photo: number; icon: string; role: string; genre: string; tilt: string; accent: string }) {
   return (
-    <View style={[styles.card, { backgroundColor: props.accent, transform: [{ rotate: props.tilt }] }]}>
-      <Image source={props.photo} style={StyleSheet.absoluteFill} contentFit="cover" />
-      {/* One slim label at the bottom edge so it doesn't hide what the person is doing. */}
-      <View style={styles.badge}>
-        <Text style={styles.badgeIcon}>{props.icon}</Text>
-        <Text style={styles.badgeText} maxFontSizeMultiplier={1.1}>{props.role}</Text>
-        <View style={[styles.dot, { backgroundColor: props.accent }]} />
-        <Text style={[styles.genreText, { color: props.accent }]} maxFontSizeMultiplier={1.1}>
-          {props.genre}
-        </Text>
+    // Outer view tilts the whole thing; inner view clips the photo to rounded corners.
+    // The labels sit outside the clip so they can hang off the bottom edge instead of covering the photo.
+    <View style={[styles.cardWrap, { transform: [{ rotate: props.tilt }] }]}>
+      <View style={[styles.card, { backgroundColor: props.accent }]}>
+        <Image source={props.photo} style={StyleSheet.absoluteFill} contentFit="cover" />
+      </View>
+      <View style={styles.labels}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeIcon}>{props.icon}</Text>
+          <Text style={styles.badgeText} maxFontSizeMultiplier={1.1}>
+            {props.role}
+          </Text>
+        </View>
+        <View style={[styles.tag, { backgroundColor: props.accent }]}>
+          <Text style={styles.tagText} maxFontSizeMultiplier={1.1}>
+            {props.genre}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -88,18 +96,20 @@ const styles = StyleSheet.create({
   logo: { width: 40, height: 24 },
   brand: { fontFamily: fonts.heading, fontSize: 22, color: colors.text },
 
-  cards: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, marginBottom: 24 },
-  card: {
+  cards: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, marginBottom: 52 },
+  cardWrap: {
     width: 124,
     height: 158,
     borderRadius: radius.md,
-    overflow: 'hidden',
     shadowColor: '#000',
     shadowOpacity: 0.18,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
   },
+  card: { flex: 1, borderRadius: radius.md, overflow: 'hidden' },
+  // Role pill straddles the card's bottom edge; genre tag hangs just below it.
+  labels: { position: 'absolute', bottom: -40, left: 0, right: 0, alignItems: 'center', gap: 4 },
   connector: {
     width: 42,
     height: 42,
@@ -116,21 +126,29 @@ const styles = StyleSheet.create({
   },
   connectorIcon: { fontSize: 19 },
   badge: {
-    position: 'absolute',
-    bottom: 6,
-    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: colors.white,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: radius.full,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   badgeIcon: { fontSize: 12 },
   badgeText: { fontFamily: fonts.bodySemibold, fontSize: 12, color: colors.text },
-  dot: { width: 4, height: 4, borderRadius: 2, marginHorizontal: 1 },
-  genreText: { fontFamily: fonts.bodySemibold, fontSize: 11 },
+  tag: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: colors.white,
+  },
+  tagText: { fontFamily: fonts.bodySemibold, fontSize: 11, color: colors.white },
 
   headline: {
     fontFamily: fonts.heading,
