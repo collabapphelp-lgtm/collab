@@ -15,6 +15,14 @@ type OnboardingState = {
 
 const OnboardingContext = createContext<OnboardingState | null>(null);
 
+// Lets Discover show a one-time "You're in" welcome right after onboarding finishes.
+let justFinished = false;
+export function consumeJustFinished() {
+  const v = justFinished;
+  justFinished = false;
+  return v;
+}
+
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const { user, profile } = useAuth();
 
@@ -35,7 +43,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const value: OnboardingState = {
     draft,
     saveStep: (patch) => write(patch),
-    finish: (patch) => write(patch, { onboardingComplete: true, onboardingCompletedAt: serverTimestamp() }),
+    finish: async (patch) => {
+      justFinished = true;
+      await write(patch, { onboardingComplete: true, onboardingCompletedAt: serverTimestamp() });
+    },
   };
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

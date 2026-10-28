@@ -2,4 +2,4 @@
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 
-module.exports = defineConfig([expoConfig, { ignores: ['dist/*', 'dist-preview/*', 'dist-preview-ob/*', 'dist-ios/*'] }]);
+module.exports = defineConfig([expoConfig, { ignores: ['dist/*', 'dist-preview/*', 'dist-preview-ob/*', 'dist-preview-app/*', 'dist-ios/*'] }]);

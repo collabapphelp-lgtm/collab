@@ -27,12 +27,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 function PreviewAuthProvider({ children }: { children: ReactNode }) {
-  const [profile] = useState<UserProfile>({
-    id: 'preview',
-    firstName: 'Kam',
-    email: 'preview@collab.app',
-    onboardingComplete: UI_PREVIEW_STAGE === 'app',
-  });
+  const [profile] = useState<UserProfile>(() =>
+    UI_PREVIEW_STAGE === 'app'
+      ? {
+          id: 'preview',
+          firstName: 'Kam',
+          email: 'preview@collab.app',
+          onboardingComplete: true,
+          location: 'Atlanta, Georgia, USA',
+          geo: { lat: 33.749, lng: -84.388 },
+          maxDistance: 50,
+          global: true,
+          creatorType: 'musician',
+          skills: ['producer', 'instrumentalist'],
+          instruments: ['piano'],
+          lookingFor: ['vocalist', 'content'],
+          lookingForDetails: { content: ['videographer'] },
+          genres: ['rnb', 'hiphop'],
+          showcase: [
+            { type: 'media', source: 'link', url: 'https://soundcloud.com/demo', platform: 'soundcloud', title: 'Beat tape vol. 2' },
+            { type: 'prompt', question: 'My creative process looks like...', answer: 'Chords first, drums second, then I hand it to someone who can sing.' },
+          ],
+          bio: 'Atlanta producer. Ableton + Push. Always down to cook.',
+        }
+      : { id: 'preview', firstName: 'Kam', email: 'preview@collab.app', onboardingComplete: false },
+  );
   const value: AuthState = {
     initializing: false,
     user: UI_PREVIEW_STAGE === 'auth' ? null : ({ uid: 'preview', email: profile.email } as User),

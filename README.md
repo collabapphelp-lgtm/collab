@@ -26,6 +26,10 @@ src/components/     shared UI: Button, TextField, BackButton…
 src/lib/            firebase setup, auth state, brand theme, types
 ```
 
+## Preview without Firebase
+
+Build with `EXPO_PUBLIC_UI_PREVIEW=1` (and optionally `EXPO_PUBLIC_UI_PREVIEW_STAGE=auth|onboarding|app`) to click through screens with fake data. Never set this for real builds.
+
 ## Checks before committing
 
 ```
@@ -36,8 +40,8 @@ npx eslint .
 ## Roadmap
 
 - [x] Phase 1 — foundation, login, signup
-- [ ] Phase 2 — onboarding (location, creator type, skills, looking for, genres, showcase, bio)
-- [ ] Phase 3 — discover and matching
+- [x] Phase 2 — onboarding (location, creator type, skills, looking for, genres, showcase, bio)
+- [x] Phase 3 — discover and matching (rules in `src/lib/matching.ts`)
 - [ ] Phase 4 — messaging and push notifications
 - [ ] Phase 5 — safety (report/block, account deletion), privacy policy, Firestore security rules
 - [ ] Phase 6 — TestFlight, then App Store
