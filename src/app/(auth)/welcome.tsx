@@ -12,9 +12,9 @@ const SINGER_PHOTO = require('../../../assets/welcome/singer.jpg');
 
 // The three reasons to sign up. Keep each to one short line so the page stays scannable.
 const BENEFITS = [
-  { icon: '🎯', title: 'Find the right people', body: 'Producers, vocalists, videographers and more, near you or worldwide' },
-  { icon: '🎧', title: 'Lead with your work', body: 'Your profile shows your tracks, clips and style, not just a bio' },
-  { icon: '💬', title: 'Match, then make something', body: "When you're both in, start a conversation and get to work" },
+  { icon: '🎯', title: 'Find the right people', body: 'Producers, vocalists, instrumentalists, videographers and more, near you or worldwide' },
+  { icon: '💡', title: 'Share your ideas', body: "Post snippets of your work and what you're looking for in a collab" },
+  { icon: '💬', title: 'Match and create', body: "Browse other creatives, match when it's mutual, then start working together" },
 ];
 
 export default function Welcome() {
@@ -35,9 +35,9 @@ export default function Welcome() {
             <ProfileCard photo={SINGER_PHOTO} icon="🎤" role="Singer" genre="R&B" tilt="6deg" accent={colors.purple} />
           </View>
 
-          <Text style={styles.headline}>Find your next creative collab</Text>
+          <Text style={styles.headline}>Find your next creative collab partner</Text>
           <Text style={styles.subhead}>
-            Collab connects musicians and content creators who want to make something together.
+            Collab helps you find collaboration partners for a variety of creatives.
           </Text>
 
           <View style={styles.benefits}>
@@ -68,12 +68,14 @@ function ProfileCard(props: { photo: number; icon: string; role: string; genre: 
   return (
     <View style={[styles.card, { backgroundColor: props.accent, transform: [{ rotate: props.tilt }] }]}>
       <Image source={props.photo} style={StyleSheet.absoluteFill} contentFit="cover" />
+      {/* One slim label at the bottom edge so it doesn't hide what the person is doing. */}
       <View style={styles.badge}>
         <Text style={styles.badgeIcon}>{props.icon}</Text>
-        <Text style={styles.badgeText}>{props.role}</Text>
-      </View>
-      <View style={[styles.tag, { backgroundColor: props.accent }]}>
-        <Text style={styles.tagText}>{props.genre}</Text>
+        <Text style={styles.badgeText} maxFontSizeMultiplier={1.1}>{props.role}</Text>
+        <View style={[styles.dot, { backgroundColor: props.accent }]} />
+        <Text style={[styles.genreText, { color: props.accent }]} maxFontSizeMultiplier={1.1}>
+          {props.genre}
+        </Text>
       </View>
     </View>
   );
@@ -115,29 +117,20 @@ const styles = StyleSheet.create({
   connectorIcon: { fontSize: 19 },
   badge: {
     position: 'absolute',
-    bottom: 34,
+    bottom: 6,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: 'rgba(255,255,255,0.95)',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radius.full,
   },
   badgeIcon: { fontSize: 12 },
   badgeText: { fontFamily: fonts.bodySemibold, fontSize: 12, color: colors.text },
-  tag: {
-    position: 'absolute',
-    bottom: 8,
-    alignSelf: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.9)',
-  },
-  tagText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.white },
+  dot: { width: 4, height: 4, borderRadius: 2, marginHorizontal: 1 },
+  genreText: { fontFamily: fonts.bodySemibold, fontSize: 11 },
 
   headline: {
     fontFamily: fonts.heading,
