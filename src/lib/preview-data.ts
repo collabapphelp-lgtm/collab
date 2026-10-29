@@ -91,3 +91,20 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
     bio: 'Only here to find other DJs.',
   },
 ];
+
+// Already connected with the preview user, with a chat history (see connections.ts).
+PREVIEW_PROFILES.push({
+  id: 'p6',
+  firstName: 'Tasha',
+  lastName: 'Reed',
+  email: 'tasha@example.com',
+  onboardingComplete: true,
+  location: 'Atlanta, Georgia, USA',
+  geo: { lat: 33.75, lng: -84.42 },
+  creatorType: 'content',
+  skills: ['videographer', 'photographer'],
+  lookingFor: ['musician'],
+  interests: ['music', 'fashion'],
+  showcase: [{ type: 'media', source: 'link', url: 'https://www.instagram.com/demo', platform: 'instagram', title: 'Westside visual' }],
+  bio: 'Visuals for artists. Moody, cinematic, on budget.',
+});

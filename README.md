@@ -42,6 +42,7 @@ npx eslint .
 - [x] Phase 1 — foundation, login, signup
 - [x] Phase 2 — onboarding (location, creator type, skills, looking for, genres, showcase, bio)
 - [x] Phase 3 — discover and matching (rules in `src/lib/matching.ts`)
-- [ ] Phase 4 — messaging and push notifications
+- [x] Phase 4a — real-time chat, unread badges, icebreakers
+- [ ] Phase 4b — push notifications
 - [ ] Phase 5 — safety (report/block, account deletion), privacy policy, Firestore security rules
 - [ ] Phase 6 — TestFlight, then App Store

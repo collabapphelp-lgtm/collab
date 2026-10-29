@@ -6,7 +6,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
 import { useAuth } from '@/lib/auth-context';
-import { getProfile } from '@/lib/discover';
+import { getProfile, pairId } from '@/lib/discover';
+import { useMatches } from '@/lib/use-matches';
 import { distanceMiles, formatDistance } from '@/lib/matching';
 import type { UserProfile } from '@/lib/types';
 import { colors, fonts } from '@/lib/theme';
@@ -16,6 +17,8 @@ export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile: me } = useAuth();
   const [them, setThem] = useState<UserProfile | null | undefined>(undefined);
+  const { matches } = useMatches();
+  const connected = !!(me && id && matches?.some((m) => m.id === pairId(me.id, id)));
 
   useEffect(() => {
     if (id) getProfile(id).then(setThem).catch(() => setThem(null));
@@ -54,9 +57,14 @@ export default function UserProfileScreen() {
       <SafeAreaView edges={['top']} style={styles.topBar} pointerEvents="box-none">
         {back}
       </SafeAreaView>
-      <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
-        <Button title={`Message ${them.firstName}`} onPress={() => router.navigate('/messages')} />
-      </SafeAreaView>
+      {connected && me ? (
+        <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
+          <Button
+            title={`Message ${them.firstName}`}
+            onPress={() => router.push({ pathname: '/chat/[id]', params: { id: pairId(me.id, them.id) } })}
+          />
+        </SafeAreaView>
+      ) : null}
     </View>
   );
 }

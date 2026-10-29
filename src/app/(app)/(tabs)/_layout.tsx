@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors, fonts } from '@/lib/theme';
+import { useMatches } from '@/lib/use-matches';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 const icon = (on: IconName, off: IconName) =>
@@ -12,6 +13,7 @@ const icon = (on: IconName, off: IconName) =>
 export const unstable_settings = { initialRouteName: 'discover' };
 
 export default function TabsLayout() {
+  const { unreadCount } = useMatches();
   return (
     <Tabs
       screenOptions={{
@@ -23,8 +25,16 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="discover" options={{ title: 'Discover', tabBarIcon: icon('compass', 'compass-outline') }} />
-      <Tabs.Screen name="matches" options={{ title: 'Matches', tabBarIcon: icon('heart', 'heart-outline') }} />
-      <Tabs.Screen name="messages" options={{ title: 'Messages', tabBarIcon: icon('chatbubbles', 'chatbubbles-outline') }} />
+      <Tabs.Screen name="connections" options={{ title: 'Connections', tabBarIcon: icon('people', 'people-outline') }} />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          tabBarIcon: icon('chatbubbles', 'chatbubbles-outline'),
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.red, fontFamily: fonts.bodySemibold, fontSize: 11 },
+        }}
+      />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: icon('person-circle', 'person-circle-outline') }} />
     </Tabs>
   );

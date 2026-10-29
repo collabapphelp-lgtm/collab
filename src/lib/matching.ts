@@ -70,16 +70,22 @@ function tastes(p: UserProfile) {
   return p.creatorType === 'content' ? (p.interests ?? []) : (p.genres ?? []);
 }
 
-export function scoreCandidate(me: UserProfile, them: UserProfile): Candidate | null {
+/**
+ * `best`: only people inside your reach who fit at least one way (returns null otherwise).
+ * `explore`: everyone, so people who were filtered out can still be shown once best fits run out.
+ */
+export function scoreCandidate(me: UserProfile, them: UserProfile, mode: 'best' | 'explore' = 'best'): Candidate | null {
   const miles = distanceMiles(me.geo, them.geo);
-  if (!withinReach(me, them, miles)) return null;
+  const inReach = withinReach(me, them, miles);
+  if (mode === 'best' && !inReach) return null;
 
   const iWant = fitsWanted(me, them);
   const theyWant = fitsWanted(them, me);
   const iMatch = iWant.open || iWant.matched.length > 0;
   const theyMatch = theyWant.open || theyWant.matched.length > 0;
-  // Both were specific and neither fits the other: not a useful suggestion.
-  if (!iWant.open && !theyWant.open && iWant.matched.length === 0 && theyWant.matched.length === 0) return null;
+  // Both were specific and neither fits the other: not a direct fit.
+  const noFit = !iWant.open && !theyWant.open && iWant.matched.length === 0 && theyWant.matched.length === 0;
+  if (mode === 'best' && noFit) return null;
 
   let score = 0;
   const reasons: string[] = [];
@@ -111,18 +117,29 @@ export function scoreCandidate(me: UserProfile, them: UserProfile): Candidate | 
   }
 
   const radius = me.maxDistance ?? DEFAULT_RADIUS_MILES;
-  if (reasons.length < 2 && (miles === null || miles > radius)) reasons.push('Open to remote collabs');
+  if (noFit) reasons.unshift('A different lane. Could spark something new');
+  if (reasons.length < 2 && (miles === null || miles > radius)) reasons.push(inReach ? 'Open to remote collabs' : 'Outside your usual area');
   if (reasons.length === 0 && theyWant.open) reasons.push('Open to all kinds of collabs');
 
   return { profile: them, score, distanceMiles: miles, reasons: reasons.slice(0, 2) };
 }
 
-/** Score, filter and sort everyone not yet seen. Best fits first. */
-export function rankCandidates(me: UserProfile, others: UserProfile[]): Candidate[] {
-  return others
-    .map((o) => scoreCandidate(me, o))
-    .filter((c): c is Candidate => c !== null)
-    .sort((a, b) => b.score - a.score);
+const byScore = (a: Candidate, b: Candidate) => b.score - a.score;
+
+/**
+ * Split everyone not yet seen into:
+ *   best — direct fits within reach, best first
+ *   more — everyone else (different lanes, outside your area), offered once `best` runs out
+ */
+export function rankCandidates(me: UserProfile, others: UserProfile[]): { best: Candidate[]; more: Candidate[] } {
+  const best: Candidate[] = [];
+  const more: Candidate[] = [];
+  for (const o of others) {
+    const strict = scoreCandidate(me, o, 'best');
+    if (strict) best.push(strict);
+    else more.push(scoreCandidate(me, o, 'explore')!);
+  }
+  return { best: best.sort(byScore), more: more.sort(byScore) };
 }
 
 export function formatDistance(miles: number | null, location?: string) {

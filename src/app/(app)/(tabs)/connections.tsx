@@ -6,7 +6,7 @@ import { roleLine } from '@/lib/labels';
 import { useMatches } from '@/lib/use-matches';
 import { colors, fonts, radius } from '@/lib/theme';
 
-export default function Matches() {
+export default function Connections() {
   const { matches, error } = useMatches();
   const { width } = useWindowDimensions();
   const tile = Math.floor((width - 16 * 2 - 14) / 2); // two columns with a 14pt gap
@@ -14,7 +14,7 @@ export default function Matches() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Matches</Text>
+        <Text style={styles.title}>Connections</Text>
         {matches && matches.length > 0 ? <Text style={styles.count}>{matches.length}</Text> : null}
       </View>
 
@@ -25,8 +25,8 @@ export default function Matches() {
       ) : !matches || matches.length === 0 ? (
         <View style={styles.center}>
           <Text style={styles.emptyEmoji}>{error ? '📡' : '💫'}</Text>
-          <Text style={styles.emptyTitle}>{error ? 'Something went wrong' : 'No matches yet'}</Text>
-          <Text style={styles.emptyBody}>{error ?? 'When you and another creative both tap ♥, they’ll show up here.'}</Text>
+          <Text style={styles.emptyTitle}>{error ? 'Something went wrong' : 'No connections yet'}</Text>
+          <Text style={styles.emptyBody}>{error ?? 'When you and another creative both tap ♥, you’re connected and they’ll show up here.'}</Text>
         </View>
       ) : (
         <FlatList

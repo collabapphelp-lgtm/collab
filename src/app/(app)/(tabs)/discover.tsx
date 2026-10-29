@@ -16,6 +16,9 @@ import { colors, fonts } from '@/lib/theme';
 export default function Discover() {
   const { profile } = useAuth();
   const [queue, setQueue] = useState<Candidate[] | null>(null);
+  // Non-direct fits, held back until best fits run out and the person chooses to explore.
+  const [more, setMore] = useState<Candidate[]>([]);
+  const [exploring, setExploring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
   const [welcome, setWelcome] = useState(() => consumeJustFinished());
@@ -29,36 +32,46 @@ export default function Discover() {
     profileRef.current = profile;
   }, [profile]);
 
-  const fetchQueue = useCallback(async (): Promise<{ queue: Candidate[]; error: string | null }> => {
+  type Loaded = { best: Candidate[]; more: Candidate[]; error: string | null };
+  const fetchQueue = useCallback(async (): Promise<Loaded> => {
     const me = profileRef.current;
-    if (!me) return { queue: [], error: null };
+    if (!me) return { best: [], more: [], error: null };
     try {
-      return { queue: rankCandidates(me, await loadUnseenProfiles(me.id)), error: null };
+      return { ...rankCandidates(me, await loadUnseenProfiles(me.id)), error: null };
     } catch (e) {
       console.warn('Discover load failed', e);
-      return { queue: [], error: 'Couldn’t load creatives. Check your connection and try again.' };
+      return { best: [], more: [], error: 'Couldn’t load creatives. Check your connection and try again.' };
     }
+  }, []);
+
+  const apply = useCallback((r: Loaded) => {
+    setQueue(r.best);
+    setMore(r.more);
+    setExploring(false);
+    setError(r.error);
   }, []);
 
   useEffect(() => {
     if (!meId) return;
     let cancelled = false;
     fetchQueue().then((r) => {
-      if (cancelled) return;
-      setQueue(r.queue);
-      setError(r.error);
+      if (!cancelled) apply(r);
     });
     return () => {
       cancelled = true;
     };
-  }, [meId, fetchQueue]);
+  }, [meId, fetchQueue, apply]);
 
   async function refresh() {
     setQueue(null);
     setError(null);
-    const r = await fetchQueue();
-    setQueue(r.queue);
-    setError(r.error);
+    apply(await fetchQueue());
+  }
+
+  function exploreMore() {
+    setQueue(more);
+    setMore([]);
+    setExploring(true);
   }
 
   const current = queue?.[0];
@@ -86,7 +99,9 @@ export default function Discover() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Discover</Text>
-        {queue && queue.length > 0 ? <Text style={styles.count}>{queue.length} to explore</Text> : null}
+        {queue && queue.length > 0 ? (
+          <Text style={styles.count}>{exploring ? `Exploring · ${queue.length} more` : `${queue.length} to explore`}</Text>
+        ) : null}
       </View>
 
       {queue === null ? (
@@ -102,6 +117,7 @@ export default function Discover() {
                 profile={current.profile}
                 distanceLabel={formatDistance(current.distanceMiles, current.profile.location)}
                 reasons={current.reasons}
+                heroHeight={340}
               />
             </View>
             {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -112,6 +128,8 @@ export default function Discover() {
             <ActionButton kind="like" onPress={() => decide('like')} disabled={acting} />
           </View>
         </View>
+      ) : !error && more.length > 0 ? (
+        <ExploreMore count={more.length} onExplore={exploreMore} />
       ) : (
         <EmptyState error={error} onRefresh={refresh} global={!!profile?.global} />
       )}
@@ -137,6 +155,20 @@ function ActionButton({ kind, onPress, disabled }: { kind: 'pass' | 'like'; onPr
     >
       <Ionicons name={like ? 'heart' : 'close'} size={like ? 32 : 30} color={like ? colors.white : colors.red} />
     </Pressable>
+  );
+}
+
+function ExploreMore({ count, onExplore }: { count: number; onExplore: () => void }) {
+  return (
+    <ScrollView contentContainerStyle={styles.empty}>
+      <Text style={styles.emptyEmoji}>🧭</Text>
+      <Text style={styles.emptyTitle}>You’ve seen your best fits</Text>
+      <Text style={styles.emptyBody}>
+        There are more creatives outside your usual search: different lanes, other cities. Some of the best collabs come
+        from unexpected places.
+      </Text>
+      <Button title={`Explore ${count} more creative${count === 1 ? '' : 's'}`} onPress={onExplore} style={{ marginTop: 8 }} />
+    </ScrollView>
   );
 }
 
@@ -166,7 +198,7 @@ function WelcomeModal({ visible, name, onClose }: { visible: boolean; name: stri
           <Text style={styles.welcomeEmoji}>🎉</Text>
           <Text style={styles.welcomeTitle}>You’re in{name ? `, ${name}` : ''}!</Text>
           <Text style={styles.welcomeBody}>
-            Here’s how Discover works: tap ♥ if you’d like to collab, ✕ to pass. When it’s mutual, it’s a match and you can
+            Here’s how Discover works: tap ♥ if you’d like to collab, ✕ to pass. When it’s mutual, you’re connected and can
             start talking.
           </Text>
           <Button title="Start exploring" onPress={onClose} />

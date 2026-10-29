@@ -19,10 +19,12 @@ type Props = {
   heroAccessory?: ReactNode;
   /** Viewing your own profile: section titles say "Your" instead of "Their". */
   isSelf?: boolean;
+  /** Photo height. Discover uses a shorter one so more of the profile shows without scrolling. */
+  heroHeight?: number;
 };
 
 /** One person's full profile: photo, roles, why you match, what they want, their sound, their work, bio. */
-export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, isSelf }: Props) {
+export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, isSelf, heroHeight = 420 }: Props) {
   const name = fullName(profile);
   const tastes = profile.creatorType === 'content' ? profile.interests : profile.genres;
   const looking = profile.lookingFor ?? [];
@@ -31,7 +33,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.hero}>
+      <View style={[styles.hero, { height: heroHeight }]}>
         <HeroPhoto uri={profile.photoURL} name={name} seed={profile.id} />
         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={styles.heroShade} />
         {heroAccessory ? <View style={styles.heroAccessory}>{heroAccessory}</View> : null}
@@ -161,7 +163,7 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
 
 const styles = StyleSheet.create({
   wrap: { backgroundColor: colors.white },
-  hero: { height: 460, justifyContent: 'flex-end', backgroundColor: colors.purple, overflow: 'hidden' },
+  hero: { justifyContent: 'flex-end', backgroundColor: colors.purple, overflow: 'hidden' },
   heroShade: { position: 'absolute', left: 0, right: 0, bottom: 0, top: '45%' },
   heroAccessory: { position: 'absolute', top: 12, right: 12 },
   heroText: { padding: 20, gap: 4 },

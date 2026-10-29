@@ -1,18 +1,8 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  onSnapshot,
-  query,
-  serverTimestamp,
-  setDoc,
-  where,
-} from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { db } from './firebase';
 import { UI_PREVIEW } from './preview';
 import { PREVIEW_PROFILES } from './preview-data';
+import { addPreviewMatch } from './connections';
 import type { UserProfile } from './types';
 
 /**
@@ -23,9 +13,6 @@ import type { UserProfile } from './types';
  *   matches/{uidA_uidB}             created when both liked each other; members: [uidA, uidB]
  * A top-level `matches` doc (instead of copies under each user) is what Phase 4 chat hangs off.
  */
-
-type FirestoreTime = { toMillis?: () => number };
-export type Match = { id: string; members: string[]; createdAt?: FirestoreTime; other: UserProfile };
 
 export const pairId = (a: string, b: string) => [a, b].sort().join('_');
 
@@ -53,8 +40,7 @@ export async function like(me: UserProfile, them: UserProfile): Promise<boolean>
   if (UI_PREVIEW) {
     previewSeen.add(them.id);
     const matched = !!(them as UserProfile & { likesYou?: boolean }).likesYou;
-    if (matched) previewMatches.unshift({ id: pairId(me.id, them.id), members: [me.id, them.id], other: them });
-    previewListeners.forEach((l) => l([...previewMatches]));
+    if (matched) addPreviewMatch({ id: pairId(me.id, them.id), members: [me.id, them.id], other: them });
     return matched;
   }
 
@@ -71,45 +57,9 @@ export async function like(me: UserProfile, them: UserProfile): Promise<boolean>
   return true;
 }
 
-export async function getProfile(uid: string): Promise<UserProfile | null> {
-  if (UI_PREVIEW) return PREVIEW_PROFILES.find((p) => p.id === uid) ?? null;
-  const snap = await getDoc(doc(db, 'users', uid));
-  return snap.exists() ? ({ id: snap.id, ...snap.data() } as UserProfile) : null;
-}
-
-/** Live list of my matches, newest first, each with the other person's profile. */
-export function listenToMatches(me: string, onChange: (matches: Match[]) => void, onError?: (e: Error) => void) {
-  if (UI_PREVIEW) {
-    previewListeners.add(onChange);
-    onChange([...previewMatches]);
-    return () => void previewListeners.delete(onChange);
-  }
-
-  const cache = new Map<string, UserProfile>();
-  return onSnapshot(
-    query(collection(db, 'matches'), where('members', 'array-contains', me)),
-    async (snap) => {
-      const rows = await Promise.all(
-        snap.docs.map(async (d): Promise<Match | null> => {
-          const data = d.data() as { members: string[]; createdAt?: FirestoreTime };
-          const otherId = data.members.find((m) => m !== me);
-          if (!otherId) return null;
-          if (!cache.has(otherId)) {
-            const p = await getProfile(otherId);
-            if (p) cache.set(otherId, p);
-          }
-          const other = cache.get(otherId);
-          return other ? { id: d.id, members: data.members, createdAt: data.createdAt, other } : null;
-        }),
-      );
-      const millis = (m: Match) => m.createdAt?.toMillis?.() ?? Date.now();
-      onChange(rows.filter((r): r is Match => r !== null).sort((a, b) => millis(b) - millis(a)));
-    },
-    (e) => onError?.(e),
-  );
-}
+// Profile lookups and connection listening live in profiles.ts / connections.ts.
+export { getProfile } from './profiles';
 
 // ---- Preview-mode state (in memory only) ----
-const previewSeen = new Set<string>();
-const previewMatches: Match[] = [];
-const previewListeners = new Set<(m: Match[]) => void>();
+// p6 is already connected in preview mode (see connections.ts), so she doesn't show on Discover.
+const previewSeen = new Set<string>(['p6']);
