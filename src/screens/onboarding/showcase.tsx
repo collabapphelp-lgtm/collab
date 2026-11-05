@@ -10,9 +10,11 @@ import { colors, fonts, radius } from '@/lib/theme';
 
 type Slot = ShowcaseItem | null;
 
+const INITIAL_SLOTS = 4;
+
 // What each empty slot says, in order. Media and prompts alternate.
 const EMPTY_COPY = [
-  { emoji: '🎵', title: 'Upload a snippet', body: 'A track, clip or link to your work' },
+  { emoji: '🎵', title: 'Add a snippet', body: 'Upload a file or paste a link' },
   { emoji: '💬', title: 'Answer a prompt', body: 'Let people get to know the real you' },
   { emoji: '🎬', title: 'Add another snippet', body: 'Show a different side of your work' },
   { emoji: '✨', title: 'Another prompt', body: 'Share more about your creative vision' },
@@ -27,12 +29,14 @@ function toSlots(items: ShowcaseItem[] | undefined): Slot[] {
   return SHOWCASE.slots.map((kind) => (kind === 'media' ? media.shift() : prompts.shift()) ?? null);
 }
 
-// Step 6: show off your best work (snippets + prompts, at least one).
+// Step 5: show off your best work (snippets + prompts, at least one).
 export default function ShowcaseStep() {
   const { draft, saveStep, advance } = useOnboarding();
   const prompts = draft.creatorType === 'content' ? CONTENT_PROMPTS : MUSICIAN_PROMPTS;
 
   const [slots, setSlots] = useState<Slot[]>(() => toSlots(draft.showcase));
+  // Show 4 slots up front so it doesn't feel like homework; the rest open on request (or if already used).
+  const [showAll, setShowAll] = useState(() => slots.slice(INITIAL_SLOTS).some(Boolean));
   const [editing, setEditing] = useState<{ index: number; kind: 'media' | 'prompt' } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,19 +79,27 @@ export default function ShowcaseStep() {
     <StepScreen
       step="showcase"
       onSkip={() => advance('/onboarding/bio')}
-      emoji="🎨"
+      emoji="🔥"
+      inlineEmoji
       title="Show off your best work"
-      subtitle="Add snippets and answer prompts so people can see what you’re about. Fill at least one to continue."
+      subtitle="Snippets and prompts show people what you’re about."
       onContinue={next}
       continueDisabled={filled < SHOWCASE.minItems}
       saving={saving}
       error={error}
-      footerHint={filled === 0 ? 'Add at least one snippet or prompt' : `${filled} of ${SHOWCASE.slots.length} added`}
+      footerHint={filled === 0 ? '☝️ Add at least one snippet or prompt' : `${filled} of ${SHOWCASE.slots.length} added · the rest are optional`}
+      footerHintStrong={filled === 0}
     >
       <View style={styles.list}>
-        {slots.map((slot, i) => (
-          <SlotCard key={i} index={i} slot={slot} onPress={() => onSlotPress(i)} />
-        ))}
+        <Text style={styles.listNote}>One is enough to start. Add more anytime.</Text>
+        {slots.map((slot, i) =>
+          showAll || i < INITIAL_SLOTS ? <SlotCard key={i} index={i} slot={slot} onPress={() => onSlotPress(i)} /> : null,
+        )}
+        {showAll ? null : (
+          <Pressable onPress={() => setShowAll(true)} hitSlop={8} style={styles.more} accessibilityRole="button">
+            <Text style={styles.moreText}>＋ Room for {SHOWCASE.slots.length - INITIAL_SLOTS} more</Text>
+          </Pressable>
+        )}
       </View>
 
       <MediaSheet
@@ -151,7 +163,7 @@ function SlotCard({ index, slot, onPress }: { index: number; slot: Slot; onPress
         <Text style={styles.title} numberOfLines={slot ? 2 : 1}>
           {title}
         </Text>
-        <Text style={[styles.body, slot && styles.bodyFilled]} numberOfLines={2}>
+        <Text style={[styles.body, slot && styles.bodyFilled]} numberOfLines={slot ? 2 : 1}>
           {body}
         </Text>
       </View>
@@ -161,12 +173,16 @@ function SlotCard({ index, slot, onPress }: { index: number; slot: Slot; onPress
 }
 
 const styles = StyleSheet.create({
-  list: { gap: 12 },
+  list: { gap: 10, marginTop: -6 },
+  more: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 12 },
+  moreText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue },
+  listNote: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   slot: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    padding: 16,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
     borderRadius: radius.md,
     borderWidth: 2,
     borderStyle: 'dashed',
@@ -175,10 +191,10 @@ const styles = StyleSheet.create({
   },
   slotPrompt: { backgroundColor: 'rgba(229,197,71,0.05)' },
   slotFilled: { borderStyle: 'solid', borderColor: colors.blue, backgroundColor: 'rgba(75,163,199,0.06)' },
-  icon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   iconMedia: { backgroundColor: 'rgba(75,163,199,0.15)' },
   iconPrompt: { backgroundColor: 'rgba(229,197,71,0.22)' },
-  iconText: { fontSize: 22 },
+  iconText: { fontSize: 20 },
   text: { flex: 1, gap: 2 },
   title: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
   body: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textSecondary },

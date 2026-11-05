@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { MatchesProvider } from '@/lib/use-matches';
 
-export const unstable_settings = { initialRouteName: '(tabs)' };
+export const unstable_settings = { anchor: '(tabs)' };
 
 export default function AppLayout() {
   return (

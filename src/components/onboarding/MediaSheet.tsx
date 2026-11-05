@@ -12,6 +12,11 @@ import { uploadMedia } from '@/lib/upload';
 import type { ShowcaseMedia } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
 
+const CHOICES = [
+  { value: 'link', emoji: '🔗', title: 'Paste a link', body: 'Spotify, YouTube, SoundCloud, TikTok…' },
+  { value: 'upload', emoji: '📲', title: 'Upload a file', body: 'Audio, video or photo from your phone' },
+] as const;
+
 type Props = { visible: boolean; onClose: () => void; onAdd: (item: ShowcaseMedia) => void };
 
 /** Add a snippet by pasting a link (Spotify, YouTube…) or uploading a file from the phone. */
@@ -94,18 +99,27 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
 
   return (
     <Sheet visible={visible} title="Add a snippet" onClose={close}>
+      <Text style={styles.choose}>Two ways to add your work:</Text>
       <View style={styles.tabs}>
-        {(['link', 'upload'] as const).map((t) => (
-          <Pressable
-            key={t}
-            onPress={() => !uploading && setTab(t)}
-            style={[styles.tab, tab === t && styles.tabOn]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: tab === t }}
-          >
-            <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{t === 'link' ? '🔗 Paste a link' : '📁 Upload'}</Text>
-          </Pressable>
-        ))}
+        {CHOICES.map((c) => {
+          const on = tab === c.value;
+          return (
+            <Pressable
+              key={c.value}
+              onPress={() => !uploading && setTab(c.value)}
+              style={({ pressed }) => [styles.tab, on && styles.tabOn, pressed && { opacity: 0.8 }]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+            >
+              <View style={[styles.tabIcon, on && styles.tabIconOn]}>
+                <Text style={styles.tabEmoji}>{c.emoji}</Text>
+              </View>
+              <Text style={[styles.tabText, on && styles.tabTextOn]}>{c.title}</Text>
+              <Text style={styles.tabBody}>{c.body}</Text>
+              <View style={[styles.tabRadio, on && styles.tabRadioOn]}>{on ? <View style={styles.tabRadioDot} /> : null}</View>
+            </Pressable>
+          );
+        })}
       </View>
 
       {tab === 'link' ? (
@@ -178,11 +192,30 @@ function normalizeUrl(raw: string): string | null {
 }
 
 const styles = StyleSheet.create({
-  tabs: { flexDirection: 'row', gap: 8, padding: 4, backgroundColor: colors.bgSecondary, borderRadius: radius.md },
-  tab: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
-  tabOn: { backgroundColor: colors.white, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  tabText: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textSecondary },
-  tabTextOn: { color: colors.text, fontFamily: fonts.bodySemibold },
+  choose: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSecondary, marginBottom: -4 },
+  tabs: { flexDirection: 'row', gap: 10 },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    paddingTop: 14,
+    paddingBottom: 12,
+    paddingHorizontal: 10,
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  tabOn: { borderColor: colors.blue, backgroundColor: 'rgba(75,163,199,0.07)' },
+  tabIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bgSecondary, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
+  tabIconOn: { backgroundColor: 'rgba(75,163,199,0.16)' },
+  tabEmoji: { fontSize: 22 },
+  tabText: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
+  tabTextOn: { color: colors.blue },
+  tabBody: { fontFamily: fonts.body, fontSize: 12, lineHeight: 16, color: colors.textSecondary, textAlign: 'center' },
+  tabRadio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
+  tabRadioOn: { borderColor: colors.blue },
+  tabRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.blue },
   detected: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.blue, marginTop: -6 },
   pickers: { flexDirection: 'row', gap: 12 },
   pick: {

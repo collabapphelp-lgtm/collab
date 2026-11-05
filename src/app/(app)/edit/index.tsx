@@ -21,8 +21,13 @@ export default function EditProfile() {
 
   const rows: { title: string; value?: string; href: Href }[] = [
     { title: 'Location', value: profile.global ? `${shortLocation(profile.location) ?? 'Not set'} · Open to global` : shortLocation(profile.location), href: '/edit/location' },
-    { title: 'I am a…', value: profile.creatorType === 'content' ? 'Content Creator' : profile.creatorType === 'musician' ? 'Musician' : undefined, href: '/edit/type' },
-    { title: isMusician ? 'What kind of musician' : 'What kind of content', value: roleLine(profile, 3), href: '/edit/skills' },
+    {
+      title: 'I am a…',
+      value: [profile.creatorType === 'content' ? 'Content Creator' : profile.creatorType === 'musician' ? 'Musician' : null, roleLine(profile, 3)]
+        .filter(Boolean)
+        .join(' · ') || undefined,
+      href: '/edit/type',
+    },
     { title: 'Looking to collab with', value: profile.lookingFor?.map((v) => lookingOptionFor(v).label).join(', ') || undefined, href: '/edit/looking' },
     {
       title: isMusician ? 'Your sound' : 'Your vibe',

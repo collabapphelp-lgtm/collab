@@ -8,7 +8,7 @@ import { CONTENT_LOOKING, MUSICIAN_LOOKING, type LookingOption } from '@/lib/onb
 import { toggleIn } from '@/lib/toggle';
 import { colors, fonts } from '@/lib/theme';
 
-// Step 4: who do you want to collab with? Includes the other creator type (cross-type matching).
+// Step 3: who do you want to collab with? Includes the other creator type (cross-type matching).
 export default function LookingStep() {
   const { draft, saveStep, advance } = useOnboarding();
   const isMusician = draft.creatorType !== 'content';

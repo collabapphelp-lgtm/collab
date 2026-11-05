@@ -10,7 +10,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // When a guard below turns off (sign in, sign out, onboarding done), the app falls back to
 // the index screen, which sends the person to the right section.
-export const unstable_settings = { initialRouteName: 'index' };
+export const unstable_settings = { anchor: 'index' };
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, SpaceGrotesk_700Bold });

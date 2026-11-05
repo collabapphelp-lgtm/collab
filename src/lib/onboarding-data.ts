@@ -106,11 +106,8 @@ export const GENRES: Option[] = [
   { value: 'latin', label: 'Latin', emoji: '💃' },
   { value: 'afrobeats', label: 'Afrobeats', emoji: '🌍' },
   { value: 'country', label: 'Country', emoji: '🤠' },
-  { value: 'reggae', label: 'Reggae', emoji: '🌴' },
   { value: 'jazz', label: 'Jazz', emoji: '🎷' },
-  { value: 'gospel', label: 'Gospel', emoji: '✝️' },
   { value: 'classical', label: 'Classical', emoji: '🎻' },
-  { value: 'kpop', label: 'K-Pop', emoji: '💜' },
 ];
 
 export const INTERESTS: Option[] = [

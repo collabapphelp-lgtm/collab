@@ -7,7 +7,7 @@ import { GENRES, INTERESTS } from '@/lib/onboarding-data';
 import { toggleIn } from '@/lib/toggle';
 import { colors, fonts, radius } from '@/lib/theme';
 
-// Step 5: genres (musicians) or content niches (creators), with "Open to all".
+// Step 4: genres (musicians) or content niches (creators), with "Open to all".
 export default function TasteStep() {
   const { draft, saveStep, advance } = useOnboarding();
   const isMusician = draft.creatorType !== 'content';
@@ -68,7 +68,7 @@ export default function TasteStep() {
         accessibilityState={{ checked: openToAll }}
         style={({ pressed }) => [styles.openAll, openToAll && styles.openAllOn, pressed && { opacity: 0.8 }]}
       >
-        <Text style={styles.openAllEmoji}>🌈</Text>
+        <Text style={styles.openAllEmoji}>♾️</Text>
         <Text style={[styles.openAllText, openToAll && { color: colors.blue }]}>
           {isMusician ? 'Open to all genres' : 'Open to all niches'}
         </Text>

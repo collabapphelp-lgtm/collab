@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
 import { SafetyButton } from '@/components/SafetyButton';
@@ -98,10 +99,14 @@ export default function Discover() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} />
       <View style={styles.header}>
         <Text style={styles.title}>Discover</Text>
         {queue && queue.length > 0 ? (
-          <Text style={styles.count}>{exploring ? `Exploring · ${queue.length} more` : `${queue.length} to explore`}</Text>
+          <View style={styles.countPill}>
+            <View style={styles.countDot} />
+            <Text style={styles.count}>{exploring ? `Exploring · ${queue.length} more` : `${queue.length} to explore`}</Text>
+          </View>
         ) : null}
       </View>
 
@@ -114,7 +119,8 @@ export default function Discover() {
         <View style={styles.flex}>
           <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <View style={styles.card}>
-              <ProfileView
+              <View style={styles.cardClip}>
+                <ProfileView
                 profile={current.profile}
                 distanceLabel={formatDistance(current.distanceMiles, current.profile.location)}
                 reasons={current.reasons}
@@ -122,11 +128,13 @@ export default function Discover() {
                 heroAccessory={
                   <SafetyButton them={current.profile} tone="light" onBlocked={() => setQueue((q) => (q ? q.slice(1) : q))} />
                 }
-              />
+                />
+              </View>
             </View>
             {error ? <Text style={styles.error}>{error}</Text> : null}
           </ScrollView>
 
+          <LinearGradient colors={['rgba(244,242,236,0)', 'rgba(244,242,236,0.95)']} style={styles.fade} pointerEvents="none" />
           <View style={styles.actions} pointerEvents="box-none">
             <ActionButton kind="pass" onPress={() => decide('pass')} disabled={acting} />
             <ActionButton kind="like" onPress={() => decide('like')} disabled={acting} />
@@ -157,7 +165,13 @@ function ActionButton({ kind, onPress, disabled }: { kind: 'pass' | 'like'; onPr
         { transform: [{ scale: pressed ? 0.92 : 1 }], opacity: disabled ? 0.6 : 1 },
       ]}
     >
-      <Ionicons name={like ? 'heart' : 'close'} size={like ? 32 : 30} color={like ? colors.white : colors.red} />
+      {like ? (
+        <LinearGradient colors={[colors.blue, colors.purple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}>
+          <Ionicons name="heart" size={34} color={colors.white} />
+        </LinearGradient>
+      ) : (
+        <Ionicons name="close" size={30} color={colors.red} />
+      )}
     </Pressable>
   );
 }
@@ -213,29 +227,55 @@ function WelcomeModal({ visible, name, onClose }: { visible: boolean; name: stri
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bgSecondary },
+  safe: { flex: 1, backgroundColor: '#F4F2EC' },
   flex: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 14 },
   title: { fontFamily: fonts.heading, fontSize: 28, color: colors.text },
-  count: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
+  countPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.white,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  countDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.teal },
+  count: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.textSecondary },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   loading: { fontFamily: fonts.body, fontSize: 15, color: colors.textSecondary },
-  scroll: { paddingHorizontal: 12, paddingBottom: 120 },
-  card: { borderRadius: 24, overflow: 'hidden', backgroundColor: colors.white },
+  scroll: { paddingHorizontal: 14, paddingTop: 2, paddingBottom: 130 },
+  card: {
+    borderRadius: 28,
+    backgroundColor: colors.white,
+    shadowColor: '#2A3B4D',
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  cardClip: { borderRadius: 28, overflow: 'hidden' },
+  fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 120 },
   error: { fontFamily: fonts.body, fontSize: 14, color: colors.red, textAlign: 'center', marginTop: 12 },
   actions: {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 18,
+    bottom: 16,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 28,
+    alignItems: 'center',
+    gap: 26,
   },
   action: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -245,7 +285,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   actionPass: { backgroundColor: colors.white },
-  actionLike: { backgroundColor: colors.blue },
+  actionLike: { width: 74, height: 74, borderRadius: 37, backgroundColor: colors.blue },
+  actionFill: { width: '100%', height: '100%', borderRadius: 37, alignItems: 'center', justifyContent: 'center' },
   empty: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 10 },
   emptyEmoji: { fontSize: 52 },
   emptyTitle: { fontFamily: fonts.heading, fontSize: 24, color: colors.text, textAlign: 'center' },

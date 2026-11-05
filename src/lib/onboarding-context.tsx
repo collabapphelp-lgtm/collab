@@ -66,6 +66,6 @@ export function useOnboarding() {
   return ctx;
 }
 
-/** The order of the steps; used for the progress bar and "Step 3 of 7". */
-export const ONBOARDING_STEPS = ['location', 'type', 'skills', 'looking', 'taste', 'showcase', 'bio'] as const;
+/** The order of the steps; used for the progress bar and "Step 3 of 6". */
+export const ONBOARDING_STEPS = ['location', 'type', 'looking', 'taste', 'showcase', 'bio'] as const;
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];

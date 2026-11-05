@@ -10,7 +10,7 @@ const TIPS = [
   { emoji: '🎯', text: 'Be specific about what you’re looking for in a collab' },
 ];
 
-// Step 7: optional bio, then finish. Finishing flips onboardingComplete, which moves them into the app.
+// Step 6: optional bio, then finish. Finishing flips onboardingComplete, which moves them into the app.
 export default function BioStep() {
   const { draft, finish, advance, mode } = useOnboarding();
   const [bio, setBio] = useState(draft.bio ?? '');

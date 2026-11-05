@@ -41,27 +41,31 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.role}>{roleLine(profile, 3)}</Text>
           {distanceLabel || profile.location ? (
-            <Text style={styles.where}>📍 {distanceLabel ?? shortLocation(profile.location)}</Text>
+            <View style={styles.wherePill}>
+              <Text style={styles.where}>📍 {distanceLabel ?? shortLocation(profile.location)}</Text>
+            </View>
           ) : null}
         </View>
       </View>
 
       <View style={styles.body}>
         {reasons && reasons.length > 0 ? (
-          <View style={styles.reasons}>
+          <LinearGradient colors={['rgba(229,197,71,0.22)', 'rgba(163,153,199,0.14)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.reasons}>
+            <Text style={styles.reasonsTitle}>Why you two fit</Text>
             {reasons.map((r) => (
-              <View key={r} style={styles.reason}>
-                <Text style={styles.reasonText}>✨ {r}</Text>
-              </View>
+              <Text key={r} style={styles.reasonText}>
+                ✨ {r}
+              </Text>
             ))}
-          </View>
+          </LinearGradient>
         ) : null}
 
-        {instruments.length > 0 ? <Section title={isSelf ? 'You play' : 'Plays'}>{<ChipRow items={instruments} />}</Section> : null}
+        {instruments.length > 0 ? <Section title={isSelf ? 'You play' : 'Plays'}>{<ChipRow items={instruments} tone="blue" />}</Section> : null}
 
         {looking.length > 0 ? (
           <Section title="Looking to collab with">
             <ChipRow
+              tone="blue"
               items={looking.map((v) => {
                 const o = lookingOptionFor(v);
                 const details = profile.lookingForDetails?.[v];
@@ -75,9 +79,10 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
         {tastes?.length || profile.openToAll ? (
           <Section title={`${isSelf ? 'Your' : 'Their'} ${profile.creatorType === 'content' ? 'vibe' : 'sound'}`}>
             <ChipRow
+              tone="purple"
               items={[
                 ...(tastes ?? []).map((t) => `${optionFor(t).emoji} ${optionFor(t).label}`),
-                ...(profile.openToAll ? ['🌈 Open to all'] : []),
+                ...(profile.openToAll ? ['♾️ Open to all'] : []),
               ]}
             />
           </Section>
@@ -106,11 +111,11 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function ChipRow({ items }: { items: string[] }) {
+function ChipRow({ items, tone }: { items: string[]; tone: 'blue' | 'purple' }) {
   return (
     <View style={styles.chips}>
       {items.map((t) => (
-        <View key={t} style={styles.chip}>
+        <View key={t} style={[styles.chip, tone === 'blue' ? styles.chipBlue : styles.chipPurple]}>
           <Text style={styles.chipText}>{t}</Text>
         </View>
       ))}
@@ -156,7 +161,9 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
         </Text>
         <Text style={styles.mediaKind}>{kind}</Text>
       </View>
-      <Text style={styles.play}>▶</Text>
+      <View style={styles.playBtn}>
+        <Text style={styles.play}>▶</Text>
+      </View>
     </Pressable>
   );
 }
@@ -167,19 +174,22 @@ const styles = StyleSheet.create({
   heroShade: { position: 'absolute', left: 0, right: 0, bottom: 0, top: '45%' },
   heroAccessory: { position: 'absolute', top: 12, right: 12 },
   heroText: { padding: 20, gap: 4 },
-  name: { fontFamily: fonts.heading, fontSize: 32, color: colors.white },
-  role: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.white },
-  where: { fontFamily: fonts.body, fontSize: 14, color: 'rgba(255,255,255,0.9)' },
+  name: { fontFamily: fonts.heading, fontSize: 34, lineHeight: 38, color: colors.white },
+  role: { fontFamily: fonts.bodySemibold, fontSize: 16, color: 'rgba(255,255,255,0.95)' },
+  wherePill: { alignSelf: 'flex-start', marginTop: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 4 },
+  where: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.white },
 
-  body: { padding: 20, gap: 18 },
-  reasons: { gap: 8 },
-  reason: { alignSelf: 'flex-start', backgroundColor: 'rgba(229,197,71,0.18)', paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full },
-  reasonText: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.text },
+  body: { padding: 20, gap: 20 },
+  reasons: { borderRadius: radius.md, padding: 16, gap: 6 },
+  reasonsTitle: { fontFamily: fonts.heading, fontSize: 15, color: colors.text, marginBottom: 2 },
+  reasonText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.text },
 
   section: { gap: 10 },
-  sectionTitle: { fontFamily: fonts.bodySemibold, fontSize: 13, letterSpacing: 0.6, textTransform: 'uppercase', color: colors.textMuted },
+  sectionTitle: { fontFamily: fonts.heading, fontSize: 16, color: colors.text },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, backgroundColor: colors.bgSecondary },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1 },
+  chipBlue: { backgroundColor: 'rgba(75,163,199,0.08)', borderColor: 'rgba(75,163,199,0.25)' },
+  chipPurple: { backgroundColor: 'rgba(163,153,199,0.12)', borderColor: 'rgba(163,153,199,0.35)' },
   chipText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.text },
 
   prompt: { padding: 18, borderRadius: radius.md, backgroundColor: 'rgba(163,153,199,0.12)', gap: 8 },
@@ -192,15 +202,22 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     borderRadius: radius.md,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   mediaIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(75,163,199,0.14)', alignItems: 'center', justifyContent: 'center' },
   mediaIconText: { fontSize: 22 },
   mediaText: { flex: 1 },
   mediaTitle: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
   mediaKind: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },
-  play: { fontSize: 18, color: colors.blue },
+  playBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
+  play: { fontSize: 14, color: colors.white, marginLeft: 2 },
   mediaImageWrap: { gap: 6 },
   mediaImage: { width: '100%', aspectRatio: 4 / 5, borderRadius: radius.md, backgroundColor: colors.bgSecondary },
   mediaCaption: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },

@@ -14,6 +14,8 @@ type Props = {
   title: string;
   subtitle?: string;
   emoji?: string;
+  /** Put the emoji beside the title instead of above it (saves vertical space). */
+  inlineEmoji?: boolean;
   children: ReactNode;
   continueLabel?: string;
   continueDisabled?: boolean;
@@ -21,6 +23,8 @@ type Props = {
   error?: string | null;
   /** Small hint under the button, e.g. "Pick at least one". */
   footerHint?: string;
+  /** Make the hint stand out (e.g. what's still needed to continue). */
+  footerHintStrong?: boolean;
   onContinue: () => void;
   /** Hide the back button (first step). */
   hideBack?: boolean;
@@ -70,8 +74,17 @@ export function StepScreen(props: Props) {
           </View>
 
           <View style={styles.header}>
-            {props.emoji ? <Text style={styles.emoji}>{props.emoji}</Text> : null}
-            <Text style={styles.title}>{props.title}</Text>
+            {props.emoji && props.inlineEmoji ? (
+              <View style={styles.titleRow}>
+                <Text style={styles.emojiInline}>{props.emoji}</Text>
+                <Text style={[styles.title, styles.flex]}>{props.title}</Text>
+              </View>
+            ) : (
+              <>
+                {props.emoji ? <Text style={styles.emoji}>{props.emoji}</Text> : null}
+                <Text style={styles.title}>{props.title}</Text>
+              </>
+            )}
             {props.subtitle ? <Text style={styles.subtitle}>{props.subtitle}</Text> : null}
           </View>
 
@@ -86,7 +99,15 @@ export function StepScreen(props: Props) {
             disabled={props.continueDisabled}
             loading={props.saving}
           />
-          {props.footerHint ? <Text style={styles.hint}>{props.footerHint}</Text> : null}
+          {props.footerHint ? (
+            props.footerHintStrong ? (
+              <View style={styles.hintStrongWrap}>
+                <Text style={styles.hintStrong}>{props.footerHint}</Text>
+              </View>
+            ) : (
+              <Text style={styles.hint}>{props.footerHint}</Text>
+            )
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -106,6 +127,8 @@ const styles = StyleSheet.create({
   stepCount: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   header: { gap: 6 },
   emoji: { fontSize: 36, marginBottom: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  emojiInline: { fontSize: 30 },
   title: { fontFamily: fonts.heading, fontSize: 28, lineHeight: 33, color: colors.text },
   subtitle: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.textSecondary },
   footer: {
@@ -118,6 +141,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   hint: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted, textAlign: 'center' },
+  hintStrongWrap: { alignSelf: 'center', backgroundColor: 'rgba(229,197,71,0.22)', borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6 },
+  hintStrong: { fontFamily: fonts.bodySemibold, fontSize: 14, color: '#7A5F00', textAlign: 'center' },
 });
 
 export const stepStyles = StyleSheet.create({
