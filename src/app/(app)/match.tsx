@@ -13,7 +13,7 @@ import { optionFor } from '@/lib/labels';
 import type { UserProfile } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
 
-// "It's a Collab!" — shown right after two people like each other.
+// "Let's Collab!" — shown right after two people like each other.
 // Dark "studio at night" look; the tilted cards echo the welcome screen.
 export default function ConnectionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -45,7 +45,7 @@ export default function ConnectionScreen() {
             <PersonCard person={them} tilt="7deg" accent={colors.purple} />
           </View>
 
-          <Text style={styles.title}>It’s a Collab!</Text>
+          <Text style={styles.title}>Let’s Collab!</Text>
           <Text style={styles.body}>
             You and {them?.firstName ?? 'this creative'} are now connected. Say hi and start making something.
           </Text>
