@@ -58,7 +58,8 @@ const activity = (m: Match) => m.lastMessage?.at ?? m.createdAt;
 /** Live list of my connections, most recent activity first, each with the other person's profile. */
 export function listenToMatches(me: string, onChange: (matches: Match[]) => void, onError?: (e: Error) => void) {
   if (UI_PREVIEW) {
-    const l = () => onChange([...preview.matches].sort((a, b) => activity(b) - activity(a)));
+    const l = () =>
+      onChange(preview.matches.filter((m) => !previewBlocked.has(m.other.id)).sort((a, b) => activity(b) - activity(a)));
     preview.listeners.add(l);
     l();
     return () => void preview.listeners.delete(l);
@@ -75,7 +76,11 @@ export function listenToMatches(me: string, onChange: (matches: Match[]) => void
             createdAt?: FirestoreTime;
             lastMessage?: { text: string; senderId: string; createdAt?: FirestoreTime };
             lastRead?: Record<string, FirestoreTime>;
+            blockedBy?: string;
+            closedBy?: string;
           };
+          // Blocked or closed (account deleted) connections disappear for both people.
+          if (data.blockedBy || data.closedBy) return null;
           const otherId = data.members.find((m) => m !== me);
           if (!otherId) return null;
           if (!profiles.has(otherId)) {
@@ -167,6 +172,12 @@ export async function markRead(matchId: string, me: string) {
 }
 
 // ---- Preview-mode store (in memory only; never touches Firebase) ----
+export const previewBlocked = new Set<string>();
+export function previewBlock(uid: string) {
+  previewBlocked.add(uid);
+  preview.emit();
+}
+
 const preview = {
   matches: [] as Match[],
   messages: new Map<string, ChatMessage[]>(),

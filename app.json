@@ -53,6 +53,12 @@
     "scheme": "collab",
     "experiments": {
       "typedRoutes": true
+    },
+    "owner": "collabapp",
+    "extra": {
+      "eas": {
+        "projectId": "ba5a2d7c-6be8-45f2-8baa-b2cde414d859"
+      }
     }
   }
 }

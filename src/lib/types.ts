@@ -20,7 +20,8 @@ export type UserProfile = {
   id: string;
   firstName: string;
   lastName?: string;
-  email: string;
+  /** Legacy: older test profiles stored this publicly; it's now removed on next launch. Login email lives in Firebase Auth only. */
+  email?: string;
   photoURL?: string | null;
   onboardingComplete: boolean;
 

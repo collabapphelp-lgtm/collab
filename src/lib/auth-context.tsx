@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { deleteField, doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import type { UserProfile } from './types';
 import { UI_PREVIEW, UI_PREVIEW_STAGE } from './preview';
@@ -90,6 +90,8 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     return onSnapshot(
       doc(db, 'users', user.uid),
       (snap) => {
+        // Older test accounts stored their email in the public profile; strip it.
+        if (snap.exists() && 'email' in snap.data()) updateDoc(snap.ref, { email: deleteField() }).catch(() => {});
         setProfile(snap.exists() ? ({ id: snap.id, ...snap.data() } as UserProfile) : null);
         setProfileReady(true);
       },

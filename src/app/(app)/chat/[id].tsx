@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Avatar } from '@/components/Avatar';
+import { SafetyButton } from '@/components/SafetyButton';
 import { useAuth } from '@/lib/auth-context';
 import { listenToMessages, markRead, MESSAGE_MAX_CHARS, sendMessage, type ChatMessage } from '@/lib/connections';
 import { roleLine } from '@/lib/labels';
@@ -130,6 +131,7 @@ export default function ChatScreen() {
         ) : (
           <View style={styles.headerWho} />
         )}
+        {them ? <SafetyButton them={them} onBlocked={() => router.back()} /> : null}
       </View>
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>

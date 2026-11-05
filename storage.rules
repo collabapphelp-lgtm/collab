@@ -1,0 +1,34 @@
+rules_version = '2';
+
+// Collab — Cloud Storage security rules.
+// Publish: Firebase console → Storage → Rules → paste this file → Publish.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() { return request.auth != null; }
+    function isMe(uid) { return signedIn() && request.auth.uid == uid; }
+
+    // Profile photos: anyone signed in can view; only you can upload or delete yours. Images up to 10 MB.
+    match /profile-photos/{uid}/{file} {
+      allow read: if signedIn();
+      allow create, update: if isMe(uid)
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isMe(uid);
+    }
+
+    // Showcase uploads: images, video or audio up to 30 MB.
+    match /media/{uid}/{file} {
+      allow read: if signedIn();
+      allow create, update: if isMe(uid)
+        && request.resource.size < 30 * 1024 * 1024
+        && request.resource.contentType.matches('(image|video|audio)/.*');
+      allow delete: if isMe(uid);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

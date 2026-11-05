@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
+import { SafetyButton } from '@/components/SafetyButton';
 import { useAuth } from '@/lib/auth-context';
 import { getProfile, pairId } from '@/lib/discover';
 import { useMatches } from '@/lib/use-matches';
@@ -12,7 +13,7 @@ import { distanceMiles, formatDistance } from '@/lib/matching';
 import type { UserProfile } from '@/lib/types';
 import { colors, fonts } from '@/lib/theme';
 
-// Someone's full profile, opened from Matches.
+// Someone's full profile, opened from Connections, Messages or a chat.
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile: me } = useAuth();
@@ -56,6 +57,7 @@ export default function UserProfileScreen() {
       </ScrollView>
       <SafeAreaView edges={['top']} style={styles.topBar} pointerEvents="box-none">
         {back}
+        <SafetyButton them={them} tone="light" onBlocked={() => router.back()} />
       </SafeAreaView>
       {connected && me ? (
         <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
@@ -73,7 +75,16 @@ const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.white },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, backgroundColor: colors.white },
   missing: { fontFamily: fonts.body, fontSize: 16, color: colors.textSecondary },
-  topBar: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 8 },
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   back: {
     width: 42,
     height: 42,

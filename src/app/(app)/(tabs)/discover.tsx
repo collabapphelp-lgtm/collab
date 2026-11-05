@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
+import { SafetyButton } from '@/components/SafetyButton';
 import { Quote, QUOTES } from '@/components/Quote';
 import { useAuth } from '@/lib/auth-context';
 import { like, loadUnseenProfiles, passOn } from '@/lib/discover';
@@ -118,6 +119,9 @@ export default function Discover() {
                 distanceLabel={formatDistance(current.distanceMiles, current.profile.location)}
                 reasons={current.reasons}
                 heroHeight={340}
+                heroAccessory={
+                  <SafetyButton them={current.profile} tone="light" onBlocked={() => setQueue((q) => (q ? q.slice(1) : q))} />
+                }
               />
             </View>
             {error ? <Text style={styles.error}>{error}</Text> : null}

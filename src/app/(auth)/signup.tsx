@@ -65,7 +65,6 @@ export default function Signup() {
       await setDoc(doc(db, 'users', cred.user.uid), {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        email: email.trim().toLowerCase(),
         photoURL,
         createdAt: serverTimestamp(),
         onboardingComplete: false,

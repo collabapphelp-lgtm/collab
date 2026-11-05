@@ -54,7 +54,9 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
     setUploading(true);
     setError(null);
     try {
-      const { url: downloadUrl, path } = await uploadMedia(user.uid, localUri, fileName, mimeType);
+      // Storage rules only accept image/video/audio types, so never upload without one.
+      const contentType = mimeType || { image: 'image/jpeg', video: 'video/mp4', audio: 'audio/mpeg' }[kind];
+      const { url: downloadUrl, path } = await uploadMedia(user.uid, localUri, fileName, contentType);
       onAdd({
         type: 'media',
         source: 'upload',
