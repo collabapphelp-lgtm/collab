@@ -54,7 +54,7 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "collabapp",
+    "owner": "collab-app1",
     "extra": {
       "eas": {
         "projectId": "ba5a2d7c-6be8-45f2-8baa-b2cde414d859"
