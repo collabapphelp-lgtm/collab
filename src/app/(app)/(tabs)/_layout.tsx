@@ -17,8 +17,6 @@ const icon = (on: IconName, off: IconName) =>
     );
   };
 
-export const unstable_settings = { anchor: 'discover' };
-
 export default function TabsLayout() {
   const { unreadCount } = useMatches();
   const insets = useSafeAreaInsets();
