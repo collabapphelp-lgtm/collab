@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.collabapp.collab",
+      "bundleIdentifier": "com.kaamilajani.collab",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -21,7 +21,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.collabapp.collab"
+      "package": "com.kaamilajani.collab"
     },
     "web": {
       "favicon": "./assets/favicon.png",
