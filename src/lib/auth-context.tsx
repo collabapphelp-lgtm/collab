@@ -17,6 +17,9 @@ type AuthState = {
    */
   signupInProgress: boolean;
   setSignupInProgress: (v: boolean) => void;
+  /** While an account is being deleted, keep the person where they are instead of bouncing to onboarding. */
+  deletingAccount: boolean;
+  setDeletingAccount: (v: boolean) => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -59,6 +62,8 @@ function PreviewAuthProvider({ children }: { children: ReactNode }) {
     signOutUser: async () => {},
     signupInProgress: false,
     setSignupInProgress: () => {},
+    deletingAccount: false,
+    setDeletingAccount: () => {},
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
@@ -69,6 +74,7 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [authReady, setAuthReady] = useState(false);
   const [profileReady, setProfileReady] = useState(false);
   const [signupInProgress, setSignupInProgress] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
@@ -109,6 +115,8 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     signOutUser: () => signOut(auth),
     signupInProgress,
     setSignupInProgress,
+    deletingAccount,
+    setDeletingAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

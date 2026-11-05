@@ -24,7 +24,7 @@ export default function RootLayout() {
 }
 
 function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
-  const { initializing, user, profile, signupInProgress } = useAuth();
+  const { initializing, user, profile, signupInProgress, deletingAccount } = useAuth();
   const ready = fontsLoaded && !initializing;
 
   useEffect(() => {
@@ -34,9 +34,10 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   // Keep the native splash screen up until we know where to send the person.
   if (!ready) return null;
 
-  const signedOut = !user || signupInProgress;
-  const needsOnboarding = !signedOut && !profile?.onboardingComplete;
-  const inApp = !signedOut && !!profile?.onboardingComplete;
+  // During account deletion the profile disappears before the login does; stay put until it's all gone.
+  const signedOut = !deletingAccount && (!user || signupInProgress);
+  const needsOnboarding = !deletingAccount && !signedOut && !profile?.onboardingComplete;
+  const inApp = deletingAccount || (!signedOut && !!profile?.onboardingComplete);
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#fff' } }}>

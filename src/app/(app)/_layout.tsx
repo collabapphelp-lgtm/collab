@@ -11,6 +11,7 @@ export default function AppLayout() {
         <Stack.Screen name="user/[id]" options={{ presentation: 'card' }} />
         <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
         <Stack.Screen name="match" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+        <Stack.Screen name="delete-account" options={{ presentation: 'modal' }} />
       </Stack>
     </MatchesProvider>
   );

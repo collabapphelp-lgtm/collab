@@ -1,4 +1,5 @@
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
@@ -31,6 +32,9 @@ export default function MyProfile() {
               ])
             }
           />
+          <Pressable onPress={() => router.push('/delete-account')} hitSlop={8} style={styles.deleteLink} accessibilityRole="button">
+            <Text style={styles.deleteText}>Delete account</Text>
+          </Pressable>
         </View>
       </ScrollView>
       <SafeAreaView edges={['top']} style={styles.topFade} pointerEvents="none" />
@@ -42,5 +46,7 @@ const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.white },
   actions: { paddingHorizontal: 20, gap: 12 },
   note: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted, textAlign: 'center', marginBottom: 4 },
+  deleteLink: { alignSelf: 'center', paddingVertical: 12 },
+  deleteText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.red },
   topFade: { position: 'absolute', top: 0, left: 0, right: 0 },
 });
