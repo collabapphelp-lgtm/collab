@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { deleteField, doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { unregisterPush } from './push';
 import type { UserProfile } from './types';
 import { UI_PREVIEW, UI_PREVIEW_STAGE } from './preview';
 
@@ -112,7 +113,10 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     initializing: !authReady || !profileReady,
     user,
     profile,
-    signOutUser: () => signOut(auth),
+    signOutUser: async () => {
+      if (auth.currentUser) await unregisterPush(auth.currentUser.uid);
+      await signOut(auth);
+    },
     signupInProgress,
     setSignupInProgress,
     deletingAccount,

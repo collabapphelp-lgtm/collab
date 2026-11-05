@@ -7,6 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
+      "icon": {
+        "light": "./assets/icons/ios-light.png",
+        "dark": "./assets/icons/ios-dark.png",
+        "tinted": "./assets/icons/ios-tinted.png"
+      },
       "supportsTablet": false,
       "bundleIdentifier": "com.kaamilajani.collab",
       "infoPlist": {
@@ -30,6 +35,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-notifications",
       "expo-image",
       "expo-font",
       [

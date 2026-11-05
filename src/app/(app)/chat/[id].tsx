@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { setOpenChat } from '@/lib/push';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -60,6 +61,12 @@ export default function ChatScreen() {
       },
       () => setLoadError('Couldn’t load messages. Check your internet.'),
     );
+  }, [id]);
+
+  // While this chat is open, its new messages don't also pop a notification banner.
+  useEffect(() => {
+    setOpenChat(id ?? null);
+    return () => setOpenChat(null);
   }, [id]);
 
   // Opening the chat, and every new message while it's open, counts as read.

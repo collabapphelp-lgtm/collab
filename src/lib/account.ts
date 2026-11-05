@@ -3,6 +3,7 @@ import { collection, deleteDoc, doc, getDocs, query, where, writeBatch } from 'f
 import { deleteObject, listAll, ref } from 'firebase/storage';
 import { auth, db, storage } from './firebase';
 import { UI_PREVIEW } from './preview';
+import { deletePushTokens } from './push';
 
 async function deleteAllIn(path: [string, ...string[]]) {
   const snap = await getDocs(collection(db, ...path));
@@ -23,8 +24,8 @@ async function deleteStorageFolder(folder: string) {
  * Permanently deletes the signed-in person's account and data.
  * Throws with code 'auth/wrong-password' / 'auth/invalid-credential' if the password is wrong.
  *
- * Not removed here (needs a server function, planned with push notifications): other people's
- * "like" records pointing at this account. They reference a deleted profile and are ignored.
+ * Not removed here: other people's "like" records pointing at this account.
+ * They reference a deleted profile and are ignored.
  */
 export async function deleteAccount(password: string) {
   const user = auth.currentUser;
@@ -58,7 +59,8 @@ export async function deleteAccount(password: string) {
   await deleteStorageFolder(`profile-photos/${me}`);
   await deleteStorageFolder(`media/${me}`);
 
-  // 4. Profile, then the login itself.
+  // 4. Push tokens, profile, then the login itself.
+  await deletePushTokens(me);
   await deleteDoc(doc(db, 'users', me));
   await deleteUser(user);
 }

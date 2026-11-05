@@ -59,7 +59,7 @@ export async function like(me: UserProfile, them: UserProfile): Promise<boolean>
   const matchRef = doc(db, 'matches', pairId(me.id, them.id));
   if (!(await getDoc(matchRef)).exists()) {
     try {
-      await setDoc(matchRef, { members: [me.id, them.id].sort(), createdAt: serverTimestamp() });
+      await setDoc(matchRef, { members: [me.id, them.id].sort(), createdBy: me.id, createdAt: serverTimestamp() });
     } catch (e) {
       // Lost a race with the other person creating it at the same moment: that's still a match.
       if (!(await getDoc(matchRef)).exists()) throw e;
