@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import { router, type Href } from 'expo-router';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { useAuth } from './auth-context';
@@ -11,6 +12,10 @@ type OnboardingState = {
   saveStep: (patch: OnboardingDraft) => Promise<void>;
   /** Save the last answers and mark onboarding done, which moves them into the app. */
   finish: (patch: OnboardingDraft) => Promise<void>;
+  /** 'onboarding' walks through every step; 'edit' opens one step from Edit profile and returns. */
+  mode: 'onboarding' | 'edit';
+  /** Go to the next onboarding step, or back to Edit profile when editing. */
+  advance: (nextOnboardingStep: Href) => void;
 };
 
 const OnboardingContext = createContext<OnboardingState | null>(null);
@@ -23,7 +28,7 @@ export function consumeJustFinished() {
   return v;
 }
 
-export function OnboardingProvider({ children }: { children: ReactNode }) {
+export function OnboardingProvider({ children, mode = 'onboarding' }: { children: ReactNode; mode?: 'onboarding' | 'edit' }) {
   const { user, profile } = useAuth();
 
   // Start from whatever is already saved, so someone who quit halfway picks up where they left off.
@@ -44,9 +49,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     draft,
     saveStep: (patch) => write(patch),
     finish: async (patch) => {
+      if (mode === 'edit') return write(patch);
       justFinished = true;
       await write(patch, { onboardingComplete: true, onboardingCompletedAt: serverTimestamp() });
     },
+    mode,
+    advance: (next) => (mode === 'edit' ? router.back() : router.push(next)),
   };
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

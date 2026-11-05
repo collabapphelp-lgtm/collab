@@ -44,5 +44,6 @@ npx eslint .
 - [x] Phase 3 — discover and matching (rules in `src/lib/matching.ts`)
 - [x] Phase 4a — real-time chat, unread badges, icebreakers
 - [ ] Phase 4b — push notifications
-- [ ] Phase 5 — safety (report/block, account deletion), privacy policy, Firestore security rules
+- [x] Phase 5a — report/block, in-app account deletion, edit profile, security rules (`firestore.rules`, `storage.rules`)
+- [ ] Phase 5b — privacy policy + terms, server-side cleanup and moderation alerts
 - [ ] Phase 6 — TestFlight, then App Store

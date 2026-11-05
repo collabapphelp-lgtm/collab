@@ -20,7 +20,7 @@ export default function MyProfile() {
           <Text style={styles.note}>This is how other creatives see your profile.</Text>
           <Button
             title="Edit profile"
-            onPress={() => Alert.alert('Coming soon', 'Profile editing is on the way. For now, your onboarding answers are what people see.')}
+            onPress={() => router.push('/edit')}
           />
           <Button
             title="Log out"

@@ -6,7 +6,7 @@ import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/lib/auth-context';
-import { ONBOARDING_STEPS, type OnboardingStep } from '@/lib/onboarding-context';
+import { ONBOARDING_STEPS, useOnboarding, type OnboardingStep } from '@/lib/onboarding-context';
 import { colors, fonts, radius } from '@/lib/theme';
 
 type Props = {
@@ -31,19 +31,23 @@ type Props = {
 /** Shared layout for every onboarding step: progress bar, back, title, scrolling body, pinned Continue. */
 export function StepScreen(props: Props) {
   const { signOutUser } = useAuth();
+  const { mode } = useOnboarding();
+  const editing = mode === 'edit';
   const index = ONBOARDING_STEPS.indexOf(props.step);
   const progress = (index + 1) / ONBOARDING_STEPS.length;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <View style={styles.progressTrack} accessibilityLabel={`Step ${index + 1} of ${ONBOARDING_STEPS.length}`}>
-        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-      </View>
+      {editing ? null : (
+        <View style={styles.progressTrack} accessibilityLabel={`Step ${index + 1} of ${ONBOARDING_STEPS.length}`}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+        </View>
+      )}
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.topRow}>
-            {props.hideBack ? (
+            {props.hideBack && !editing ? (
               // First step has nowhere to go back to; offer a way out instead.
               <Pressable onPress={signOutUser} hitSlop={10} accessibilityRole="button">
                 <Text style={styles.logout}>Log out</Text>
@@ -52,10 +56,12 @@ export function StepScreen(props: Props) {
               <BackButton onPress={() => router.back()} />
             )}
             <View style={styles.topRight}>
-              <Text style={styles.stepCount}>
-                {index + 1} of {ONBOARDING_STEPS.length}
-              </Text>
-              {props.onSkip ? (
+              {editing ? null : (
+                <Text style={styles.stepCount}>
+                  {index + 1} of {ONBOARDING_STEPS.length}
+                </Text>
+              )}
+              {props.onSkip && !editing ? (
                 <Pressable onPress={props.onSkip} hitSlop={10} accessibilityRole="button" disabled={props.saving}>
                   <Text style={styles.skip}>Skip</Text>
                 </Pressable>
@@ -75,7 +81,7 @@ export function StepScreen(props: Props) {
         <View style={styles.footer}>
           <ErrorText message={props.error ?? null} />
           <Button
-            title={props.continueLabel ?? 'Continue'}
+            title={props.continueLabel ?? (editing ? 'Save' : 'Continue')}
             onPress={props.onContinue}
             disabled={props.continueDisabled}
             loading={props.saving}
