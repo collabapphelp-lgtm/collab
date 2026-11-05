@@ -15,6 +15,7 @@ const TIMELINE = [
 function Timeline() {
   return (
     <View style={t.wrap} accessibilityLabel="How it works: create your account, build your creative profile, then match and make something">
+      <Text style={t.kicker}>HOW IT WORKS</Text>
       {TIMELINE.map((s, i) => {
         const active = i === 0;
         const last = i === TIMELINE.length - 1;
@@ -42,6 +43,7 @@ function Timeline() {
 
 const t = StyleSheet.create({
   wrap: { paddingVertical: 4 },
+  kicker: { fontFamily: fonts.bodySemibold, fontSize: 11, letterSpacing: 1.2, color: colors.textMuted, marginBottom: 10 },
   row: { flexDirection: 'row', gap: 12 },
   railCol: { alignItems: 'center', width: 26 },
   dot: {

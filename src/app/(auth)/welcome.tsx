@@ -7,8 +7,8 @@ import { Button } from '@/components/Button';
 import { colors, fonts, gradients, radius } from '@/lib/theme';
 
 // Built into the app (not loaded from the internet) so they always show instantly.
-const PRODUCER_PHOTO = require('../../../assets/welcome/producer-card.jpg');
-const SINGER_PHOTO = require('../../../assets/welcome/singer-card.jpg');
+const PRODUCER_PHOTO = require('../../../assets/welcome/producer-studio.jpg');
+const SINGER_PHOTO = require('../../../assets/welcome/singer-mic.jpg');
 
 // The three reasons to sign up. Keep each to one short line so the page stays scannable.
 const BENEFITS = [
