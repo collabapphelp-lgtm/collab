@@ -30,15 +30,14 @@ export const CONTENT_SKILLS: Option[] = [
 /** Shared by "what do you play?" and "which instruments are you looking for?" so they match. */
 export const INSTRUMENTS: Option[] = [
   { value: 'guitar', label: 'Guitar', emoji: '🎸' },
-  { value: 'piano', label: 'Piano / Keys', emoji: '🎹' },
+  { value: 'piano', label: 'Piano', emoji: '🎹' },
   { value: 'drums', label: 'Drums', emoji: '🥁' },
   { value: 'bass', label: 'Bass', emoji: '🎸' },
-  { value: 'violin', label: 'Violin', emoji: '🎻' },
-  { value: 'cello', label: 'Cello', emoji: '🎻' },
+  { value: 'strings', label: 'Strings', emoji: '🎻' },
+  { value: 'percussion', label: 'Percussion', emoji: '🪘' },
   { value: 'saxophone', label: 'Saxophone', emoji: '🎷' },
-  { value: 'trumpet', label: 'Trumpet', emoji: '🎺' },
+  { value: 'brass', label: 'Brass', emoji: '🎺' },
   { value: 'flute', label: 'Flute', emoji: '🪈' },
-  { value: 'ukulele', label: 'Ukulele', emoji: '🪕' },
 ];
 
 // ---------- Who you're looking for ----------
@@ -78,7 +77,7 @@ export const MUSICIAN_LOOKING: LookingOption[] = [
   { value: 'songwriter', label: 'Songwriters', emoji: '✍️' },
   { value: 'engineer', label: 'Audio Engineers', emoji: '🎚️' },
   CONTENT_GROUP, // cross-type: musicians can look for content creators
-  OPEN_TO_ANYTHING,
+  OPEN_TO_ANYTHING, // shown at the top of the screen (see looking.tsx)
 ];
 
 export const CONTENT_LOOKING: LookingOption[] = [
@@ -90,7 +89,7 @@ export const CONTENT_LOOKING: LookingOption[] = [
   { value: 'videographer', label: 'Videographers', emoji: '🎥' },
   { value: 'editor', label: 'Video Editors', emoji: '✂️' },
   MUSICIAN_GROUP, // cross-type: creators can look for musicians
-  OPEN_TO_ANYTHING,
+  OPEN_TO_ANYTHING, // shown at the top of the screen (see looking.tsx)
 ];
 
 // ---------- Your sound / your vibe ----------
@@ -99,8 +98,7 @@ export const GENRES: Option[] = [
   { value: 'hiphop', label: 'Hip Hop', emoji: '🎧' },
   { value: 'pop', label: 'Pop', emoji: '🎵' },
   { value: 'rnb', label: 'R&B / Soul', emoji: '🎤' },
-  { value: 'electronic', label: 'Electronic', emoji: '🎹' },
-  { value: 'edm', label: 'Dance / EDM', emoji: '🎛️' },
+  { value: 'electronic', label: 'Electronic / EDM', emoji: '🎛️' },
   { value: 'rock', label: 'Rock', emoji: '🎸' },
   { value: 'indie', label: 'Indie', emoji: '🌙' },
   { value: 'latin', label: 'Latin', emoji: '💃' },

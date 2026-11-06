@@ -87,7 +87,7 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
     creatorType: 'musician',
     skills: ['dj'],
     lookingFor: ['dj'],
-    genres: ['edm'],
+    genres: ['electronic'],
     bio: 'Only here to find other DJs.',
   },
 ];

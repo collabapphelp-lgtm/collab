@@ -34,17 +34,17 @@ export default function BioStep() {
     <StepScreen
       step="bio"
       emoji="🎉"
-      title="Almost there!"
-      subtitle="One last thing: tell people a bit about yourself."
+      title="Anything else?"
+      subtitle="Is there anything else you want potential collabs to know?"
       continueLabel={mode === 'edit' ? 'Save' : 'Complete profile 🚀'}
       onContinue={done}
       saving={saving}
       error={error}
-      footerHint="Your bio is optional. You can add or change it later."
+      footerHint="This is optional. You can add or change it anytime."
     >
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>✍️ Your bio</Text>
+          <Text style={styles.cardTitle}>✍️ In your own words</Text>
           <Text style={styles.optional}>OPTIONAL</Text>
         </View>
         <TextInput
@@ -52,10 +52,10 @@ export default function BioStep() {
           onChangeText={setBio}
           multiline
           maxLength={BIO_MAX_CHARS}
-          placeholder="Anything else you want to share?"
+          placeholder="e.g. Got a home studio in Brooklyn, free most weekends, working on my first EP…"
           placeholderTextColor={colors.textMuted}
           style={styles.input}
-          accessibilityLabel="Your bio"
+          accessibilityLabel="Anything else you want potential collabs to know"
         />
         <Text style={styles.count}>
           {bio.length}/{BIO_MAX_CHARS}

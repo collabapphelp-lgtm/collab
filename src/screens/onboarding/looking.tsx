@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { StepScreen } from '@/components/onboarding/StepScreen';
 import { Chip, ChipGrid } from '@/components/onboarding/Chip';
 import { OptionRow } from '@/components/onboarding/OptionRow';
+import { OpenToAll } from '@/components/onboarding/OpenToAll';
 import { useOnboarding } from '@/lib/onboarding-context';
 import { CONTENT_LOOKING, MUSICIAN_LOOKING, type LookingOption } from '@/lib/onboarding-data';
 import { toggleIn } from '@/lib/toggle';
@@ -52,7 +53,7 @@ export default function LookingStep() {
       step="looking"
       onSkip={() => advance('/onboarding/taste')}
       title="Looking to collab with..."
-      subtitle="What kind of creative are you looking to Collab with? Pick as many as you like."
+      subtitle="Who do you want to create with? Pick as many as you like."
       onContinue={next}
       continueDisabled={looking.length === 0}
       saving={saving}
@@ -60,7 +61,18 @@ export default function LookingStep() {
       footerHint={looking.length === 0 ? 'Pick at least one' : undefined}
     >
       <View style={styles.list}>
-        {options.map((o) => (
+        <OpenToAll
+          label="Open to anything!"
+          detail="Any creative who's a good fit"
+          selected={looking.includes('anything')}
+          onPress={() => toggleRow('anything')}
+        />
+        <View style={styles.orRow}>
+          <View style={styles.orLine} />
+          <Text style={styles.orText}>or pick specific types</Text>
+          <View style={styles.orLine} />
+        </View>
+        {options.filter((o) => o.value !== 'anything').map((o) => (
           <LookingRow
             key={o.value}
             option={o}
@@ -125,5 +137,8 @@ function LookingRow(props: {
 
 const styles = StyleSheet.create({
   list: { gap: 10 },
+  orRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 2 },
+  orLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+  orText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   subPrompt: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSecondary },
 });

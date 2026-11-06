@@ -23,6 +23,10 @@ const ALL: Option[] = [
 const byValue = new Map<string, Option>();
 for (const o of ALL) if (!byValue.has(o.value)) byValue.set(o.value, o);
 
+// Options we've since merged: older profiles still show a sensible label.
+const RETIRED: Record<string, string> = { violin: 'strings', cello: 'strings', ukulele: 'strings', trumpet: 'brass', edm: 'electronic' };
+for (const [old, now] of Object.entries(RETIRED)) byValue.set(old, byValue.get(now)!);
+
 /** Turn a stored value like 'producer' into what people see: { label: 'Producer', emoji: '💻' }. */
 export function optionFor(value: string): Option {
   return byValue.get(value) ?? { value, label: value, emoji: '•' };
