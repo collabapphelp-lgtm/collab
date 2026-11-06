@@ -61,6 +61,7 @@ export async function deleteAccount(password: string) {
 
   // 4. Push tokens, profile, then the login itself.
   await deletePushTokens(me);
+  await deleteDoc(doc(db, 'activity', me)).catch(() => {});
   await deleteDoc(doc(db, 'users', me));
   await deleteUser(user);
 }

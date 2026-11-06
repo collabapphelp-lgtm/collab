@@ -102,3 +102,6 @@ exports.onNewMessage = onDocumentCreated('matches/{matchId}/messages/{messageId}
     data: { type: 'message', matchId },
   });
 });
+
+// Tester dashboard (private).
+exports.metrics = require('./metrics').metrics;

@@ -6,6 +6,7 @@ import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/lib/auth-context';
+import { trackSkip } from '@/lib/activity';
 import { ONBOARDING_STEPS, useOnboarding, type OnboardingStep } from '@/lib/onboarding-context';
 import { colors, fonts, radius } from '@/lib/theme';
 
@@ -34,8 +35,14 @@ type Props = {
 
 /** Shared layout for every onboarding step: progress bar, back, title, scrolling body, pinned Continue. */
 export function StepScreen(props: Props) {
-  const { signOutUser } = useAuth();
+  const { signOutUser, user } = useAuth();
   const { mode } = useOnboarding();
+  const onSkip = props.onSkip
+    ? () => {
+        trackSkip(user?.uid, props.step);
+        props.onSkip?.();
+      }
+    : undefined;
   const editing = mode === 'edit';
   const index = ONBOARDING_STEPS.indexOf(props.step);
   const progress = (index + 1) / ONBOARDING_STEPS.length;
@@ -65,8 +72,8 @@ export function StepScreen(props: Props) {
                   {index + 1} of {ONBOARDING_STEPS.length}
                 </Text>
               )}
-              {props.onSkip && !editing ? (
-                <Pressable onPress={props.onSkip} hitSlop={10} accessibilityRole="button" disabled={props.saving}>
+              {onSkip && !editing ? (
+                <Pressable onPress={onSkip} hitSlop={10} accessibilityRole="button" disabled={props.saving}>
                   <Text style={styles.skip}>Skip</Text>
                 </Pressable>
               ) : null}

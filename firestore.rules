@@ -90,6 +90,18 @@ service cloud.firestore {
       allow read, write: if isMe(uid);
     }
 
+    // ---------- Usage signals for the tester dashboard ----------
+    // activity/{uid}: { days, stepsReached, skipped } — lists of short strings. Owner-only; the server reads it.
+    match /activity/{uid} {
+      allow read: if isMe(uid);
+      allow create, update: if isMe(uid)
+        && request.resource.data.keys().hasOnly(['days', 'stepsReached', 'skipped'])
+        && (!('days' in request.resource.data) || request.resource.data.days.size() <= 400)
+        && (!('stepsReached' in request.resource.data) || request.resource.data.stepsReached.size() <= 20)
+        && (!('skipped' in request.resource.data) || request.resource.data.skipped.size() <= 20);
+      allow delete: if isMe(uid);
+    }
+
     // ---------- Reports ----------
     // Write-only from the app; reviewed in the Firebase console.
     match /reports/{reportId} {

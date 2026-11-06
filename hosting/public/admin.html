@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Tester Dashboard · Collab</title>
+<link rel="icon" href="/logo-mark.png">
+<style>
+:root{--bg:#F6F3EE;--card:#fff;--text:#1F2328;--muted:#5B6270;--line:#E6E2DA;--blue:#4BA3C7;--purple:#A399C7;--good:#2E8B57;--warn:#B7791F;--bar:#DCEEF7}
+@media (prefers-color-scheme:dark){:root{--bg:#121315;--card:#1B1D20;--text:#ECEDEE;--muted:#A3A9B3;--line:#2C2F34;--bar:#21384A}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 16px 64px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+header img{width:40px}header h1{font-size:20px;margin:0;flex:1}
+.muted{color:var(--muted)}.small{font-size:13px}
+button{font:inherit;font-weight:600;border:0;border-radius:999px;padding:10px 18px;background:var(--blue);color:#fff;cursor:pointer}
+button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+input{font:inherit;width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+.login{max-width:380px;margin:48px auto}
+.grid{display:grid;gap:12px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:12px}
+.kpi .n{font-size:30px;font-weight:700;letter-spacing:-.5px}
+.kpi .l{color:var(--muted);font-size:13px}
+.two{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-bottom:12px}
+h2{font-size:15px;margin:0 0 12px}
+.row{display:grid;grid-template-columns:150px 1fr 64px;gap:10px;align-items:center;margin:6px 0;font-size:14px}
+.track{height:12px;background:var(--line);border-radius:6px;overflow:hidden}
+.fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:6px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:12px;color:var(--warn)}
+dl{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin:0;font-size:14px}dt{color:var(--muted)}dd{margin:0;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.spark{display:flex;align-items:flex-end;gap:4px;height:90px;margin-top:6px}
+.spark div{flex:1;background:var(--bar);border-radius:4px 4px 0 0;min-height:2px;position:relative}
+.spark div.on{background:linear-gradient(180deg,var(--blue),var(--purple))}
+.spark-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:600}td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;background:var(--line)}
+.pill.yes{background:rgba(46,139,87,.15);color:var(--good)}
+.err{color:#C0392B;font-size:14px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="/logo-mark.png" alt="">
+    <h1>Collab · Tester Dashboard</h1>
+    <span id="who" class="muted small"></span>
+    <button id="refresh" class="ghost" hidden>Refresh</button>
+    <button id="logout" class="ghost" hidden>Log out</button>
+  </header>
+
+  <section id="login" class="card login" hidden>
+    <h2>Log in with your Collab account</h2>
+    <p class="muted small">Only the Collab team can see this page.</p>
+    <form id="form">
+      <input id="email" type="email" placeholder="Email" autocomplete="username" required>
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
+      <button type="submit">Log in</button>
+      <div id="loginErr" class="err"></div>
+    </form>
+  </section>
+
+  <p id="loading" class="muted">Loading…</p>
+  <main id="dash" hidden></main>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-functions.js';
+
+const app = initializeApp({
+  apiKey: 'AIzaSyBCMbF8VSSauQfjHF1_DfvWDuDWTuvK0rc',
+  authDomain: 'collab-609ac.firebaseapp.com',
+  projectId: 'collab-609ac',
+  storageBucket: 'collab-609ac.firebasestorage.app',
+  messagingSenderId: '991980593637',
+  appId: '1:991980593637:web:4931917caba588c69ecf0c',
+});
+const auth = getAuth(app);
+const metrics = httpsCallable(getFunctions(app, 'us-central1'), 'metrics');
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '–');
+const fmt = (x, digits = 1) => (x === null || x === undefined ? '–' : Number.isInteger(x) ? String(x) : x.toFixed(digits));
+
+onAuthStateChanged(auth, (user) => {
+  $('loading').hidden = !!user ? false : true;
+  $('login').hidden = !!user;
+  $('logout').hidden = $('refresh').hidden = !user;
+  $('who').textContent = user ? user.email : '';
+  if (user) load();
+  else $('dash').hidden = true;
+});
+
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('loginErr').textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, $('email').value.trim(), $('password').value);
+  } catch {
+    $('loginErr').textContent = 'That email and password didn’t work.';
+  }
+});
+$('logout').onclick = () => signOut(auth);
+$('refresh').onclick = () => load();
+
+async function load() {
+  $('loading').hidden = false;
+  $('loading').textContent = 'Loading…';
+  try {
+    const { data } = await metrics();
+    render(data);
+    $('loading').hidden = true;
+  } catch (e) {
+    $('dash').hidden = true;
+    $('loading').textContent =
+      e.code === 'functions/permission-denied'
+        ? 'This account isn’t on the Collab team list. Log out and use your own account.'
+        : 'Couldn’t load the numbers. Check your connection and press Refresh.';
+  }
+}
+
+function bars(rows, total) {
+  return rows
+    .map((r) => `<div class="row"><span>${esc(r.label)}${r.skipped ? ` <span class="note">· ${r.skipped} skipped</span>` : ''}</span>
+      <div class="track"><div class="fill" style="width:${total ? (r.n / total) * 100 : 0}%"></div></div>
+      <span class="num">${r.n} <span class="muted small">${pct(r.n, total)}</span></span></div>`)
+    .join('');
+}
+
+function spark(series, title) {
+  const max = Math.max(1, ...series.map((d) => d.n));
+  const cols = series.map((d) => `<div class="${d.n ? 'on' : ''}" style="height:${(d.n / max) * 100}%" title="${d.day}: ${d.n}"></div>`).join('');
+  const short = (d) => new Date(d + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return `<h2>${title}</h2><div class="spark">${cols}</div>
+    <div class="spark-labels"><span>${short(series[0].day)}</span><span>today: ${series.at(-1).n}</span></div>`;
+}
+
+function render(d) {
+  const t = d.totals, c = d.connections, s = d.discover, p = d.profiles;
+  const when = (ms) => (ms ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '–');
+  $('dash').innerHTML = `
+  <div class="grid kpis">
+    <div class="card kpi"><div class="n">${t.testers}</div><div class="l">Testers signed up</div></div>
+    <div class="card kpi"><div class="n">${pct(t.finishedSetup, t.testers)}</div><div class="l">Finished setup (${t.finishedSetup})</div></div>
+    <div class="card kpi"><div class="n">${t.cameBackAnotherDay}</div><div class="l">Came back on another day</div></div>
+    <div class="card kpi"><div class="n">${c.conversationsWithReplies}</div><div class="l">Conversations with replies</div></div>
+  </div>
+
+  <div class="grid two">
+    <div class="card"><h2>Setup funnel</h2>${bars(d.funnel, d.funnel[0].n)}
+      <p class="muted small">“Skipped” counts people who tapped Skip on that step.</p></div>
+    <div class="card"><h2>Matches → real conversations</h2>
+      ${bars([
+        { label: 'Finished setup', n: t.finishedSetup },
+        { label: 'Swiped in Discover', n: s.swipers },
+        { label: 'Got a match', n: c.testersWithAMatch },
+      ], t.finishedSetup)}
+      <dl style="margin-top:14px">
+        <dt>Matches</dt><dd>${c.matches}</dd>
+        <dt>Conversations started</dt><dd>${c.conversationsStarted} <span class="muted small">${pct(c.conversationsStarted, c.matches)} of matches</span></dd>
+        <dt>…with a reply</dt><dd>${c.conversationsWithReplies} <span class="muted small">${pct(c.conversationsWithReplies, c.conversationsStarted)}</span></dd>
+        <dt>Messages per conversation (median)</dt><dd>${fmt(c.medianMessagesPerConversation)}</dd>
+        <dt>Hours from match to first message (median)</dt><dd>${fmt(c.medianHoursToFirstMessage)}</dd>
+      </dl></div>
+  </div>
+
+  <div class="grid two">
+    <div class="card"><h2>Discover</h2><dl>
+      <dt>Likes</dt><dd>${s.likes}</dd><dt>Passes</dt><dd>${s.passes}</dd>
+      <dt>Like rate</dt><dd>${s.likeRate === null ? '–' : pct(s.likes, s.likes + s.passes)}</dd>
+      <dt>Swipes per person (median)</dt><dd>${fmt(s.medianSwipesPerSwiper)}</dd></dl>
+      <h2 style="margin-top:18px">Profiles (finished setup)</h2><dl>
+      <dt>Added a photo</dt><dd>${pct(p.withPhoto, t.finishedSetup)}</dd>
+      <dt>Added a snippet or prompt</dt><dd>${pct(p.withShowcase, t.finishedSetup)}</dd>
+      <dt>Wrote “Anything else”</dt><dd>${pct(p.withBio, t.finishedSetup)}</dd>
+      <dt>Showcase items (average)</dt><dd>${fmt(p.avgShowcaseItems)}</dd></dl></div>
+    <div class="card">${spark(d.dailyActive, 'People using Collab each day (last 14 days)')}
+      <div style="height:18px"></div>${spark(d.signupsByDay, 'New signups each day')}
+      <p class="muted small">Active in the last 7 days: <strong>${t.activeLast7Days}</strong></p></div>
+  </div>
+
+  <div class="card"><h2>Testers</h2><div class="tablewrap"><table>
+    <thead><tr><th>Name</th><th>Role</th><th>Joined</th><th>Setup</th><th class="r">Showcase</th><th class="r">Likes</th><th class="r">Passes</th><th class="r">Matches</th><th class="r">Msgs sent</th><th class="r">Days active</th><th>Last seen</th></tr></thead>
+    <tbody>${d.people.map((u) => `<tr>
+      <td>${esc(u.name) || '<span class="muted">(no name)</span>'}</td>
+      <td>${u.role === 'content' ? 'Creator' : u.role === 'musician' ? 'Musician' : '–'}</td>
+      <td>${when(u.joined)}</td>
+      <td><span class="pill ${u.finished ? 'yes' : ''}">${u.finished ? 'Done' : 'In progress'}</span></td>
+      <td class="r">${u.showcase}</td><td class="r">${u.likes}</td><td class="r">${u.passes}</td><td class="r">${u.matches}</td>
+      <td class="r">${u.sent}</td><td class="r">${u.daysActive}</td><td>${u.lastActive ?? '–'}</td></tr>`).join('') || '<tr><td colspan="11" class="muted">No testers yet.</td></tr>'}
+    </tbody></table></div>
+    <p class="muted small">Leaves out ${d.internalExcluded} internal account(s): yours and collabapphelp+…@gmail.com logins like the App Review account. Updated ${new Date(d.generatedAt).toLocaleString()}.</p>
+  </div>`;
+  $('dash').hidden = false;
+}
+</script>
+</body>
+</html>

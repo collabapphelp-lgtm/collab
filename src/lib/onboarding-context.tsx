@@ -5,6 +5,7 @@ import { db } from './firebase';
 import { useAuth } from './auth-context';
 import type { OnboardingDraft } from './types';
 import { UI_PREVIEW } from './preview';
+import { trackStepReached } from './activity';
 
 type OnboardingState = {
   draft: OnboardingDraft;
@@ -54,7 +55,11 @@ export function OnboardingProvider({ children, mode = 'onboarding' }: { children
       await write(patch, { onboardingComplete: true, onboardingCompletedAt: serverTimestamp() });
     },
     mode,
-    advance: (next) => (mode === 'edit' ? router.back() : router.push(next)),
+    advance: (next) => {
+      if (mode === 'edit') return router.back();
+      trackStepReached(user?.uid, String(next).split('/').pop() ?? '');
+      router.push(next);
+    },
   };
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

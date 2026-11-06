@@ -4,7 +4,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } from '@expo-google-fonts/outfit';
 import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
+import { AppState } from 'react-native';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { trackActiveDay } from '@/lib/activity';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -25,6 +27,14 @@ export default function RootLayout() {
 
 function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { initializing, user, profile, signupInProgress, deletingAccount } = useAuth();
+
+  // Count a day of use whenever the app is opened or brought back (for the tester dashboard).
+  const uid = user?.uid;
+  useEffect(() => {
+    trackActiveDay(uid);
+    const sub = AppState.addEventListener('change', (s) => s === 'active' && trackActiveDay(uid));
+    return () => sub.remove();
+  }, [uid]);
   const ready = fontsLoaded && !initializing;
 
   useEffect(() => {
