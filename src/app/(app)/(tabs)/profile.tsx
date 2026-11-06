@@ -1,5 +1,7 @@
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
@@ -7,6 +9,14 @@ import { useAuth } from '@/lib/auth-context';
 import { shortLocation } from '@/lib/labels';
 import { openLegal, SUPPORT_EMAIL } from '@/lib/legal';
 import { colors, fonts } from '@/lib/theme';
+
+// Which version is running: the build's own code, or an over-the-air update (and when it was published).
+function versionLine() {
+  const v = Constants.expoConfig?.version ?? '';
+  if (Updates.isEmbeddedLaunch || !Updates.createdAt) return `Collab ${v}`;
+  const when = Updates.createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return `Collab ${v} · updated ${when} (${(Updates.updateId ?? '').slice(0, 6)})`;
+}
 
 // Your own profile, as others see it.
 export default function MyProfile() {
@@ -49,6 +59,7 @@ export default function MyProfile() {
               Help
             </Text>
           </View>
+          <Text style={styles.version}>{versionLine()}</Text>
         </View>
       </ScrollView>
       <SafeAreaView edges={['top']} style={styles.topFade} pointerEvents="none" />
@@ -65,5 +76,6 @@ const styles = StyleSheet.create({
   legalRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
   legalLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   legalDot: { fontSize: 13, color: colors.textMuted },
+  version: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, textAlign: 'center', marginTop: 6 },
   topFade: { position: 'absolute', top: 0, left: 0, right: 0 },
 });
