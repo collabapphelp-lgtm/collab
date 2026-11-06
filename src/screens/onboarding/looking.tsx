@@ -63,7 +63,6 @@ export default function LookingStep() {
       <View style={styles.list}>
         <OpenToAll
           label="Open to anything!"
-          detail="Any creative who's a good fit"
           selected={looking.includes('anything')}
           onPress={() => toggleRow('anything')}
         />

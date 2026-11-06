@@ -52,7 +52,7 @@ export default function BioStep() {
           onChangeText={setBio}
           multiline
           maxLength={BIO_MAX_CHARS}
-          placeholder="e.g. Got a home studio in Brooklyn, free most weekends, working on my first EP…"
+          placeholder="Anything else you want to share?"
           placeholderTextColor={colors.textMuted}
           style={styles.input}
           accessibilityLabel="Anything else you want potential collabs to know"

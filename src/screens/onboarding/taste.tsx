@@ -63,7 +63,6 @@ export default function TasteStep() {
 
       <OpenToAll
         label={isMusician ? 'Open to all genres' : 'Open to all niches'}
-        detail="Happy to work outside my picks"
         selected={openToAll}
         onPress={() => setOpenToAll((v) => !v)}
       />
