@@ -14,6 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ChatProfileCard } from '@/components/ChatProfileCard';
 import { Avatar } from '@/components/Avatar';
 import { SafetyButton } from '@/components/SafetyButton';
 import { useAuth } from '@/lib/auth-context';
@@ -40,7 +42,7 @@ type Row = { kind: 'day'; key: string; label: string } | { kind: 'msg'; key: str
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, profile: myProfile } = useAuth();
   const { matches } = useMatches();
   const me = user?.uid ?? '';
   const match = matches?.find((m) => m.id === id);
@@ -50,6 +52,7 @@ export default function ChatScreen() {
   const [draft, setDraft] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [cardOpen, setCardOpen] = useState(true);
 
   useEffect(() => {
     if (!id) return;
@@ -118,6 +121,7 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <LinearGradient colors={['#F7FAFC', '#F6F3EE']} style={StyleSheet.absoluteFill} />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={26} color={colors.text} />
@@ -129,10 +133,18 @@ export default function ChatScreen() {
             accessibilityRole="button"
             accessibilityLabel={`View ${them.firstName}'s profile`}
           >
-            <Avatar uri={them.photoURL} name={them.firstName} seed={them.id} size={38} />
-            <View>
-              <Text style={styles.headerName}>{them.firstName}</Text>
-              <Text style={styles.headerRole}>{roleLine(them)}</Text>
+            <LinearGradient colors={[colors.blue, colors.purple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ring}>
+              <View style={styles.ringInner}>
+                <Avatar uri={them.photoURL} name={them.firstName} seed={them.id} size={40} />
+              </View>
+            </LinearGradient>
+            <View style={styles.flex}>
+              <Text style={styles.headerName} numberOfLines={1}>
+                {them.firstName}
+              </Text>
+              <Text style={styles.headerRole} numberOfLines={1}>
+                {roleLine(them)} · View profile
+              </Text>
             </View>
           </Pressable>
         ) : (
@@ -141,10 +153,12 @@ export default function ChatScreen() {
         {them ? <SafetyButton them={them} onBlocked={() => router.back()} /> : null}
       </View>
 
+      {them ? <ChatProfileCard me={myProfile} them={them} expanded={cardOpen} onToggle={() => setCardOpen((v) => !v)} /> : null}
+
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
         {empty && them ? (
           <ScrollView contentContainerStyle={styles.empty} keyboardShouldPersistTaps="handled">
-            <Avatar uri={them.photoURL} name={them.firstName} seed={them.id} size={88} />
+            <Text style={styles.emptyEmoji}>👋</Text>
             <Text style={styles.emptyTitle}>You and {them.firstName} are connected</Text>
             <Text style={styles.emptyBody}>Break the ice. Tap one to use it, or write your own.</Text>
             <View style={styles.breakers}>
@@ -168,9 +182,20 @@ export default function ChatScreen() {
                 <Text style={styles.day}>{item.label}</Text>
               ) : (
                 <View style={[styles.bubbleRow, item.mine ? styles.rowMine : styles.rowTheirs, item.tail && { marginBottom: 8 }]}>
-                  <View style={[styles.bubble, item.mine ? styles.mine : styles.theirs, item.tail && (item.mine ? styles.tailMine : styles.tailTheirs)]}>
-                    <Text style={[styles.text, item.mine && { color: colors.white }]}>{item.msg.text}</Text>
-                  </View>
+                  {item.mine ? (
+                    <LinearGradient
+                      colors={[colors.blue, '#6F8FD0']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[styles.bubble, item.tail && styles.tailMine]}
+                    >
+                      <Text style={[styles.text, { color: colors.white }]}>{item.msg.text}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={[styles.bubble, styles.theirs, item.tail && styles.tailTheirs]}>
+                      <Text style={styles.text}>{item.msg.text}</Text>
+                    </View>
+                  )}
                   {item.tail ? (
                     <Text style={[styles.meta, item.mine && { textAlign: 'right' }]}>
                       {item.msg.pending ? 'Sending…' : clockTime(item.msg.at)}
@@ -191,6 +216,7 @@ export default function ChatScreen() {
             placeholderTextColor={colors.textMuted}
             multiline
             maxLength={MESSAGE_MAX_CHARS}
+            onFocus={() => setCardOpen(false)}
             style={styles.input}
             accessibilityLabel="Message"
           />
@@ -199,9 +225,11 @@ export default function ChatScreen() {
             disabled={!draft.trim()}
             accessibilityRole="button"
             accessibilityLabel="Send"
-            style={[styles.send, !draft.trim() && { opacity: 0.4 }]}
+            style={!draft.trim() && { opacity: 0.4 }}
           >
-            <Ionicons name="arrow-up" size={22} color={colors.white} />
+            <LinearGradient colors={[colors.blue, colors.purple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.send}>
+              <Ionicons name="arrow-up" size={22} color={colors.white} />
+            </LinearGradient>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -210,7 +238,7 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.white },
+  safe: { flex: 1, backgroundColor: '#F6F3EE' },
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -218,11 +246,14 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  ring: { width: 46, height: 46, borderRadius: 23, padding: 2 },
+  ringInner: { flex: 1, borderRadius: 21, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   headerWho: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerName: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
+  headerName: { fontFamily: fonts.heading, fontSize: 18, color: colors.text },
   headerRole: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary },
 
   list: { paddingHorizontal: 14, paddingVertical: 12 },
@@ -231,14 +262,23 @@ const styles = StyleSheet.create({
   rowMine: { alignSelf: 'flex-end' },
   rowTheirs: { alignSelf: 'flex-start' },
   bubble: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20 },
-  mine: { backgroundColor: colors.blue },
-  theirs: { backgroundColor: colors.bgSecondary },
+  theirs: {
+    backgroundColor: colors.white,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E4E1DA',
+    shadowColor: '#2A3B4D',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
   tailMine: { borderBottomRightRadius: 6 },
   tailTheirs: { borderBottomLeftRadius: 6 },
   text: { fontFamily: fonts.body, fontSize: 16, lineHeight: 22, color: colors.text },
   meta: { fontFamily: fonts.body, fontSize: 11, color: colors.textMuted, marginTop: 3, marginHorizontal: 4 },
 
   empty: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 8 },
+  emptyEmoji: { fontSize: 40 },
   emptyTitle: { fontFamily: fonts.heading, fontSize: 21, color: colors.text, textAlign: 'center', marginTop: 8 },
   emptyBody: { fontFamily: fonts.body, fontSize: 14, color: colors.textSecondary, textAlign: 'center' },
   breakers: { alignSelf: 'stretch', gap: 10, marginTop: 14 },
@@ -258,6 +298,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.95)',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
