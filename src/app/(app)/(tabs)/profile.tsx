@@ -1,10 +1,11 @@
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
 import { useAuth } from '@/lib/auth-context';
 import { shortLocation } from '@/lib/labels';
+import { openLegal, SUPPORT_EMAIL } from '@/lib/legal';
 import { colors, fonts } from '@/lib/theme';
 
 // Your own profile, as others see it.
@@ -35,6 +36,19 @@ export default function MyProfile() {
           <Pressable onPress={() => router.push('/delete-account')} hitSlop={8} style={styles.deleteLink} accessibilityRole="button">
             <Text style={styles.deleteText}>Delete account</Text>
           </Pressable>
+          <View style={styles.legalRow}>
+            <Text style={styles.legalLink} onPress={() => openLegal('privacy')}>
+              Privacy
+            </Text>
+            <Text style={styles.legalDot}>·</Text>
+            <Text style={styles.legalLink} onPress={() => openLegal('terms')}>
+              Terms
+            </Text>
+            <Text style={styles.legalDot}>·</Text>
+            <Text style={styles.legalLink} onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`).catch(() => {})}>
+              Help
+            </Text>
+          </View>
         </View>
       </ScrollView>
       <SafeAreaView edges={['top']} style={styles.topFade} pointerEvents="none" />
@@ -48,5 +62,8 @@ const styles = StyleSheet.create({
   note: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted, textAlign: 'center', marginBottom: 4 },
   deleteLink: { alignSelf: 'center', paddingVertical: 12 },
   deleteText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.red },
+  legalRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  legalLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
+  legalDot: { fontSize: 13, color: colors.textMuted },
   topFade: { position: 'absolute', top: 0, left: 0, right: 0 },
 });

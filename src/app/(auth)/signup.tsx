@@ -15,6 +15,7 @@ import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ErrorText';
 import { TextField } from '@/components/TextField';
 import { SignupIntro } from '@/components/SignupIntro';
+import { openLegal } from '@/lib/legal';
 import { colors, fonts } from '@/lib/theme';
 
 export default function Signup() {
@@ -156,6 +157,17 @@ export default function Signup() {
           <ErrorText message={error} />
 
           <View style={styles.footer}>
+            <Text style={styles.legal}>
+              By creating an account, you agree to our{' '}
+              <Text style={styles.legalLink} onPress={() => openLegal('terms')} accessibilityRole="link">
+                Terms
+              </Text>{' '}
+              and{' '}
+              <Text style={styles.legalLink} onPress={() => openLegal('privacy')} accessibilityRole="link">
+                Privacy Policy
+              </Text>
+              , and confirm you’re 18 or older.
+            </Text>
             <Button title="Create account" onPress={handleSignup} loading={submitting} />
             <Pressable onPress={() => router.replace('/login')} hitSlop={8}>
               <Text style={styles.switchText}>
@@ -196,4 +208,6 @@ const styles = StyleSheet.create({
   footer: { marginTop: 'auto', gap: 16, alignItems: 'center' },
   switchText: { fontFamily: fonts.body, fontSize: 15, color: colors.textSecondary },
   switchLink: { fontFamily: fonts.bodySemibold, color: colors.blue },
+  legal: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textMuted, textAlign: 'center' },
+  legalLink: { fontFamily: fonts.bodySemibold, color: colors.textSecondary, textDecorationLine: 'underline' },
 });

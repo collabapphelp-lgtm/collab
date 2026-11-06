@@ -1,5 +1,27 @@
 {
-  "firestore": { "rules": "firestore.rules" },
-  "storage": { "rules": "storage.rules" },
-  "functions": [{ "source": "functions", "codebase": "default", "ignore": ["node_modules", ".git", "*.log"] }]
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "*.log"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": "hosting/public",
+    "cleanUrls": true,
+    "ignore": [
+      "firebase.json",
+      "**/.*"
+    ]
+  }
 }
