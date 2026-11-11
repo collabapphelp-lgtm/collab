@@ -146,12 +146,17 @@ async function load() {
 let accounts = [];
 const selected = new Set();
 async function loadAccounts() {
+  $('acctCard').hidden = false;
+  $('acctMsg').textContent = 'Loading accounts…';
   try {
     accounts = (await listAccounts()).data;
+    $('acctMsg').textContent = '';
     renderAccounts();
-    $('acctCard').hidden = false;
-  } catch {
-    $('acctCard').hidden = true;
+  } catch (e) {
+    accounts = [];
+    renderAccounts();
+    $('acctMsg').innerHTML = `<span class="err">Couldn’t load accounts (${esc(e.code || '')}: ${esc(e.message || e)}).</span> <button class="ghost" id="acctRetry" style="padding:4px 12px">Retry</button>`;
+    $('acctRetry').onclick = loadAccounts;
   }
 }
 function renderAccounts() {
