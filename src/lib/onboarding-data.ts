@@ -13,7 +13,7 @@ export const MUSICIAN_SKILLS: Option[] = [
   { value: 'vocalist', label: 'Vocalist', emoji: '🎤' },
   { value: 'producer', label: 'Producer', emoji: '💻' },
   { value: 'dj', label: 'DJ', emoji: '🎧' },
-  { value: 'songwriter', label: 'Songwriter', emoji: '✍️' },
+  { value: 'songwriter', label: 'Songwriter / Lyricist', emoji: '✍️' },
   { value: 'engineer', label: 'Audio Engineer', emoji: '🎚️' },
 ];
 
@@ -74,7 +74,7 @@ export const MUSICIAN_LOOKING: LookingOption[] = [
   { value: 'vocalist', label: 'Vocalists', emoji: '🎤' },
   { value: 'producer', label: 'Producers', emoji: '💻' },
   { value: 'dj', label: 'DJs', emoji: '🎧' },
-  { value: 'songwriter', label: 'Songwriters', emoji: '✍️' },
+  { value: 'songwriter', label: 'Songwriters / Lyricists', emoji: '✍️' },
   { value: 'engineer', label: 'Audio Engineers', emoji: '🎚️' },
   CONTENT_GROUP, // cross-type: musicians can look for content creators
   OPEN_TO_ANYTHING, // shown at the top of the screen (see looking.tsx)
