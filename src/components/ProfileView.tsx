@@ -93,7 +93,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
         ))}
 
         {profile.bio ? (
-          <Section title="About">
+          <Section title={isSelf ? "What you’re looking for in a collab" : "Looking for in a collab"}>
             <Text style={styles.bio}>{profile.bio}</Text>
           </Section>
         ) : null}

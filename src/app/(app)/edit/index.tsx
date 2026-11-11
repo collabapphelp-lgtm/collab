@@ -35,7 +35,7 @@ export default function EditProfile() {
       href: '/edit/taste',
     },
     { title: 'Showcase', value: showcaseCount ? `${showcaseCount} item${showcaseCount === 1 ? '' : 's'}` : undefined, href: '/edit/showcase' },
-    { title: 'Anything else', value: profile.bio || undefined, href: '/edit/bio' },
+    { title: 'Looking for in a collab', value: profile.bio || undefined, href: '/edit/showcase' },
   ];
 
   return (

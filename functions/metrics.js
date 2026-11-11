@@ -18,8 +18,7 @@ const STEPS = [
   ['type', 'I am a…'],
   ['looking', 'Looking for'],
   ['taste', 'Your sound'],
-  ['showcase', 'Showcase'],
-  ['bio', 'Anything else'],
+  ['showcase', 'Showcase + collab partner'],
 ];
 
 const ms = (t) => (t && typeof t.toMillis === 'function' ? t.toMillis() : null);
@@ -116,7 +115,6 @@ exports.metrics = onCall({ maxInstances: 2, memory: '256MiB' }, async (request) 
     looking: (u) => (u.lookingFor?.length ?? 0) > 0,
     taste: (u) => (u.genres?.length ?? 0) + (u.interests?.length ?? 0) > 0 || !!u.openToAll,
     showcase: (u) => (u.showcase?.length ?? 0) > 0,
-    bio: (u) => !!u.bio,
   };
   const reached = (u, i) => {
     if (i === 0) return true; // everyone who signs up lands on Location

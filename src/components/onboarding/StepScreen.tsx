@@ -56,7 +56,7 @@ export function StepScreen(props: Props) {
       )}
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
           <View style={styles.topRow}>
             {props.hideBack && !editing ? (
               // First step has nowhere to go back to; offer a way out instead.

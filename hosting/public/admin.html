@@ -262,7 +262,7 @@ function render(d) {
       <h2 style="margin-top:18px">Profiles (finished setup)</h2><dl>
       <dt>Added a photo</dt><dd>${pct(p.withPhoto, t.finishedSetup)}</dd>
       <dt>Added a snippet or prompt</dt><dd>${pct(p.withShowcase, t.finishedSetup)}</dd>
-      <dt>Wrote “Anything else”</dt><dd>${pct(p.withBio, t.finishedSetup)}</dd>
+      <dt>Described their ideal collab partner</dt><dd>${pct(p.withBio, t.finishedSetup)}</dd>
       <dt>Showcase items (average)</dt><dd>${fmt(p.avgShowcaseItems)}</dd></dl></div>
     <div class="card">${spark(d.dailyActive, 'People using Collab each day (last 14 days)')}
       <div style="height:18px"></div>${spark(d.signupsByDay, 'New signups each day')}

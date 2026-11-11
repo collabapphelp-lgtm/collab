@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StepScreen } from '@/components/onboarding/StepScreen';
 import { MediaSheet } from '@/components/onboarding/MediaSheet';
 import { PromptSheet } from '@/components/onboarding/PromptSheet';
 import { useOnboarding } from '@/lib/onboarding-context';
-import { CONTENT_PROMPTS, detectPlatform, MUSICIAN_PROMPTS, SHOWCASE } from '@/lib/onboarding-data';
+import { BIO_MAX_CHARS, CONTENT_PROMPTS, detectPlatform, MUSICIAN_PROMPTS, SHOWCASE } from '@/lib/onboarding-data';
 import type { ShowcaseItem, ShowcaseMedia, ShowcasePrompt } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
 
 type Slot = ShowcaseItem | null;
 
-const INITIAL_SLOTS = 4;
+const INITIAL_SLOTS = 3;
 
 // What each empty slot says, in order. Media and prompts alternate.
 const EMPTY_COPY = [
@@ -30,13 +30,15 @@ function toSlots(items: ShowcaseItem[] | undefined): Slot[] {
   return SHOWCASE.slots.map((kind) => (kind === 'media' ? media.shift() : prompts.shift()) ?? null);
 }
 
-// Step 5: show off your best work (snippets + prompts, at least one).
+// Last step: show off your best work (snippets + prompts, at least one), plus an optional note on
+// what they want in a collab partner (stored as `bio`). Finishing flips onboardingComplete.
 export default function ShowcaseStep() {
-  const { draft, saveStep, advance } = useOnboarding();
+  const { draft, finish, advance, mode } = useOnboarding();
+  const [partner, setPartner] = useState(draft.bio ?? '');
   const prompts = draft.creatorType === 'content' ? CONTENT_PROMPTS : MUSICIAN_PROMPTS;
 
   const [slots, setSlots] = useState<Slot[]>(() => toSlots(draft.showcase));
-  // Show 4 slots up front so it doesn't feel like homework; the rest open on request (or if already used).
+  // Show 3 slots up front so it doesn't feel like homework; the rest open on request (or if already used).
   const [showAll, setShowAll] = useState(() => slots.slice(INITIAL_SLOTS).some(Boolean));
   const [editing, setEditing] = useState<{ index: number; kind: 'media' | 'prompt' } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -60,26 +62,30 @@ export default function ShowcaseStep() {
     ]);
   }
 
-  async function next() {
-    if (filled < SHOWCASE.minItems) return;
+  async function save(withShowcase: boolean) {
     setSaving(true);
     setError(null);
     try {
-      await saveStep({ showcase: slots.filter((s): s is ShowcaseItem => s !== null) });
-      advance('/onboarding/bio');
+      await finish({
+        ...(withShowcase ? { showcase: slots.filter((s): s is ShowcaseItem => s !== null) } : {}),
+        bio: partner.trim(),
+      });
+      // Onboarding: the app sees setup is complete and moves them in. Editing: back to Edit profile.
+      if (mode === 'edit') advance('/onboarding/showcase');
     } catch {
       setError('Couldn’t save. Check your connection and try again.');
-    } finally {
       setSaving(false);
     }
   }
+  const next = () => (filled >= SHOWCASE.minItems ? save(true) : undefined);
 
   const editingPrompt = editing?.kind === 'prompt' ? (slots[editing.index] as ShowcasePrompt | null) : null;
 
   return (
     <StepScreen
       step="showcase"
-      onSkip={() => advance('/onboarding/bio')}
+      onSkip={() => save(false)}
+      continueLabel={mode === 'edit' ? 'Save' : 'Complete profile 🚀'}
       emoji="🔥"
       inlineEmoji
       title="Show off your best work"
@@ -101,6 +107,28 @@ export default function ShowcaseStep() {
             <Text style={styles.moreText}>＋ Room for {SHOWCASE.slots.length - INITIAL_SLOTS} more</Text>
           </Pressable>
         )}
+      </View>
+
+      <View style={styles.partner}>
+        <View style={styles.partnerHead}>
+          <Text style={styles.partnerTitle}>🤝 What are you looking for in a collab partner?</Text>
+          <Text style={styles.optional}>OPTIONAL</Text>
+        </View>
+        <TextInput
+          value={partner}
+          onChangeText={setPartner}
+          multiline
+          maxLength={BIO_MAX_CHARS}
+          placeholder="e.g. Someone consistent who’s down to link weekly. Into moody R&B and big hooks."
+          placeholderTextColor={colors.textMuted}
+          style={styles.partnerInput}
+          accessibilityLabel="What are you looking for in a collab partner"
+        />
+        {partner.length > BIO_MAX_CHARS - 100 ? (
+          <Text style={styles.partnerCount}>
+            {partner.length}/{BIO_MAX_CHARS}
+          </Text>
+        ) : null}
       </View>
 
       <MediaSheet
@@ -181,6 +209,33 @@ function SlotCard({ index, slot, onPress }: { index: number; slot: Slot; onPress
 
 const styles = StyleSheet.create({
   list: { gap: 10, marginTop: -6 },
+  partner: { gap: 10, marginTop: 6, padding: 14, borderRadius: radius.md, backgroundColor: 'rgba(163,153,199,0.10)' },
+  partnerHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  partnerTitle: { flex: 1, fontFamily: fonts.bodySemibold, fontSize: 15, lineHeight: 20, color: colors.text },
+  optional: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    color: colors.textMuted,
+    backgroundColor: colors.white,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  partnerInput: {
+    minHeight: 84,
+    borderRadius: 12,
+    backgroundColor: colors.white,
+    padding: 12,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 21,
+    color: colors.text,
+    textAlignVertical: 'top',
+    ...Platform.select({ web: { outlineWidth: 0 }, default: {} }),
+  },
+  partnerCount: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, textAlign: 'right' },
   more: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 12 },
   moreText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue },
   listNote: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },

@@ -6,7 +6,7 @@ import { useOnboarding } from '@/lib/onboarding-context';
 import { GENRES, INTERESTS } from '@/lib/onboarding-data';
 import { toggleIn } from '@/lib/toggle';
 
-// Step 4: genres (musicians) or content niches (creators), with "Open to all".
+// Step 4 of 5: genres (musicians) or content niches (creators), with "Open to all".
 export default function TasteStep() {
   const { draft, saveStep, advance } = useOnboarding();
   const isMusician = draft.creatorType !== 'content';
