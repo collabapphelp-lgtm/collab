@@ -68,6 +68,18 @@ th{color:var(--muted);font-weight:600}td.r,th.r{text-align:right;font-variant-nu
 
   <p id="loading" class="muted">Loading…</p>
   <main id="dash" hidden></main>
+  <section id="acctCard" class="card" style="margin-top:12px" hidden>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <h2 style="margin:0;flex:1">Accounts</h2>
+      <label class="small muted"><input type="checkbox" id="onlyUnfinished" style="width:auto;margin:0 4px 0 0">Only unfinished setups</label>
+      <button id="delBtn" disabled style="background:#C0392B">Delete selected</button>
+    </div>
+    <p class="muted small" style="margin-top:0">Every login, including internal ones. Deleting removes the login, profile, photos and uploads, likes, connections and their messages. It can’t be undone. Your account and the App Review account are protected.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th></th><th>Name</th><th>Email</th><th>Created</th><th>Last sign-in</th><th>Setup</th></tr></thead>
+      <tbody id="acctRows"></tbody></table></div>
+    <div id="acctMsg" class="small" style="margin-top:8px"></div>
+  </section>
 </div>
 
 <script type="module">
@@ -84,7 +96,10 @@ const app = initializeApp({
   appId: '1:991980593637:web:4931917caba588c69ecf0c',
 });
 const auth = getAuth(app);
-const metrics = httpsCallable(getFunctions(app, 'us-central1'), 'metrics');
+const fns = getFunctions(app, 'us-central1');
+const metrics = httpsCallable(fns, 'metrics');
+const listAccounts = httpsCallable(fns, 'accounts');
+const deleteAccounts = httpsCallable(fns, 'deleteAccounts', { timeout: 300000 });
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '–');
@@ -96,7 +111,7 @@ onAuthStateChanged(auth, (user) => {
   $('logout').hidden = $('refresh').hidden = !user;
   $('who').textContent = user ? user.email : '';
   if (user) load();
-  else $('dash').hidden = true;
+  else { $('dash').hidden = true; $('acctCard').hidden = true; }
 });
 
 $('form').addEventListener('submit', async (e) => {
@@ -118,6 +133,7 @@ async function load() {
     const { data } = await metrics();
     render(data);
     $('loading').hidden = true;
+    loadAccounts();
   } catch (e) {
     $('dash').hidden = true;
     $('loading').textContent =
@@ -126,6 +142,57 @@ async function load() {
         : 'Couldn’t load the numbers. Check your connection and press Refresh.';
   }
 }
+
+let accounts = [];
+const selected = new Set();
+async function loadAccounts() {
+  try {
+    accounts = (await listAccounts()).data;
+    renderAccounts();
+    $('acctCard').hidden = false;
+  } catch {
+    $('acctCard').hidden = true;
+  }
+}
+function renderAccounts() {
+  const day = (ms) => (ms ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '–');
+  const rows = accounts.filter((a) => !$('onlyUnfinished').checked || !a.finished);
+  $('acctRows').innerHTML = rows.map((a) => {
+    const locked = a.isAdmin || a.isReview;
+    const tag = a.isAdmin ? ' <span class="pill">you</span>' : a.isReview ? ' <span class="pill">App Review</span>' : '';
+    return `<tr><td><input type="checkbox" data-uid="${esc(a.uid)}" ${locked ? 'disabled' : ''} ${selected.has(a.uid) ? 'checked' : ''} style="width:auto;margin:0"></td>
+      <td>${esc(a.name) || '<span class="muted">(no profile)</span>'}${tag}</td><td>${esc(a.email) || '–'}</td>
+      <td>${day(a.created)}</td><td>${day(a.lastSignIn)}</td>
+      <td><span class="pill ${a.finished ? 'yes' : ''}">${a.finished ? 'Done' : 'Not finished'}</span></td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="muted">No accounts.</td></tr>';
+  $('acctRows').querySelectorAll('input[data-uid]').forEach((box) => {
+    box.onchange = () => { box.checked ? selected.add(box.dataset.uid) : selected.delete(box.dataset.uid); updateDelBtn(); };
+  });
+  updateDelBtn();
+}
+function updateDelBtn() {
+  $('delBtn').disabled = selected.size === 0;
+  $('delBtn').textContent = selected.size ? `Delete selected (${selected.size})` : 'Delete selected';
+}
+$('onlyUnfinished').onchange = renderAccounts;
+$('delBtn').onclick = async () => {
+  const names = accounts.filter((a) => selected.has(a.uid)).map((a) => a.name || a.email).join(', ');
+  const typed = window.prompt(`Permanently delete ${selected.size} account(s)?\n\n${names}\n\nType DELETE to confirm.`);
+  if (typed !== 'DELETE') return;
+  $('delBtn').disabled = true;
+  $('acctMsg').textContent = 'Deleting…';
+  try {
+    const { data } = await deleteAccounts({ uids: [...selected] });
+    const failed = data.filter((r) => !r.ok);
+    $('acctMsg').innerHTML = `Deleted ${data.length - failed.length} account(s).` +
+      (failed.length ? ` <span class="err">${failed.length} failed: ${failed.map((f) => esc(f.error)).join('; ')}</span>` : '');
+    selected.clear();
+    load();
+  } catch {
+    $('acctMsg').innerHTML = '<span class="err">Couldn’t delete. Check your connection and try again.</span>';
+    updateDelBtn();
+  }
+};
 
 function bars(rows, total) {
   return rows

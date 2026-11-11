@@ -145,3 +145,5 @@ exports.onNewReport = onDocumentCreated('reports/{reportId}', async (event) => {
 
 // Tester dashboard (private).
 exports.metrics = require('./metrics').metrics;
+exports.accounts = require('./admin').accounts;
+exports.deleteAccounts = require('./admin').deleteAccounts;
