@@ -75,10 +75,10 @@ function LikedYouRow() {
   return (
     <LinearGradient colors={['#EEF5F9', '#F3EFF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.liked}>
       <View style={styles.likedHead}>
-        <Text style={styles.likedTitle}>Liked you</Text>
+        <Text style={styles.likedTitle}>Wants to collab</Text>
         <Text style={styles.likedCount}>{likedYou.length}</Text>
       </View>
-      <Text style={styles.likedSub}>Like them back to connect and start talking.</Text>
+      <Text style={styles.likedSub}>These creatives tapped ♥ on you. Collab back to connect.</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.likedList}>
         {likedYou.map((p) => (
           <LikedPerson key={p.id} p={p} />
@@ -94,7 +94,7 @@ function LikedPerson({ p }: { p: UserProfile }) {
       onPress={() => router.push({ pathname: '/user/[id]', params: { id: p.id, likedYou: '1' } })}
       style={({ pressed }) => [styles.likedPerson, pressed && { opacity: 0.8 }]}
       accessibilityRole="button"
-      accessibilityLabel={`${p.firstName} liked you. Open profile`}
+      accessibilityLabel={`${p.firstName} wants to collab with you. Open profile`}
     >
       <LinearGradient colors={[colors.blue, colors.purple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.likedRing}>
         <View style={styles.likedRingInner}>

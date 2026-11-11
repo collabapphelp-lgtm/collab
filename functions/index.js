@@ -114,7 +114,7 @@ exports.onLikeCreated = onDocumentCreated('users/{uid}/likes/{otherUid}', async 
   if (mutual || blocked) return;
   await notify(otherUid, {
     title: 'Someone wants to collab with you 👀',
-    body: 'Open Collab to see who liked you.',
+    body: 'Open Collab to see who.',
     data: { type: 'like' },
   });
 });

@@ -64,7 +64,7 @@ export default function UserProfileScreen() {
       </SafeAreaView>
       {likedYou && !connected && me ? (
         <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
-          <Text style={styles.likedNote}>{them.firstName} liked you. Want to collab?</Text>
+          <Text style={styles.likedNote}>{them.firstName} wants to collab with you 👀</Text>
           <View style={styles.actions}>
             <Button
               title="Pass"
