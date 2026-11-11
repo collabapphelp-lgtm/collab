@@ -54,7 +54,17 @@
           "backgroundColor": "#C5DAE8"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Collab uses your location once to fill in your city. Your exact location is never saved.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ]
     ],
     "scheme": "collab",
     "experiments": {

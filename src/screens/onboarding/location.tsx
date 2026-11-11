@@ -76,7 +76,7 @@ export default function LocationStep() {
         <Text style={styles.globe}>🌍</Text>
         <View style={styles.globalText}>
           <Text style={styles.globalTitle}>Open to global collabs</Text>
-          <Text style={styles.globalBody}>Also connect with creatives anywhere. Remote work welcome.</Text>
+          <Text style={styles.globalBody}>Also connect with creatives anywhere in the world.</Text>
         </View>
         <Switch
           value={global}

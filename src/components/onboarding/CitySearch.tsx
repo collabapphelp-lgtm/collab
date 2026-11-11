@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import * as Location from 'expo-location';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors, fonts, radius } from '@/lib/theme';
 
 export type PickedCity = { label: string; lat: number; lng: number };
@@ -28,6 +30,44 @@ function labelFor(r: GeoResult) {
   return [r.name, r.admin1, country].filter(Boolean).join(', ');
 }
 
+const milesBetween = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
+  const rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad;
+  const dLng = (b.lng - a.lng) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return 3959 * 2 * Math.asin(Math.sqrt(h));
+};
+
+/**
+ * "Use my location": reads the phone's position once, turns it into a city name on the device,
+ * then looks that city up so we store the city's own coordinates. The GPS position is never saved.
+ */
+async function cityFromDevice(): Promise<PickedCity | 'denied' | null> {
+  const perm = await Location.requestForegroundPermissionsAsync();
+  if (perm.status !== 'granted') return 'denied';
+  const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+  const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+  let place: Location.LocationGeocodedAddress | undefined;
+  try {
+    [place] = await Location.reverseGeocodeAsync({ latitude: here.lat, longitude: here.lng });
+  } catch {
+    // Not available on every platform (e.g. web); fall through to the search below.
+  }
+  const name = place?.city ?? place?.subregion ?? place?.region;
+  if (name) {
+    const matches = await searchCities(name, new AbortController().signal).catch(() => []);
+    const best = matches
+      .map((r) => ({ r, d: milesBetween(here, { lat: r.latitude, lng: r.longitude }) }))
+      .sort((a, b) => a.d - b.d)[0];
+    if (best && best.d < 60) return { label: labelFor(best.r), lat: best.r.latitude, lng: best.r.longitude };
+    const country = place?.isoCountryCode === 'US' ? 'USA' : place?.country;
+    // Couldn't match a listed city: keep the name and only a rough (~7 mile) position.
+    return { label: [name, place?.region, country].filter(Boolean).join(', '), lat: Math.round(here.lat * 10) / 10, lng: Math.round(here.lng * 10) / 10 };
+  }
+  return null;
+}
+
 type Props = { value: PickedCity | null; onPick: (city: PickedCity | null) => void };
 
 export function CitySearch({ value, onPick }: Props) {
@@ -37,6 +77,27 @@ export function CitySearch({ value, onPick }: Props) {
   const [failed, setFailed] = useState(false);
   const [focused, setFocused] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locateMsg, setLocateMsg] = useState<string | null>(null);
+
+  async function locateMe() {
+    setLocating(true);
+    setLocateMsg(null);
+    try {
+      const city = await cityFromDevice();
+      if (city === 'denied') setLocateMsg('Location is off for Collab. Search for your city instead, or allow it in Settings.');
+      else if (!city) setLocateMsg('Couldn’t work out your city. Try searching for it instead.');
+      else {
+        setQuery(city.label);
+        setResults([]);
+        onPick(city);
+      }
+    } catch {
+      setLocateMsg('Couldn’t get your location. Try searching for your city instead.');
+    } finally {
+      setLocating(false);
+    }
+  }
 
   useEffect(() => {
     // Don't search again for the city they just picked.
@@ -84,6 +145,20 @@ export function CitySearch({ value, onPick }: Props) {
         />
         {loading ? <ActivityIndicator color={colors.blue} /> : value ? <Text style={styles.ok}>✓</Text> : null}
       </View>
+
+      {!value && !showList ? (
+        <Pressable
+          onPress={locateMe}
+          disabled={locating}
+          style={({ pressed }) => [styles.locate, pressed && { opacity: 0.7 }]}
+          accessibilityRole="button"
+          hitSlop={6}
+        >
+          {locating ? <ActivityIndicator size="small" color={colors.blue} /> : <Ionicons name="navigate" size={16} color={colors.blue} />}
+          <Text style={styles.locateText}>{locating ? 'Finding your city…' : 'Use my current location'}</Text>
+        </Pressable>
+      ) : null}
+      {locateMsg && !value ? <Text style={styles.locateMsg}>{locateMsg}</Text> : null}
 
       {showList ? (
         <View style={styles.list}>
@@ -142,5 +217,8 @@ const styles = StyleSheet.create({
   item: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   city: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
   region: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },
+  locate: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 4 },
+  locateText: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.blue },
+  locateMsg: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textSecondary, paddingHorizontal: 4 },
   muted: { fontFamily: fonts.body, fontSize: 14, color: colors.textMuted, padding: 16 },
 });
