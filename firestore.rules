@@ -28,6 +28,11 @@ service cloud.firestore {
         allow create, delete: if isMe(uid) && otherUid != uid;
       }
 
+      // Who liked me. Written only by the server (functions/index.js onLikeCreated).
+      match /likedBy/{otherUid} {
+        allow read: if isMe(uid);
+      }
+
       // Private to the owner.
       match /passes/{otherUid} {
         allow read, create, delete: if isMe(uid);

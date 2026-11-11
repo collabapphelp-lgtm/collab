@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors, fonts } from '@/lib/theme';
 import { useMatches } from '@/lib/use-matches';
+import { useLikedYou } from '@/lib/liked-you';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -19,6 +20,8 @@ const icon = (on: IconName, off: IconName) =>
 
 export default function TabsLayout() {
   const { unreadCount } = useMatches();
+  const { likedYou } = useLikedYou();
+  const likedCount = likedYou?.length ?? 0;
   const insets = useSafeAreaInsets();
   return (
     <Tabs
@@ -33,7 +36,15 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="discover" options={{ title: 'Discover', tabBarIcon: icon('compass', 'compass-outline') }} />
-      <Tabs.Screen name="connections" options={{ title: 'Connections', tabBarIcon: icon('people', 'people-outline') }} />
+      <Tabs.Screen
+        name="connections"
+        options={{
+          title: 'Connections',
+          tabBarIcon: icon('people', 'people-outline'),
+          tabBarBadge: likedCount > 0 ? likedCount : undefined,
+          tabBarBadgeStyle: [styles.badge, { backgroundColor: colors.purple }],
+        }}
+      />
       <Tabs.Screen
         name="messages"
         options={{

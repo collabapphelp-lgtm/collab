@@ -7,15 +7,18 @@ import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
 import { SafetyButton } from '@/components/SafetyButton';
 import { useAuth } from '@/lib/auth-context';
-import { getProfile, pairId } from '@/lib/discover';
+import { getProfile, like, pairId, passOn } from '@/lib/discover';
+import { useLikedYou } from '@/lib/liked-you';
 import { useMatches } from '@/lib/use-matches';
 import { distanceMiles, formatDistance } from '@/lib/matching';
 import type { UserProfile } from '@/lib/types';
 import { colors, fonts } from '@/lib/theme';
 
-// Someone's full profile, opened from Connections, Messages or a chat.
+// Someone's full profile, opened from Connections (incl. "Liked you"), Messages or a chat.
 export default function UserProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, likedYou } = useLocalSearchParams<{ id: string; likedYou?: string }>();
+  const { dismiss } = useLikedYou();
+  const [busy, setBusy] = useState(false);
   const { profile: me } = useAuth();
   const [them, setThem] = useState<UserProfile | null | undefined>(undefined);
   const { matches } = useMatches();
@@ -59,6 +62,45 @@ export default function UserProfileScreen() {
         {back}
         <SafetyButton them={them} tone="light" onBlocked={() => router.back()} />
       </SafeAreaView>
+      {likedYou && !connected && me ? (
+        <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
+          <Text style={styles.likedNote}>{them.firstName} liked you. Want to collab?</Text>
+          <View style={styles.actions}>
+            <Button
+              title="Pass"
+              variant="secondary"
+              disabled={busy}
+              style={styles.flex}
+              onPress={async () => {
+                setBusy(true);
+                try {
+                  await passOn(me.id, them.id);
+                  dismiss(them.id);
+                  router.back();
+                } catch {
+                  setBusy(false);
+                }
+              }}
+            />
+            <Button
+              title="♥ Collab back"
+              loading={busy}
+              style={styles.flex2}
+              onPress={async () => {
+                setBusy(true);
+                try {
+                  const matched = await like(me, them);
+                  dismiss(them.id);
+                  if (matched) router.replace({ pathname: '/match', params: { id: them.id } });
+                  else router.back();
+                } catch {
+                  setBusy(false);
+                }
+              }}
+            />
+          </View>
+        </SafeAreaView>
+      ) : null}
       {connected && me ? (
         <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
           <Button
@@ -93,5 +135,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  flex: { flex: 1 },
+  flex2: { flex: 2 },
+  actions: { flexDirection: 'row', gap: 10 },
+  likedNote: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: 10 },
   bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, backgroundColor: 'rgba(255,255,255,0.96)' },
 });

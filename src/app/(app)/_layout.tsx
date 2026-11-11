@@ -6,12 +6,14 @@ import { useAuth } from '@/lib/auth-context';
 import { registerForPush } from '@/lib/push';
 import { UI_PREVIEW } from '@/lib/preview';
 import { MatchesProvider } from '@/lib/use-matches';
+import { LikedYouProvider } from '@/lib/liked-you';
 
 export const unstable_settings = { anchor: '(tabs)' };
 
-type PushData = { type?: 'match' | 'message'; matchId?: string };
+type PushData = { type?: 'match' | 'message' | 'like' | 'report'; matchId?: string };
 
 function openFromNotification(data: PushData | undefined) {
+  if (data?.type === 'like') return router.push('/connections');
   if (!data?.matchId) return;
   router.push(`/chat/${data.matchId}`);
 }
@@ -42,6 +44,7 @@ export default function AppLayout() {
   usePushNotifications();
   return (
     <MatchesProvider>
+      <LikedYouProvider>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#fff' } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="user/[id]" options={{ presentation: 'card' }} />
@@ -50,6 +53,7 @@ export default function AppLayout() {
         <Stack.Screen name="delete-account" options={{ presentation: 'modal' }} />
         <Stack.Screen name="edit" options={{ presentation: 'modal' }} />
       </Stack>
+      </LikedYouProvider>
     </MatchesProvider>
   );
 }

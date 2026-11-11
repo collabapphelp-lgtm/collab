@@ -9,7 +9,7 @@
  * Phones register their Expo push token in pushTokens/{uid} (see src/lib/push.ts).
  * Notifications go out through Expo's push service, which forwards them to Apple / Google.
  */
-const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentDeleted } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -101,6 +101,27 @@ exports.onNewMessage = onDocumentCreated('matches/{matchId}/messages/{messageId}
     body: preview(msg.text),
     data: { type: 'message', matchId },
   });
+});
+
+// "Liked you": mirror each like into users/{them}/likedBy/{me} (server-written, so it can't be faked),
+// and nudge them, unless the like completed a match (onNewMatch covers that).
+exports.onLikeCreated = onDocumentCreated('users/{uid}/likes/{otherUid}', async (event) => {
+  const { uid, otherUid } = event.params;
+  if (uid === otherUid) return;
+  await db.doc(`users/${otherUid}/likedBy/${uid}`).set({ createdAt: FieldValue.serverTimestamp() });
+  const mutual = (await db.doc(`users/${otherUid}/likes/${uid}`).get()).exists;
+  const blocked = (await db.doc(`users/${otherUid}/blocks/${uid}`).get()).exists;
+  if (mutual || blocked) return;
+  await notify(otherUid, {
+    title: 'Someone wants to collab with you 👀',
+    body: 'Open Collab to see who liked you.',
+    data: { type: 'like' },
+  });
+});
+
+exports.onLikeDeleted = onDocumentDeleted('users/{uid}/likes/{otherUid}', async (event) => {
+  const { uid, otherUid } = event.params;
+  await db.doc(`users/${otherUid}/likedBy/${uid}`).delete();
 });
 
 // Safety: tell the Collab team right away when someone files a report.
