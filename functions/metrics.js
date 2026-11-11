@@ -8,13 +8,10 @@
  * account) are left out of the numbers so they reflect real testers.
  */
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { defineString } = require('firebase-functions/params');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 
-const ADMIN_UIDS = defineString('ADMIN_UIDS', {
-  description: 'Your Collab user ID (Firebase console → Authentication → User UID). Separate several with commas.',
-});
+const { adminUids } = require('./params');
 
 const STEPS = [
   ['location', 'Location'],
@@ -43,10 +40,7 @@ const median = (xs) => {
 };
 
 exports.metrics = onCall({ maxInstances: 2, memory: '256MiB' }, async (request) => {
-  const admins = ADMIN_UIDS.value()
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const admins = adminUids();
   if (!request.auth || !admins.includes(request.auth.uid)) {
     throw new HttpsError('permission-denied', 'This dashboard is only for the Collab team.');
   }
@@ -60,6 +54,7 @@ exports.metrics = onCall({ maxInstances: 2, memory: '256MiB' }, async (request) 
     db.collection('matches').get(),
     db.collectionGroup('messages').get(),
   ]);
+  const reportsSnap = await db.collection('reports').orderBy('createdAt', 'desc').limit(50).get();
 
   // Who's internal: admins + any collabapphelp(+tag)@gmail.com login.
   const internal = new Set(admins);
@@ -151,8 +146,23 @@ exports.metrics = onCall({ maxInstances: 2, memory: '256MiB' }, async (request) 
   const totalPasses = [...passesBy.values()].reduce((a, b) => a + b, 0);
   const finished = users.filter((u) => u.onboardingComplete);
 
+  // Reports, newest first, with names so you can act on them.
+  const nameOf = new Map(usersSnap.docs.map((d) => [d.id, [d.data().firstName, (d.data().lastName ?? '').slice(0, 1)].filter(Boolean).join(' ')]));
+  const reports = reportsSnap.docs.map((d) => {
+    const r = d.data();
+    return {
+      at: ms(r.createdAt),
+      reason: r.reason,
+      details: r.details ?? null,
+      reporter: nameOf.get(r.reporterId) ?? '(deleted account)',
+      reported: nameOf.get(r.reportedId) ?? '(deleted account)',
+      reportedId: r.reportedId,
+    };
+  });
+
   return {
     generatedAt: Date.now(),
+    reports,
     internalExcluded: internal.size,
     totals: {
       testers: users.length,

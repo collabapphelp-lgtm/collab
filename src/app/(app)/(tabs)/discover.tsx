@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { INVITE_URL } from '@/lib/legal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -191,21 +192,37 @@ function ExploreMore({ count, onExplore }: { count: number; onExplore: () => voi
 }
 
 function EmptyState({ error, onRefresh, global }: { error: string | null; onRefresh: () => void; global: boolean }) {
+  if (error) {
+    return (
+      <ScrollView contentContainerStyle={styles.empty}>
+        <Text style={styles.emptyEmoji}>📡</Text>
+        <Text style={styles.emptyTitle}>Something went wrong</Text>
+        <Text style={styles.emptyBody}>{error}</Text>
+        <Button title="Try again" variant="secondary" onPress={onRefresh} style={{ marginTop: 8 }} />
+      </ScrollView>
+    );
+  }
   return (
     <ScrollView contentContainerStyle={styles.empty}>
-      <Text style={styles.emptyEmoji}>{error ? '📡' : '🌊'}</Text>
-      <Text style={styles.emptyTitle}>{error ? 'Something went wrong' : 'You’ve seen everyone for now'}</Text>
+      <Text style={styles.emptyEmoji}>🌱</Text>
+      <Text style={styles.emptyTitle}>You’re all caught up</Text>
       <Text style={styles.emptyBody}>
-        {error
-          ? error
-          : global
-            ? 'New creatives join every day. Check back soon, and invite artists you’d love to work with.'
-            : 'New creatives join every day. Opening up to global collabs will show you more people.'}
+        Collab is brand new, and we’re adding creatives every day. Check back soon: more people will be popping up here.
       </Text>
-      <Button title="Refresh" variant="secondary" onPress={onRefresh} style={{ marginTop: 8 }} />
-      {!error ? <Quote quote={QUOTES.ocean} style={{ marginTop: 36 }} /> : null}
+      {!global ? (
+        <Text style={styles.emptyHint}>Want more people now? Turn on “Open to global collabs” in Edit profile → Location.</Text>
+      ) : null}
+      <Button title="Invite a creative" onPress={inviteCreative} style={{ marginTop: 8, alignSelf: 'stretch' }} />
+      <Button title="Refresh" variant="secondary" onPress={onRefresh} style={{ alignSelf: 'stretch' }} />
+      <Quote quote={QUOTES.ocean} style={{ marginTop: 28 }} />
     </ScrollView>
   );
+}
+
+function inviteCreative() {
+  Share.share({
+    message: `I’m on Collab, an app for finding musicians and creators to work with. Join me: ${INVITE_URL}`,
+  }).catch(() => {});
 }
 
 function WelcomeModal({ visible, name, onClose }: { visible: boolean; name: string; onClose: () => void }) {
@@ -290,6 +307,7 @@ const styles = StyleSheet.create({
   empty: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 10 },
   emptyEmoji: { fontSize: 52 },
   emptyTitle: { fontFamily: fonts.heading, fontSize: 24, color: colors.text, textAlign: 'center' },
+  emptyHint: { fontFamily: fonts.bodyMedium, fontSize: 13, lineHeight: 19, color: colors.textMuted, textAlign: 'center', maxWidth: 300 },
   emptyBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.textSecondary, textAlign: 'center', maxWidth: 320 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   welcome: { width: '100%', maxWidth: 380, backgroundColor: colors.white, borderRadius: 24, padding: 24, gap: 12, alignItems: 'center' },

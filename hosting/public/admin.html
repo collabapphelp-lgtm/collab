@@ -146,7 +146,17 @@ function spark(series, title) {
 function render(d) {
   const t = d.totals, c = d.connections, s = d.discover, p = d.profiles;
   const when = (ms) => (ms ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '–');
-  $('dash').innerHTML = `
+  const reportsCard = `<div class="card" style="margin-bottom:12px${d.reports.length ? ';border-color:#E8A3A3' : ''}">
+    <h2>🚩 Reports ${d.reports.length ? `(${d.reports.length})` : ''}</h2>
+    ${d.reports.length ? `<div class="tablewrap"><table>
+      <thead><tr><th>When</th><th>Reported</th><th>Reason</th><th>Details</th><th>By</th><th>User ID</th></tr></thead>
+      <tbody>${d.reports.map((r) => `<tr><td>${when(r.at)}</td><td><strong>${esc(r.reported)}</strong></td><td>${esc(r.reason)}</td>
+        <td style="white-space:normal;min-width:180px">${esc(r.details) || '<span class="muted">–</span>'}</td><td>${esc(r.reporter)}</td>
+        <td><code class="small">${esc(r.reportedId)}</code></td></tr>`).join('')}</tbody></table></div>
+      <p class="muted small">To remove someone: Firebase console → Authentication → search the User ID → ⋮ → Disable account (or Delete). Aim to act within 24 hours.</p>`
+      : '<p class="muted small" style="margin:0">No reports. You’ll also get a notification on your phone when one comes in.</p>'}
+  </div>`;
+  $('dash').innerHTML = reportsCard + `
   <div class="grid kpis">
     <div class="card kpi"><div class="n">${t.testers}</div><div class="l">Testers signed up</div></div>
     <div class="card kpi"><div class="n">${pct(t.finishedSetup, t.testers)}</div><div class="l">Finished setup (${t.finishedSetup})</div></div>

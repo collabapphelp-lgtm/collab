@@ -103,5 +103,24 @@ exports.onNewMessage = onDocumentCreated('matches/{matchId}/messages/{messageId}
   });
 });
 
+// Safety: tell the Collab team right away when someone files a report.
+const { adminUids } = require('./params');
+
+exports.onNewReport = onDocumentCreated('reports/{reportId}', async (event) => {
+  const r = event.data?.data();
+  if (!r) return;
+  const [reporter, reported] = await Promise.all([firstName(r.reporterId), firstName(r.reportedId)]);
+  const admins = adminUids();
+  await Promise.all(
+    admins.map((uid) =>
+      notify(uid, {
+        title: `🚩 New report: ${reported}`,
+        body: `${reporter} reported ${reported} (“${r.reason}”). Review it on the dashboard.`,
+        data: { type: 'report' },
+      }),
+    ),
+  );
+});
+
 // Tester dashboard (private).
 exports.metrics = require('./metrics').metrics;
