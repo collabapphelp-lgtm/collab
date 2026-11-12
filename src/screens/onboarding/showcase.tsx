@@ -88,6 +88,7 @@ export default function ShowcaseStep() {
       continueLabel={mode === 'edit' ? 'Save' : 'Complete profile 🚀'}
       emoji="🔥"
       inlineEmoji
+      tinted
       title="Show off your best work"
       subtitle="Snippets and prompts show people what you’re about."
       onContinue={next}
@@ -209,7 +210,20 @@ function SlotCard({ index, slot, onPress }: { index: number; slot: Slot; onPress
 
 const styles = StyleSheet.create({
   list: { gap: 10, marginTop: -6 },
-  partner: { gap: 10, marginTop: 6, padding: 14, borderRadius: radius.md, backgroundColor: 'rgba(163,153,199,0.10)' },
+  partner: {
+    gap: 10,
+    marginTop: 6,
+    padding: 14,
+    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: '#E4DEF3',
+    shadowColor: '#2A3B4D',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
+  },
   partnerHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   partnerTitle: { flex: 1, fontFamily: fonts.bodySemibold, fontSize: 15, lineHeight: 20, color: colors.text },
   optional: {
@@ -217,7 +231,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 0.5,
     color: colors.textMuted,
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(163,153,199,0.16)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radius.full,
@@ -226,7 +240,7 @@ const styles = StyleSheet.create({
   partnerInput: {
     minHeight: 84,
     borderRadius: 12,
-    backgroundColor: colors.white,
+    backgroundColor: '#F7F5FB',
     padding: 12,
     fontFamily: fonts.body,
     fontSize: 15,

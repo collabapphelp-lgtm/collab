@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
@@ -24,6 +25,8 @@ type Props = {
   error?: string | null;
   /** Small hint under the button, e.g. "Pick at least one". */
   footerHint?: string;
+  /** Soft blue-to-cream background (like Discover) so white cards stand out. */
+  tinted?: boolean;
   /** Make the hint stand out (e.g. what's still needed to continue). */
   footerHintStrong?: boolean;
   onContinue: () => void;
@@ -48,7 +51,8 @@ export function StepScreen(props: Props) {
   const progress = (index + 1) / ONBOARDING_STEPS.length;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.safe, props.tinted && styles.safeTinted]} edges={['top', 'bottom']}>
+      {props.tinted ? <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} /> : null}
       {editing ? null : (
         <View style={styles.progressTrack} accessibilityLabel={`Step ${index + 1} of ${ONBOARDING_STEPS.length}`}>
           <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
@@ -98,7 +102,7 @@ export function StepScreen(props: Props) {
           {props.children}
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, props.tinted && styles.footerTinted]}>
           <ErrorText message={props.error ?? null} />
           <Button
             title={props.continueLabel ?? (editing ? 'Save' : 'Continue')}
@@ -123,6 +127,8 @@ export function StepScreen(props: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.white },
+  safeTinted: { backgroundColor: '#F4F2EC' },
+  footerTinted: { backgroundColor: 'rgba(255,255,255,0.94)' },
   flex: { flex: 1 },
   progressTrack: { height: 4, backgroundColor: colors.border, marginHorizontal: 24, borderRadius: 2, marginTop: 4 },
   progressFill: { height: 4, backgroundColor: colors.blue, borderRadius: 2 },
