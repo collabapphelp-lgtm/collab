@@ -83,7 +83,13 @@ service cloud.firestore {
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 1000
           && request.resource.data.createdAt == request.time;
-        allow update: if false;
+        // Reactions: either member can set or clear their own reaction (reactions.{uid}) and nothing else.
+        allow update: if inChat()
+          && chatOpen()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+          && request.resource.data.get('reactions', {}).diff(resource.data.get('reactions', {})).affectedKeys().hasOnly([request.auth.uid])
+          && (!(request.auth.uid in request.resource.data.get('reactions', {}))
+              || request.resource.data.reactions[request.auth.uid] in ['❤️', '👍', '🔥', '😂', '😮', '🙏']);
         // You can delete your own messages (used when deleting your account).
         allow delete: if inChat() && resource.data.senderId == request.auth.uid;
       }

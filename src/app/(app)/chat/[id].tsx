@@ -20,7 +20,16 @@ import { ChatProfileCard } from '@/components/ChatProfileCard';
 import { Avatar } from '@/components/Avatar';
 import { SafetyButton } from '@/components/SafetyButton';
 import { useAuth } from '@/lib/auth-context';
-import { listenToMessages, markRead, MESSAGE_MAX_CHARS, sendMessage, type ChatMessage } from '@/lib/connections';
+import * as Haptics from 'expo-haptics';
+import {
+  listenToMessages,
+  markRead,
+  MESSAGE_MAX_CHARS,
+  REACTIONS,
+  sendMessage,
+  setReaction,
+  type ChatMessage,
+} from '@/lib/connections';
 import { roleLine } from '@/lib/labels';
 import { clockTime, dayLabel, sameDay } from '@/lib/time';
 import type { UserProfile } from '@/lib/types';
@@ -54,6 +63,7 @@ export default function ChatScreen() {
   const [sendError, setSendError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [cardOpen, setCardOpen] = useState(true);
+  const [picking, setPicking] = useState<string | null>(null); // message id with the reaction bar open
 
   useEffect(() => {
     if (!id) return;
@@ -105,6 +115,23 @@ export default function ChatScreen() {
       console.warn('Send failed', e);
       setDraft(text);
       setSendError('Message didn’t send. Tap send to try again.');
+    }
+  }
+
+  function openPicker(msgId: string) {
+    Haptics.selectionAsync().catch(() => {});
+    setPicking((cur) => (cur === msgId ? null : msgId));
+  }
+
+  async function react(msg: ChatMessage, emoji: string) {
+    setPicking(null);
+    if (!id || !me) return;
+    const next = msg.reactions?.[me] === emoji ? null : emoji; // tapping your current reaction removes it
+    try {
+      await setReaction(id, msg.id, me, next);
+    } catch (e) {
+      console.warn('Reaction failed', e);
+      setSendError('Couldn’t add that reaction. Try again.');
     }
   }
 
@@ -178,26 +205,51 @@ export default function ChatScreen() {
             keyExtractor={(r) => r.key}
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
+            onScrollBeginDrag={() => setPicking(null)}
+            extraData={picking}
             ListFooterComponent={loadError ? <Text style={styles.error}>{loadError}</Text> : undefined}
             renderItem={({ item }) =>
               item.kind === 'day' ? (
                 <Text style={styles.day}>{item.label}</Text>
               ) : (
                 <View style={[styles.bubbleRow, item.mine ? styles.rowMine : styles.rowTheirs, item.tail && { marginBottom: 8 }]}>
-                  {item.mine ? (
-                    <LinearGradient
-                      colors={[colors.blue, '#6F8FD0']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={[styles.bubble, item.tail && styles.tailMine]}
-                    >
-                      <Text style={[styles.text, { color: colors.white }]}>{item.msg.text}</Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={[styles.bubble, styles.theirs, item.tail && styles.tailTheirs]}>
-                      <Text style={styles.text}>{item.msg.text}</Text>
+                  {picking === item.msg.id ? (
+                    <View style={[styles.picker, item.mine ? { alignSelf: 'flex-end' } : { alignSelf: 'flex-start' }]}>
+                      {REACTIONS.map((e) => (
+                        <Pressable
+                          key={e}
+                          onPress={() => react(item.msg, e)}
+                          style={({ pressed }) => [styles.pickOpt, item.msg.reactions?.[me] === e && styles.pickOn, pressed && { transform: [{ scale: 1.2 }] }]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`React ${e}`}
+                        >
+                          <Text style={styles.pickEmoji}>{e}</Text>
+                        </Pressable>
+                      ))}
                     </View>
-                  )}
+                  ) : null}
+                  <Pressable
+                    onLongPress={() => openPicker(item.msg.id)}
+                    onPress={() => picking && setPicking(null)}
+                    delayLongPress={300}
+                    accessibilityHint="Long-press to react"
+                  >
+                    {item.mine ? (
+                      <LinearGradient
+                        colors={[colors.blue, '#6F8FD0']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[styles.bubble, item.tail && styles.tailMine]}
+                      >
+                        <Text style={[styles.text, { color: colors.white }]}>{item.msg.text}</Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={[styles.bubble, styles.theirs, item.tail && styles.tailTheirs]}>
+                        <Text style={styles.text}>{item.msg.text}</Text>
+                      </View>
+                    )}
+                  </Pressable>
+                  <Reactions msg={item.msg} mine={item.mine} me={me} onPress={() => openPicker(item.msg.id)} />
                   {item.tail ? (
                     <Text style={[styles.meta, item.mine && { textAlign: 'right' }]}>
                       {item.msg.pending ? 'Sending…' : clockTime(item.msg.at)}
@@ -239,6 +291,27 @@ export default function ChatScreen() {
   );
 }
 
+/** The little emoji pill under a bubble: each emoji once, plus a count when both of you reacted. */
+function Reactions(props: { msg: ChatMessage; mine: boolean; me: string; onPress: () => void }) {
+  const all = Object.values(props.msg.reactions ?? {});
+  if (all.length === 0) return null;
+  const unique = [...new Set(all)];
+  const iReacted = !!props.msg.reactions?.[props.me];
+  return (
+    <Pressable
+      onPress={props.onPress}
+      style={[styles.reactions, props.mine ? styles.reactionsMine : styles.reactionsTheirs, iReacted && styles.reactionsOn]}
+      accessibilityRole="button"
+      accessibilityLabel={`Reactions: ${all.join(' ')}`}
+    >
+      <Text style={styles.reactionsText}>
+        {unique.join('')}
+        {all.length > 1 ? ` ${all.length}` : ''}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F6F3EE' },
   flex: { flex: 1 },
@@ -277,6 +350,40 @@ const styles = StyleSheet.create({
   tailMine: { borderBottomRightRadius: 6 },
   tailTheirs: { borderBottomLeftRadius: 6 },
   text: { fontFamily: fonts.body, fontSize: 16, lineHeight: 22, color: colors.text },
+  picker: {
+    flexDirection: 'row',
+    gap: 2,
+    padding: 4,
+    marginBottom: 6,
+    borderRadius: radius.full,
+    backgroundColor: colors.white,
+    shadowColor: '#2A3B4D',
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  pickOpt: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  pickOn: { backgroundColor: '#E6F1F7' },
+  pickEmoji: { fontSize: 24 },
+  reactions: {
+    marginTop: -8,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+    backgroundColor: colors.white,
+    borderWidth: 1.5,
+    borderColor: '#F6F3EE',
+    shadowColor: '#2A3B4D',
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  reactionsMine: { alignSelf: 'flex-start', marginLeft: 8 },
+  reactionsTheirs: { alignSelf: 'flex-end', marginRight: 8 },
+  reactionsOn: { backgroundColor: '#E6F1F7' },
+  reactionsText: { fontSize: 14, lineHeight: 18, color: colors.textSecondary, fontFamily: fonts.bodySemibold },
   meta: { fontFamily: fonts.body, fontSize: 11, color: colors.textMuted, marginTop: 3, marginHorizontal: 4 },
 
   empty: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 8 },

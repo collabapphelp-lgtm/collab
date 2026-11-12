@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteField,
   doc,
   limit,
   onSnapshot,
@@ -42,7 +43,18 @@ export type Match = {
   lastRead: Record<string, number>;
 };
 
-export type ChatMessage = { id: string; text: string; senderId: string; at: number; pending?: boolean };
+export type ChatMessage = {
+  id: string;
+  text: string;
+  senderId: string;
+  at: number;
+  pending?: boolean;
+  /** uid → emoji. One reaction per person per message. */
+  reactions?: Record<string, string>;
+};
+
+/** The reactions you can put on a message (long-press a bubble). Keep in sync with firestore.rules. */
+export const REACTIONS = ['❤️', '👍', '🔥', '😂', '😮', '🙏'] as const;
 
 export const MESSAGE_MAX_CHARS = 1000;
 
@@ -120,8 +132,20 @@ export function listenToMessages(matchId: string, onChange: (msgs: ChatMessage[]
     query(collection(db, 'matches', matchId, 'messages'), orderBy('createdAt', 'desc'), limit(200)),
     (snap) => {
       const msgs = snap.docs.map((d) => {
-        const data = d.data({ serverTimestamps: 'estimate' }) as { text: string; senderId: string; createdAt?: FirestoreTime };
-        return { id: d.id, text: data.text, senderId: data.senderId, at: ms(data.createdAt), pending: d.metadata.hasPendingWrites };
+        const data = d.data({ serverTimestamps: 'estimate' }) as {
+          text: string;
+          senderId: string;
+          createdAt?: FirestoreTime;
+          reactions?: Record<string, string>;
+        };
+        return {
+          id: d.id,
+          text: data.text,
+          senderId: data.senderId,
+          at: ms(data.createdAt),
+          pending: d.metadata.hasPendingWrites,
+          reactions: data.reactions,
+        };
       });
       onChange(msgs.reverse());
     },
@@ -156,6 +180,23 @@ export async function sendMessage(matchId: string, me: string, text: string) {
     [`lastRead.${me}`]: serverTimestamp(),
   });
   await batch.commit();
+}
+
+/** Sets my reaction on a message, or removes it (emoji = null). */
+export async function setReaction(matchId: string, messageId: string, me: string, emoji: string | null) {
+  if (UI_PREVIEW) {
+    const msg = preview.messages.get(matchId)?.find((m) => m.id === messageId);
+    if (!msg) return;
+    const next = { ...(msg.reactions ?? {}) };
+    if (emoji) next[me] = emoji;
+    else delete next[me];
+    msg.reactions = next;
+    preview.emit();
+    return;
+  }
+  await updateDoc(doc(db, 'matches', matchId, 'messages', messageId), {
+    [`reactions.${me}`]: emoji ?? deleteField(),
+  });
 }
 
 /** Marks the chat as read for me (clears the unread badge). */
@@ -209,9 +250,16 @@ if (UI_PREVIEW) {
     });
     preview.messages.set(id, [
       { id: 'm1', senderId: 'preview', text: 'Yo! Loved your Westside visual. Your color grading is crazy.', at: t0 + 60_000 },
-      { id: 'm2', senderId: 'p6', text: 'Appreciate that!! Your beat tape is on repeat over here 🔥', at: t0 + 1000 * 60 * 20 },
-      { id: 'm3', senderId: 'preview', text: 'Want to shoot something for my next single? Thinking moody, late night.', at: t0 + 1000 * 60 * 60 * 2 },
-      { id: 'm4', senderId: 'p6', text: 'Bet. Thursday at 7 works. I’ll bring the camera 🎥', at: t0 + 1000 * 60 * 60 * 25 },
+      { id: 'm2', senderId: 'p6', text: 'Appreciate that!! Your beat tape is on repeat over here 🔥', at: t0 + 1000 * 60 * 20, reactions: { preview: '❤️' } },
+      { id: 'm3', senderId: 'preview', text: 'Want to shoot something for my next single? Thinking moody, late night.', at: t0 + 1000 * 60 * 60 * 2, reactions: { p6: '🔥' } },
+      { id: 'm4', senderId: 'p6', text: 'Bet. Thursday at 7 works. I’ll bring the camera 🎥', at: t0 + 1000 * 60 * 60 * 25, reactions: { preview: '👍' } },
     ]);
+  }
+  // App Store screenshots: a fuller Connections grid.
+  if (process.env.EXPO_PUBLIC_SHOT_PHOTOS === '1') {
+    for (const pid of ['p2', 'p4', 'p5']) {
+      const other = PREVIEW_PROFILES.find((p) => p.id === pid);
+      if (other) preview.matches.push({ id: `${pid}_preview`, members: ['preview', pid], createdAt: Date.now(), other, lastRead: {} });
+    }
   }
 }

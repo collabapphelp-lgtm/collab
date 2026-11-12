@@ -1,5 +1,8 @@
 import type { UserProfile } from './types';
 
+// App Store screenshots: sample photos served from the preview build (EXPO_PUBLIC_SHOT_PHOTOS=1).
+const SHOTS = process.env.EXPO_PUBLIC_SHOT_PHOTOS === '1';
+
 /**
  * Made-up profiles for UI preview mode only (EXPO_PUBLIC_UI_PREVIEW=1). Never written to Firebase.
  * `likesYou: true` means liking them produces a match, so the match screen can be tested.
@@ -11,8 +14,9 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
     lastName: 'Brooks',
     email: 'maya@example.com',
     onboardingComplete: true,
-    location: 'Decatur, Georgia, USA',
-    geo: { lat: 33.7748, lng: -84.2963 },
+    location: 'Harlem, New York, USA',
+    geo: { lat: 40.8116, lng: -73.9465 },
+    photoURL: SHOTS ? '/shots/maya.jpg' : undefined,
     global: false,
     creatorType: 'musician',
     skills: ['vocalist', 'songwriter'],
@@ -21,10 +25,10 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
     genres: ['rnb', 'hiphop', 'pop'],
     showcase: [
       { type: 'media', source: 'link', url: 'https://open.spotify.com/track/demo1', platform: 'spotify', title: 'Velvet (demo)' },
-      { type: 'prompt', question: 'What I’m looking for in a collab partner', answer: 'A producer with warm, late-night sounds. I write fast and love harmonies.' },
-      { type: 'prompt', question: 'My biggest musical influence is...', answer: 'Jazmine Sullivan and every choir I grew up in.' },
+      { type: 'prompt', question: 'What I’m working on right now...', answer: 'Finishing a 5-song R&B EP. Two songs are written and need warm, late-night production.' },
+      { type: 'prompt', question: 'My sound in 3 artists...', answer: 'Jazmine Sullivan, SZA, Daniel Caesar.' },
     ],
-    bio: 'R&B singer-songwriter in Decatur. Looking to finish an EP this spring.',
+    bio: 'A producer who’s down to link weekly in Brooklyn or Harlem. I write fast and love stacking harmonies.',
     likesYou: true,
   },
   {
@@ -32,8 +36,8 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
     firstName: 'Andre',
     email: 'andre@example.com',
     onboardingComplete: true,
-    location: 'Atlanta, Georgia, USA',
-    geo: { lat: 33.76, lng: -84.39 },
+    location: 'Brooklyn, New York, USA',
+    geo: { lat: 40.6944, lng: -73.9213 },
     creatorType: 'content',
     skills: ['videographer', 'editor'],
     lookingFor: ['musician'],
@@ -41,7 +45,7 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
     interests: ['music', 'fashion'],
     showcase: [
       { type: 'media', source: 'link', url: 'https://www.youtube.com/watch?v=demo', platform: 'youtube', title: 'Music video reel 2026' },
-      { type: 'prompt', question: 'A project I’d love to work on', answer: 'Shooting a one-take performance video in an Atlanta parking deck at golden hour.' },
+      { type: 'prompt', question: 'A project I’d love to work on', answer: 'Shooting a one-take performance video on a Bushwick rooftop at golden hour.' },
     ],
     bio: 'Music video director. I shoot, edit and color.',
   },
@@ -51,8 +55,9 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
     lastName: 'Lee',
     email: 'jordan@example.com',
     onboardingComplete: true,
-    location: 'Marietta, Georgia, USA',
-    geo: { lat: 33.9526, lng: -84.5499 },
+    location: 'Queens, New York, USA',
+    geo: { lat: 40.7282, lng: -73.7949 },
+    photoURL: SHOTS ? '/shots/jordan.jpg' : undefined,
     creatorType: 'musician',
     skills: ['instrumentalist'],
     instruments: ['guitar', 'bass'],
@@ -82,8 +87,8 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
     firstName: 'Chris',
     email: 'chris@example.com',
     onboardingComplete: true,
-    location: 'Atlanta, Georgia, USA',
-    geo: { lat: 33.749, lng: -84.388 },
+    location: 'Bronx, New York, USA',
+    geo: { lat: 40.8448, lng: -73.8648 },
     creatorType: 'musician',
     skills: ['dj'],
     lookingFor: ['dj'],
@@ -99,12 +104,17 @@ PREVIEW_PROFILES.push({
   lastName: 'Reed',
   email: 'tasha@example.com',
   onboardingComplete: true,
-  location: 'Atlanta, Georgia, USA',
-  geo: { lat: 33.75, lng: -84.42 },
+  location: 'Manhattan, New York, USA',
+  geo: { lat: 40.7831, lng: -73.9712 },
   creatorType: 'content',
   skills: ['videographer', 'photographer'],
   lookingFor: ['musician'],
   interests: ['music', 'fashion'],
-  showcase: [{ type: 'media', source: 'link', url: 'https://www.instagram.com/demo', platform: 'instagram', title: 'Westside visual' }],
+  showcase: [
+    { type: 'media', source: 'link', url: 'https://www.instagram.com/demo', platform: 'instagram', title: 'Westside visual' },
+    { type: 'media', source: 'link', url: 'https://www.youtube.com/watch?v=demo', platform: 'youtube', title: 'Late Night (music video)' },
+    { type: 'prompt', question: 'My ideal shoot', answer: 'Golden hour on a rooftop, one camera, an artist who trusts the vision.' },
+    { type: 'prompt', question: 'What I bring to a collab', answer: 'Treatment, shot list, color grade. You just show up and perform.' },
+  ],
   bio: 'Visuals for artists. Moody, cinematic, on budget.',
 });

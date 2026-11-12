@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -27,8 +28,14 @@ export function ChatProfileCard(props: { me: UserProfile | null; them: UserProfi
     ...(them.openToAll ? ['♾️ Open to all'] : []),
   ];
   const looking = (them.lookingFor ?? []).map((v) => lookingOptionFor(v).label).join(', ');
-  const media = them.showcase?.find((s): s is ShowcaseMedia => s.type === 'media');
-  const prompt = them.showcase?.find((s): s is ShowcasePrompt => s.type === 'prompt');
+  // Everything they showcase, snippets first, so you can swipe through their work without leaving the chat.
+  const work = [
+    ...(them.showcase ?? []).filter((s): s is ShowcaseMedia => s.type === 'media'),
+    ...(them.showcase ?? []).filter((s): s is ShowcasePrompt => s.type === 'prompt'),
+  ];
+  const snippets = work.filter((w) => w.type === 'media').length;
+  const prompts = work.length - snippets;
+  const workLabel = [snippets ? `🎵 ${snippets}` : '', prompts ? `💬 ${prompts}` : ''].filter(Boolean).join('  ');
 
   return (
     <LinearGradient colors={['#EAF3F8', '#F3EFF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.wrap}>
@@ -43,6 +50,7 @@ export function ChatProfileCard(props: { me: UserProfile | null; them: UserProfi
         ) : (
           <View style={styles.flex} />
         )}
+        {!expanded && workLabel ? <Text style={styles.workCount}>{workLabel}</Text> : null}
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecondary} />
       </Pressable>
 
@@ -65,17 +73,19 @@ export function ChatProfileCard(props: { me: UserProfile | null; them: UserProfi
             </Text>
           ) : null}
 
-          {media ? <MediaRow item={media} /> : null}
-
-          {prompt ? (
-            <View style={styles.prompt}>
-              <Text style={styles.promptQ} numberOfLines={1}>
-                {prompt.question}
-              </Text>
-              <Text style={styles.promptA} numberOfLines={2}>
-                “{prompt.answer}”
-              </Text>
-            </View>
+          {work.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.work}
+              style={styles.workScroll}
+              decelerationRate="fast"
+              snapToInterval={CARD_W + 8}
+            >
+              {work.map((w, i) =>
+                w.type === 'media' ? <MediaCard key={`m${i}`} item={w} /> : <PromptCard key={`p${i}`} item={w} />,
+              )}
+            </ScrollView>
           ) : null}
 
           <Pressable
@@ -92,20 +102,23 @@ export function ChatProfileCard(props: { me: UserProfile | null; them: UserProfi
   );
 }
 
-function MediaRow({ item }: { item: ShowcaseMedia }) {
+const CARD_W = 236;
+const CARD_H = 84;
+
+function MediaCard({ item }: { item: ShowcaseMedia }) {
   const platform = item.source === 'link' ? detectPlatform(item.url) : null;
   const icon = platform ? platform.emoji : item.mediaKind === 'audio' ? '🎵' : item.mediaKind === 'image' ? '🖼️' : '🎬';
   const kind = platform ? platform.label : item.mediaKind === 'audio' ? 'Audio' : item.mediaKind === 'image' ? 'Photo' : 'Video';
   return (
     <Pressable
       onPress={() => WebBrowser.openBrowserAsync(item.url).catch(() => {})}
-      style={({ pressed }) => [styles.media, pressed && { opacity: 0.8 }]}
+      style={({ pressed }) => [styles.card, styles.media, pressed && { opacity: 0.8 }]}
       accessibilityRole="button"
       accessibilityLabel={`Open ${item.title ?? kind}`}
     >
       <Text style={styles.mediaIcon}>{icon}</Text>
       <View style={styles.flex}>
-        <Text style={styles.mediaTitle} numberOfLines={1}>
+        <Text style={styles.mediaTitle} numberOfLines={2}>
           {item.title ?? `${kind} snippet`}
         </Text>
         <Text style={styles.mediaKind}>{kind}</Text>
@@ -113,6 +126,26 @@ function MediaRow({ item }: { item: ShowcaseMedia }) {
       <View style={styles.play}>
         <Ionicons name="play" size={13} color={colors.white} style={{ marginLeft: 2 }} />
       </View>
+    </Pressable>
+  );
+}
+
+/** A prompt answer; tap to read the whole thing. */
+function PromptCard({ item }: { item: ShowcasePrompt }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Pressable
+      onPress={() => setOpen((v) => !v)}
+      style={({ pressed }) => [styles.card, styles.prompt, open && styles.cardOpen, pressed && { opacity: 0.85 }]}
+      accessibilityRole="button"
+      accessibilityState={{ expanded: open }}
+    >
+      <Text style={styles.promptQ} numberOfLines={1}>
+        {item.question}
+      </Text>
+      <Text style={styles.promptA} numberOfLines={open ? undefined : 2}>
+        “{item.answer}”
+      </Text>
     </Pressable>
   );
 }
@@ -130,12 +163,17 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.text },
   line: { fontFamily: fonts.body, fontSize: 13, color: colors.text },
   lineLabel: { fontFamily: fonts.bodySemibold, color: colors.textSecondary },
-  media: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.white, borderRadius: 14, padding: 10 },
+  workCount: { fontFamily: fonts.bodySemibold, fontSize: 12, color: colors.textSecondary },
+  workScroll: { marginHorizontal: -12 },
+  work: { gap: 8, paddingHorizontal: 12 },
+  card: { width: CARD_W, minHeight: CARD_H, borderRadius: 14, padding: 10 },
+  cardOpen: { minHeight: undefined },
+  media: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.white },
   mediaIcon: { fontSize: 20 },
   mediaTitle: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text },
   mediaKind: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary },
   play: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
-  prompt: { backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: 10, gap: 2 },
+  prompt: { backgroundColor: 'rgba(255,255,255,0.75)', gap: 3 },
   promptQ: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondary },
   promptA: { fontFamily: fonts.heading, fontSize: 14, lineHeight: 19, color: colors.text },
   more: { flexDirection: 'row', alignItems: 'center', gap: 2, alignSelf: 'flex-start' },

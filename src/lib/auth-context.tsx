@@ -38,8 +38,8 @@ function PreviewAuthProvider({ children }: { children: ReactNode }) {
           firstName: 'Kam',
           email: 'preview@collab.app',
           onboardingComplete: true,
-          location: 'Atlanta, Georgia, USA',
-          geo: { lat: 33.749, lng: -84.388 },
+          location: 'Brooklyn, New York, USA',
+          geo: { lat: 40.6782, lng: -73.9442 },
           maxDistance: 50,
           global: true,
           creatorType: 'musician',
@@ -52,7 +52,7 @@ function PreviewAuthProvider({ children }: { children: ReactNode }) {
             { type: 'media', source: 'link', url: 'https://soundcloud.com/demo', platform: 'soundcloud', title: 'Beat tape vol. 2' },
             { type: 'prompt', question: 'My creative process looks like...', answer: 'Chords first, drums second, then I hand it to someone who can sing.' },
           ],
-          bio: 'Atlanta producer. Ableton + Push. Always down to cook.',
+          bio: 'A vocalist with a strong pen who’s serious about finishing songs.',
         }
       : { id: 'preview', firstName: 'Kam', email: 'preview@collab.app', onboardingComplete: false },
   );
