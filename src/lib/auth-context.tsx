@@ -38,6 +38,7 @@ function PreviewAuthProvider({ children }: { children: ReactNode }) {
           firstName: 'Kam',
           email: 'preview@collab.app',
           onboardingComplete: true,
+          photoURL: process.env.EXPO_PUBLIC_SHOT_PHOTOS === '1' ? '/shots/kam.jpg' : undefined,
           location: 'Brooklyn, New York, USA',
           geo: { lat: 40.6782, lng: -73.9442 },
           maxDistance: 50,
