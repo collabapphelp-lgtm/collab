@@ -88,8 +88,8 @@ export default function ShowcaseStep() {
       continueLabel={mode === 'edit' ? 'Save' : 'Complete profile 🚀'}
       emoji="🔥"
       inlineEmoji
-      title="Show off your best work"
-      subtitle="Snippets and prompts show people what you’re about."
+      title="Show your best work"
+      subtitle="Snippets and prompts show what you’re about. One is enough to start."
       onContinue={next}
       continueDisabled={filled < SHOWCASE.minItems}
       saving={saving}
@@ -98,7 +98,6 @@ export default function ShowcaseStep() {
       footerHintStrong={filled === 0}
     >
       <View style={styles.list}>
-        <Text style={styles.listNote}>One is enough to start. Add more anytime.</Text>
         {slots.map((slot, i) =>
           showAll || i < INITIAL_SLOTS ? <SlotCard key={i} index={i} slot={slot} onPress={() => onSlotPress(i)} /> : null,
         )}
@@ -111,8 +110,9 @@ export default function ShowcaseStep() {
 
       <View style={styles.partner}>
         <View style={styles.partnerHead}>
-          <Text style={styles.partnerTitle}>🤝 What are you looking for in a collab partner?</Text>
-          <Text style={styles.optional}>OPTIONAL</Text>
+          <Text style={styles.partnerTitle}>
+            🤝 What are you looking for in a collab partner? <Text style={styles.optionalInline}>Optional</Text>
+          </Text>
         </View>
         <TextInput
           value={partner}
@@ -208,11 +208,11 @@ function SlotCard({ index, slot, onPress }: { index: number; slot: Slot; onPress
 }
 
 const styles = StyleSheet.create({
-  list: { gap: 10, marginTop: -6 },
+  list: { gap: 8, marginTop: -8 },
   partner: {
-    gap: 10,
-    marginTop: 6,
-    padding: 14,
+    gap: 8,
+    marginTop: -4,
+    padding: 12,
     borderRadius: radius.md,
     backgroundColor: colors.white,
     borderWidth: 1,
@@ -223,21 +223,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 1,
   },
+  optionalInline: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
   partnerHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   partnerTitle: { flex: 1, fontFamily: fonts.bodySemibold, fontSize: 15, lineHeight: 20, color: colors.text },
-  optional: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 10,
-    letterSpacing: 0.5,
-    color: colors.textMuted,
-    backgroundColor: 'rgba(163,153,199,0.16)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-    overflow: 'hidden',
-  },
   partnerInput: {
-    minHeight: 84,
+    minHeight: 58,
     borderRadius: 12,
     backgroundColor: '#F7F5FB',
     padding: 12,
@@ -249,7 +239,7 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { outlineWidth: 0 }, default: {} }),
   },
   partnerCount: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, textAlign: 'right' },
-  more: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 12 },
+  more: { alignSelf: 'center', paddingVertical: 2, paddingHorizontal: 12 },
   moreText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue },
   listNote: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   slot: {
@@ -257,7 +247,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingVertical: 9,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: '#ECEAE4',
@@ -269,7 +259,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   slotFilled: { borderColor: 'rgba(75,163,199,0.45)', backgroundColor: 'rgba(75,163,199,0.04)' },
-  icon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   iconText: { fontSize: 20 },
   text: { flex: 1, gap: 2 },
   title: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
