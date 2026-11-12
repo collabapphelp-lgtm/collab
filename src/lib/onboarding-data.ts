@@ -125,31 +125,57 @@ export const INTERESTS: Option[] = [
 
 // ---------- Showcase prompts ----------
 
-export const MUSICIAN_PROMPTS = [
-  'My biggest musical influence is...',
-  'The vibe I’m going for in my music',
-  'What I’m looking for in a collab partner',
-  'If I could collab with anyone, living or dead...',
-  'A song or lyric that resonates with me',
-  'Top 3 albums of all time',
-  'My favorite era of music',
-  'New styles I want to explore',
-  'A project I’m most proud of',
-  'My creative process looks like...',
-];
+/** Prompt picker tabs: "About my work" helps people decide if they'd work well together; "Just for fun" keeps personality. */
+export type PromptGroups = { work: string[]; fun: string[] };
 
-export const CONTENT_PROMPTS = [
-  'The content I’m most proud of',
-  'What I’m looking for in a collab partner',
-  'My creative vision is...',
-  'What inspires me to create',
-  'If I could collab with any creator...',
-  'The vibe I’m going for',
-  'What makes my content unique',
-  'New styles or formats I want to explore',
-  'My creative process looks like...',
-  'A project I’d love to work on',
-];
+export const MUSICIAN_PROMPTS: PromptGroups = {
+  work: [
+    'What I’m working on right now...',
+    'My goal for the next few months...',
+    'A project I want to make happen...',
+    'My ideal session looks like...',
+    'What I bring to a collab...',
+    'My creative process looks like...',
+    'My setup / where I create...',
+    'My sound in 3 artists...',
+    'A project I’m proud of...',
+    'Credits or wins so far...',
+  ],
+  fun: [
+    'My biggest musical influence is...',
+    'The vibe I’m going for in my music',
+    'If I could collab with anyone, living or dead...',
+    'A song I wish I’d made...',
+    'A song or lyric that resonates with me',
+    'Top 3 albums of all time',
+    'My favorite era of music',
+    'New styles I want to explore',
+  ],
+};
+
+export const CONTENT_PROMPTS: PromptGroups = {
+  work: [
+    'What I’m working on right now...',
+    'My goal for the next few months...',
+    'A project I’d love to work on',
+    'My ideal shoot or session looks like...',
+    'What I bring to a collab...',
+    'My creative process looks like...',
+    'My setup / gear...',
+    'My style in 3 creators...',
+    'The content I’m most proud of',
+    'Wins so far (views, brands, features)...',
+  ],
+  fun: [
+    'What inspires me to create',
+    'If I could collab with any creator...',
+    'The vibe I’m going for',
+    'What makes my content unique',
+    'My creative vision is...',
+    'New styles or formats I want to explore',
+    'A trend I’d bring back...',
+  ],
+};
 
 export const SHOWCASE = {
   /** Kam's rule: at least one item to continue, up to six. */
