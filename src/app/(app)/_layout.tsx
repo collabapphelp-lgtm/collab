@@ -10,7 +10,7 @@ import { LikedYouProvider } from '@/lib/liked-you';
 
 export const unstable_settings = { anchor: '(tabs)' };
 
-type PushData = { type?: 'match' | 'message' | 'like' | 'report'; matchId?: string };
+type PushData = { type?: 'match' | 'message' | 'like' | 'report' | 'signup'; matchId?: string };
 
 function openFromNotification(data: PushData | undefined) {
   if (data?.type === 'like') return router.push('/connections');

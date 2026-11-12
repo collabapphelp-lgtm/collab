@@ -9,7 +9,7 @@
  * Phones register their Expo push token in pushTokens/{uid} (see src/lib/push.ts).
  * Notifications go out through Expo's push service, which forwards them to Apple / Google.
  */
-const { onDocumentCreated, onDocumentDeleted } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -138,6 +138,26 @@ exports.onNewReport = onDocumentCreated('reports/{reportId}', async (event) => {
         title: `🚩 New report: ${reported}`,
         body: `${reporter} reported ${reported} (“${r.reason}”). Review it on the dashboard.`,
         data: { type: 'report' },
+      }),
+    ),
+  );
+});
+
+// Admin alert when someone finishes setting up their profile (a real new member, not just an email signup).
+exports.onProfileCompleted = onDocumentUpdated('users/{uid}', async (event) => {
+  const before = event.data?.before.data();
+  const after = event.data?.after.data();
+  if (!after || before?.onboardingComplete || !after.onboardingComplete) return;
+  const admins = adminUids().filter((uid) => uid !== event.params.uid);
+  const name = after.firstName || 'Someone';
+  const where = after.location ? ` · ${String(after.location).split(',')[0]}` : '';
+  const skills = (after.skills ?? []).slice(0, 2).join(', ');
+  await Promise.all(
+    admins.map((uid) =>
+      notify(uid, {
+        title: `🎉 New member: ${name}${where}`,
+        body: skills ? `${name} just finished their profile (${skills}).` : `${name} just finished their profile.`,
+        data: { type: 'signup' },
       }),
     ),
   );
