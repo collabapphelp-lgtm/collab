@@ -11,6 +11,7 @@ import { detectPlatform, SHOWCASE } from '@/lib/onboarding-data';
 import { uploadMedia } from '@/lib/upload';
 import type { ShowcaseMedia } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
+import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 
 const CHOICES = [
   { value: 'link', emoji: '🔗', title: 'Paste a link', body: 'Spotify, YouTube, SoundCloud, TikTok…' },
@@ -47,12 +48,14 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
 
   function addLink() {
     if (!normalized) return setError('That doesn’t look like a link. Paste the full URL.');
+    if (hasBlockedLanguage(title)) return setError(BLOCKED_LANGUAGE_MESSAGE);
     onAdd({ type: 'media', source: 'link', url: normalized, platform: platform!.platform, title: title.trim() || undefined });
     reset();
   }
 
   async function upload(localUri: string, fileName: string, mimeType: string | undefined, size: number | undefined, kind: 'audio' | 'video' | 'image') {
     if (!user) return;
+    if (hasBlockedLanguage(title)) return setError(BLOCKED_LANGUAGE_MESSAGE);
     if (size && size > SHOWCASE.maxUploadMB * 1024 * 1024) {
       return setError(`That file is over ${SHOWCASE.maxUploadMB} MB. Try a shorter clip.`);
     }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { setOpenChat } from '@/lib/push';
+import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -95,6 +96,7 @@ export default function ChatScreen() {
 
   async function send(text = draft) {
     if (!id || !me || !text.trim()) return;
+    if (hasBlockedLanguage(text)) return setSendError(BLOCKED_LANGUAGE_MESSAGE);
     setSendError(null);
     setDraft('');
     try {

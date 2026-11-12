@@ -5,6 +5,7 @@ import { StepScreen } from '@/components/onboarding/StepScreen';
 import { MediaSheet } from '@/components/onboarding/MediaSheet';
 import { PromptSheet } from '@/components/onboarding/PromptSheet';
 import { useOnboarding } from '@/lib/onboarding-context';
+import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { BIO_MAX_CHARS, CONTENT_PROMPTS, detectPlatform, MUSICIAN_PROMPTS, SHOWCASE } from '@/lib/onboarding-data';
 import type { ShowcaseItem, ShowcaseMedia, ShowcasePrompt } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
@@ -63,6 +64,7 @@ export default function ShowcaseStep() {
   }
 
   async function save(withShowcase: boolean) {
+    if (hasBlockedLanguage(partner)) return setError(BLOCKED_LANGUAGE_MESSAGE);
     setSaving(true);
     setError(null);
     try {

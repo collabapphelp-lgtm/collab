@@ -15,6 +15,7 @@ import { db } from '@/lib/firebase';
 import { UI_PREVIEW } from '@/lib/preview';
 import { uploadProfilePhoto } from '@/lib/upload';
 import { colors, fonts } from '@/lib/theme';
+import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 
 // Photo and name: the only profile basics collected at signup rather than in onboarding.
 export default function EditBasics() {
@@ -35,6 +36,7 @@ export default function EditBasics() {
   async function save() {
     if (!profile) return;
     if (!firstName.trim()) return setError('Add your first name so people know who you are.');
+    if (hasBlockedLanguage(firstName, lastName)) return setError(BLOCKED_LANGUAGE_MESSAGE);
     setSaving(true);
     setError(null);
     try {

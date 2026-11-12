@@ -17,6 +17,7 @@ import { TextField } from '@/components/TextField';
 import { SignupIntro } from '@/components/SignupIntro';
 import { openLegal } from '@/lib/legal';
 import { colors, fonts } from '@/lib/theme';
+import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 
 export default function Signup() {
   const { setSignupInProgress } = useAuth();
@@ -45,6 +46,7 @@ export default function Signup() {
   async function handleSignup() {
     setError(null);
     if (!firstName.trim()) return setError('Add your first name so people know who you are.');
+    if (hasBlockedLanguage(firstName, lastName)) return setError(BLOCKED_LANGUAGE_MESSAGE);
     if (!email.trim()) return setError('Enter your email.');
     if (password.length < 6) return setError('Use at least 6 characters for your password.');
 

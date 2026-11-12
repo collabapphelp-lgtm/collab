@@ -3,6 +3,7 @@ import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import { Sheet } from './Sheet';
 import { Button } from '@/components/Button';
 import { SHOWCASE, type PromptGroups } from '@/lib/onboarding-data';
+import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import type { ShowcasePrompt } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
 
@@ -61,6 +62,7 @@ export function PromptSheet({ visible, prompts, usedQuestions, initial, onClose,
   }
 
   const trimmed = answer.trim();
+  const blocked = hasBlockedLanguage(trimmed);
   return (
     <Sheet
       visible={visible}
@@ -69,7 +71,7 @@ export function PromptSheet({ visible, prompts, usedQuestions, initial, onClose,
       footer={
         <Button
           title="Save answer"
-          disabled={!trimmed}
+          disabled={!trimmed || blocked}
           onPress={() => onSave({ type: 'prompt', question, answer: trimmed })}
         />
       }
@@ -90,6 +92,7 @@ export function PromptSheet({ visible, prompts, usedQuestions, initial, onClose,
           accessibilityLabel={question}
         />
       </View>
+      {blocked ? <Text style={styles.blocked}>{BLOCKED_LANGUAGE_MESSAGE}</Text> : null}
       <Text style={styles.count}>
         {answer.length}/{SHOWCASE.promptMaxChars}
       </Text>
@@ -98,6 +101,7 @@ export function PromptSheet({ visible, prompts, usedQuestions, initial, onClose,
 }
 
 const styles = StyleSheet.create({
+  blocked: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.red },
   tabs: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.55)', borderRadius: radius.full, padding: 4, gap: 4 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: radius.full },
   tabOn: { backgroundColor: colors.white, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
