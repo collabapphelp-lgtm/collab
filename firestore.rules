@@ -82,7 +82,13 @@ service cloud.firestore {
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 1000
-          && request.resource.data.createdAt == request.time;
+          && request.resource.data.createdAt == request.time
+          // Voice notes carry a Firebase Storage URL and a length (max ~2 min).
+          && (!('audioUrl' in request.resource.data)
+              || (request.resource.data.audioUrl is string
+                  && request.resource.data.audioUrl.matches('https://firebasestorage[.]googleapis[.]com/.*')
+                  && request.resource.data.durationMs is number
+                  && request.resource.data.durationMs <= 130000));
         // Reactions: either member can set or clear their own reaction (reactions.{uid}) and nothing else.
         allow update: if inChat()
           && chatOpen()

@@ -58,6 +58,7 @@ export async function deleteAccount(password: string) {
   // 3. Uploaded photos and snippets.
   await deleteStorageFolder(`profile-photos/${me}`);
   await deleteStorageFolder(`media/${me}`);
+  await deleteStorageFolder(`voice/${me}`);
 
   // 4. Push tokens, profile, then the login itself.
   await deletePushTokens(me);

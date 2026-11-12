@@ -56,6 +56,13 @@
       ],
       "expo-web-browser",
       [
+        "expo-audio",
+        {
+          "microphonePermission": "Collab uses your microphone to record voice notes you send in chats.",
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Collab uses your location once to fill in your city. Your exact location is never saved.",

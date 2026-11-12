@@ -27,6 +27,16 @@ service firebase.storage {
       allow delete: if isMe(uid);
     }
 
+    // Chat voice notes: up to 10 MB of audio. Only the sender's app reads them through the SDK;
+    // the other person plays them through the download URL stored on the (members-only) message.
+    match /voice/{uid}/{file} {
+      allow read: if isMe(uid);
+      allow create: if isMe(uid)
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('audio/.*');
+      allow delete: if isMe(uid);
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

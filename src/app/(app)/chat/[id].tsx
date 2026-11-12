@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { setOpenChat } from '@/lib/push';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import {
@@ -17,6 +17,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChatProfileCard } from '@/components/ChatProfileCard';
+import { RecordingBar, useVoiceRecorder, VoiceBubble } from '@/components/VoiceNote';
 import { Avatar } from '@/components/Avatar';
 import { SafetyButton } from '@/components/SafetyButton';
 import { useAuth } from '@/lib/auth-context';
@@ -27,6 +28,7 @@ import {
   MESSAGE_MAX_CHARS,
   REACTIONS,
   sendMessage,
+  sendVoiceNote,
   setReaction,
   type ChatMessage,
 } from '@/lib/connections';
@@ -64,6 +66,9 @@ export default function ChatScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [cardOpen, setCardOpen] = useState(true);
   const [picking, setPicking] = useState<string | null>(null); // message id with the reaction bar open
+  const [sendingVoice, setSendingVoice] = useState(false);
+  const lastTap = useRef<{ id: string; at: number } | null>(null);
+  const voice = useVoiceRecorder((uri, ms) => sendVoice(uri, ms));
 
   useEffect(() => {
     if (!id) return;
@@ -116,6 +121,39 @@ export default function ChatScreen() {
       setDraft(text);
       setSendError('Message didn’t send. Tap send to try again.');
     }
+  }
+
+  async function sendVoice(uri: string, durationMs: number) {
+    if (!id || !me) return;
+    if (durationMs < 700) return setSendError('Too short. Tap the mic, talk, then tap send.');
+    setSendError(null);
+    setSendingVoice(true);
+    try {
+      await sendVoiceNote(id, me, uri, durationMs);
+    } catch (e) {
+      console.warn('Voice note failed', e);
+      setSendError('Voice note didn’t send. Check your internet and try again.');
+    } finally {
+      setSendingVoice(false);
+    }
+  }
+
+  async function stopAndSendVoice() {
+    const take = await voice.stop();
+    if (take) await sendVoice(take.uri, take.durationMs);
+  }
+
+  // Double-tap a message to ❤️ it (double-tap again to take it back). Single tap closes the reaction bar.
+  function tapMessage(msg: ChatMessage) {
+    const now = Date.now();
+    if (lastTap.current?.id === msg.id && now - lastTap.current.at < 300) {
+      lastTap.current = null;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      react(msg, '❤️');
+      return;
+    }
+    lastTap.current = { id: msg.id, at: now };
+    if (picking) setPicking(null);
   }
 
   function openPicker(msgId: string) {
@@ -230,9 +268,9 @@ export default function ChatScreen() {
                   ) : null}
                   <Pressable
                     onLongPress={() => openPicker(item.msg.id)}
-                    onPress={() => picking && setPicking(null)}
+                    onPress={() => tapMessage(item.msg)}
                     delayLongPress={300}
-                    accessibilityHint="Long-press to react"
+                    accessibilityHint="Double-tap to like, long-press for more reactions"
                   >
                     {item.mine ? (
                       <LinearGradient
@@ -241,11 +279,19 @@ export default function ChatScreen() {
                         end={{ x: 1, y: 1 }}
                         style={[styles.bubble, item.tail && styles.tailMine]}
                       >
-                        <Text style={[styles.text, { color: colors.white }]}>{item.msg.text}</Text>
+                        {item.msg.audioUrl ? (
+                          <VoiceBubble id={item.msg.id} url={item.msg.audioUrl} durationMs={item.msg.durationMs ?? 0} mine />
+                        ) : (
+                          <Text style={[styles.text, { color: colors.white }]}>{item.msg.text}</Text>
+                        )}
                       </LinearGradient>
                     ) : (
                       <View style={[styles.bubble, styles.theirs, item.tail && styles.tailTheirs]}>
-                        <Text style={styles.text}>{item.msg.text}</Text>
+                        {item.msg.audioUrl ? (
+                          <VoiceBubble id={item.msg.id} url={item.msg.audioUrl} durationMs={item.msg.durationMs ?? 0} mine={false} />
+                        ) : (
+                          <Text style={styles.text}>{item.msg.text}</Text>
+                        )}
                       </View>
                     )}
                   </Pressable>
@@ -262,29 +308,50 @@ export default function ChatScreen() {
         )}
 
         {sendError ? <Text style={styles.error}>{sendError}</Text> : null}
+        {sendingVoice ? <Text style={styles.sendingVoice}>Sending voice note…</Text> : null}
         <View style={styles.composer}>
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            placeholder={them ? `Message ${them.firstName}…` : 'Message…'}
-            placeholderTextColor={colors.textMuted}
-            multiline
-            maxLength={MESSAGE_MAX_CHARS}
-            onFocus={() => setCardOpen(false)}
-            style={styles.input}
-            accessibilityLabel="Message"
-          />
-          <Pressable
-            onPress={() => send()}
-            disabled={!draft.trim()}
-            accessibilityRole="button"
-            accessibilityLabel="Send"
-            style={!draft.trim() && { opacity: 0.4 }}
-          >
-            <LinearGradient colors={[colors.blue, colors.purple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.send}>
-              <Ionicons name="arrow-up" size={22} color={colors.white} />
-            </LinearGradient>
-          </Pressable>
+          {voice.recording ? (
+            <RecordingBar durationMs={voice.durationMs} onCancel={() => voice.cancel()} />
+          ) : (
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              placeholder={them ? `Message ${them.firstName}…` : 'Message…'}
+              placeholderTextColor={colors.textMuted}
+              multiline
+              maxLength={MESSAGE_MAX_CHARS}
+              onFocus={() => setCardOpen(false)}
+              style={styles.input}
+              accessibilityLabel="Message"
+            />
+          )}
+          {voice.recording || draft.trim() ? (
+            <Pressable
+              onPress={() => (voice.recording ? stopAndSendVoice() : send())}
+              accessibilityRole="button"
+              accessibilityLabel={voice.recording ? 'Send voice note' : 'Send'}
+            >
+              <LinearGradient colors={[colors.blue, colors.purple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.send}>
+                <Ionicons name="arrow-up" size={22} color={colors.white} />
+              </LinearGradient>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => {
+                setCardOpen(false);
+                voice.start().catch((e) => {
+                  console.warn('Recording failed', e);
+                  setSendError('Couldn’t start recording. Try again.');
+                });
+              }}
+              disabled={sendingVoice}
+              style={[styles.mic, sendingVoice && { opacity: 0.4 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Record a voice note"
+            >
+              <Ionicons name="mic" size={22} color={colors.blue} />
+            </Pressable>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -425,6 +492,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     ...Platform.select({ web: { outlineWidth: 0 }, default: {} }),
   },
+  mic: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#E6F1F7', alignItems: 'center', justifyContent: 'center' },
+  sendingVoice: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondary, textAlign: 'right', paddingHorizontal: 16, paddingBottom: 4 },
   send: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
   error: { fontFamily: fonts.body, fontSize: 13, color: colors.red, textAlign: 'center', paddingVertical: 6 },
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },

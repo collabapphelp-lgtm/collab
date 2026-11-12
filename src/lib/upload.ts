@@ -32,3 +32,8 @@ export async function uploadMedia(uid: string, localUri: string, fileName: strin
   const safeName = fileName.replace(/[^\w.-]+/g, '_').slice(-80);
   return uploadFile(`media/${uid}/${Date.now()}_${safeName}`, localUri, contentType);
 }
+
+/** Uploads a recorded voice note (m4a) for a chat. Lives under the sender's folder so account deletion removes it. */
+export async function uploadVoiceNote(uid: string, matchId: string, localUri: string) {
+  return uploadFile(`voice/${uid}/${matchId}_${Date.now()}.m4a`, localUri, 'audio/mp4');
+}

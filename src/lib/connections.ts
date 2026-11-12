@@ -15,6 +15,7 @@ import { db } from './firebase';
 import { UI_PREVIEW } from './preview';
 import { PREVIEW_PROFILES } from './preview-data';
 import { getProfile } from './profiles';
+import { uploadVoiceNote } from './upload';
 import type { UserProfile } from './types';
 
 /**
@@ -51,7 +52,13 @@ export type ChatMessage = {
   pending?: boolean;
   /** uid → emoji. One reaction per person per message. */
   reactions?: Record<string, string>;
+  /** Voice notes: a Storage download URL and the length. `text` is '🎤 Voice note' so previews and alerts read well. */
+  audioUrl?: string;
+  durationMs?: number;
 };
+
+export const VOICE_NOTE_TEXT = '🎤 Voice note';
+export const VOICE_NOTE_MAX_MS = 120_000;
 
 /** The reactions you can put on a message (long-press a bubble). Keep in sync with firestore.rules. */
 export const REACTIONS = ['❤️', '👍', '🔥', '😂', '😮', '🙏'] as const;
@@ -137,6 +144,8 @@ export function listenToMessages(matchId: string, onChange: (msgs: ChatMessage[]
           senderId: string;
           createdAt?: FirestoreTime;
           reactions?: Record<string, string>;
+          audioUrl?: string;
+          durationMs?: number;
         };
         return {
           id: d.id,
@@ -145,6 +154,8 @@ export function listenToMessages(matchId: string, onChange: (msgs: ChatMessage[]
           at: ms(data.createdAt),
           pending: d.metadata.hasPendingWrites,
           reactions: data.reactions,
+          audioUrl: data.audioUrl,
+          durationMs: data.durationMs,
         };
       });
       onChange(msgs.reverse());
@@ -177,6 +188,40 @@ export async function sendMessage(matchId: string, me: string, text: string) {
   batch.set(doc(collection(matchRef, 'messages')), { text: clean, senderId: me, createdAt: serverTimestamp() });
   batch.update(matchRef, {
     lastMessage: { text: clean, senderId: me, createdAt: serverTimestamp() },
+    [`lastRead.${me}`]: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+/** Uploads a recorded voice note and posts it to the chat. */
+export async function sendVoiceNote(matchId: string, me: string, localUri: string, durationMs: number) {
+  const length = Math.min(Math.round(durationMs), VOICE_NOTE_MAX_MS);
+  if (UI_PREVIEW) {
+    const list = preview.messages.get(matchId) ?? [];
+    const at = Date.now();
+    list.push({ id: String(at), text: VOICE_NOTE_TEXT, senderId: me, at, audioUrl: localUri, durationMs: length });
+    preview.messages.set(matchId, list);
+    const m = preview.matches.find((x) => x.id === matchId);
+    if (m) {
+      m.lastMessage = { text: VOICE_NOTE_TEXT, senderId: me, at };
+      m.lastRead[me] = at;
+    }
+    preview.emit();
+    return;
+  }
+
+  const { url } = await uploadVoiceNote(me, matchId, localUri);
+  const matchRef = doc(db, 'matches', matchId);
+  const batch = writeBatch(db);
+  batch.set(doc(collection(matchRef, 'messages')), {
+    text: VOICE_NOTE_TEXT,
+    senderId: me,
+    createdAt: serverTimestamp(),
+    audioUrl: url,
+    durationMs: length,
+  });
+  batch.update(matchRef, {
+    lastMessage: { text: VOICE_NOTE_TEXT, senderId: me, createdAt: serverTimestamp() },
     [`lastRead.${me}`]: serverTimestamp(),
   });
   await batch.commit();
@@ -253,6 +298,7 @@ if (UI_PREVIEW) {
       { id: 'm2', senderId: 'p6', text: 'Appreciate that!! Your beat tape is on repeat over here 🔥', at: t0 + 1000 * 60 * 20, reactions: { preview: '❤️' } },
       { id: 'm3', senderId: 'preview', text: 'Want to shoot something for my next single? Thinking moody, late night.', at: t0 + 1000 * 60 * 60 * 2, reactions: { p6: '🔥' } },
       { id: 'm4', senderId: 'p6', text: 'Bet. Thursday at 7 works. I’ll bring the camera 🎥', at: t0 + 1000 * 60 * 60 * 25, reactions: { preview: '👍' } },
+      { id: 'm5', senderId: 'p6', text: VOICE_NOTE_TEXT, at: t0 + 1000 * 60 * 60 * 25.1, audioUrl: '/shots/voice.m4a', durationMs: 23_000 },
     ]);
   }
   // App Store screenshots: a fuller Connections grid.
