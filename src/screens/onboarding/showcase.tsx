@@ -88,7 +88,6 @@ export default function ShowcaseStep() {
       continueLabel={mode === 'edit' ? 'Save' : 'Complete profile 🚀'}
       emoji="🔥"
       inlineEmoji
-      tinted
       title="Show off your best work"
       subtitle="Snippets and prompts show people what you’re about."
       onContinue={next}

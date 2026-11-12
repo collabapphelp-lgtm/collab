@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   list: { gap: 14 },
   card: { borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.white, overflow: 'hidden' },
-  cardOn: { borderColor: colors.blue, backgroundColor: 'rgba(75,163,199,0.05)' },
+  cardOn: { borderColor: colors.blue, backgroundColor: '#F4FAFC' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 18 },
   cardEmoji: { fontSize: 32 },
   cardTitle: { fontFamily: fonts.heading, fontSize: 21, color: colors.text },

@@ -25,7 +25,7 @@ type Props = {
   error?: string | null;
   /** Small hint under the button, e.g. "Pick at least one". */
   footerHint?: string;
-  /** Soft blue-to-cream background (like Discover) so white cards stand out. */
+  /** Soft blue-to-cream background (like Discover) so white cards stand out. On by default. */
   tinted?: boolean;
   /** Make the hint stand out (e.g. what's still needed to continue). */
   footerHintStrong?: boolean;
@@ -38,6 +38,7 @@ type Props = {
 
 /** Shared layout for every onboarding step: progress bar, back, title, scrolling body, pinned Continue. */
 export function StepScreen(props: Props) {
+  const tinted = props.tinted ?? true;
   const { signOutUser, user } = useAuth();
   const { mode } = useOnboarding();
   const onSkip = props.onSkip
@@ -51,8 +52,8 @@ export function StepScreen(props: Props) {
   const progress = (index + 1) / ONBOARDING_STEPS.length;
 
   return (
-    <SafeAreaView style={[styles.safe, props.tinted && styles.safeTinted]} edges={['top', 'bottom']}>
-      {props.tinted ? <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} /> : null}
+    <SafeAreaView style={[styles.safe, tinted && styles.safeTinted]} edges={['top', 'bottom']}>
+      {tinted ? <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} /> : null}
       {editing ? null : (
         <View style={styles.progressTrack} accessibilityLabel={`Step ${index + 1} of ${ONBOARDING_STEPS.length}`}>
           <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
@@ -102,7 +103,7 @@ export function StepScreen(props: Props) {
           {props.children}
         </ScrollView>
 
-        <View style={[styles.footer, props.tinted && styles.footerTinted]}>
+        <View style={[styles.footer, tinted && styles.footerTinted]}>
           <ErrorText message={props.error ?? null} />
           <Button
             title={props.continueLabel ?? (editing ? 'Save' : 'Continue')}

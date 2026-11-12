@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.white,
   },
-  tabOn: { borderColor: colors.blue, backgroundColor: 'rgba(75,163,199,0.07)' },
+  tabOn: { borderColor: colors.blue, backgroundColor: '#F1F8FB' },
   tabIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bgSecondary, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
   tabIconOn: { backgroundColor: 'rgba(75,163,199,0.16)' },
   tabEmoji: { fontSize: 22 },

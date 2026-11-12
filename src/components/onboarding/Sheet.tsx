@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts } from '@/lib/theme';
 
 type Props = {
@@ -16,6 +17,7 @@ export function Sheet({ visible, title, onClose, children, footer }: Props) {
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.safe} edges={['bottom']}>
+        <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} />
         <View style={styles.header}>
           <Text style={styles.title} numberOfLines={2}>
             {title}
@@ -36,7 +38,7 @@ export function Sheet({ visible, title, onClose, children, footer }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.white },
+  safe: { flex: 1, backgroundColor: '#F4F2EC' },
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',

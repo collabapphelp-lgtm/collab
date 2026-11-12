@@ -98,7 +98,7 @@ export function PromptSheet({ visible, prompts, usedQuestions, initial, onClose,
 }
 
 const styles = StyleSheet.create({
-  tabs: { flexDirection: 'row', backgroundColor: colors.bgSecondary, borderRadius: radius.full, padding: 4, gap: 4 },
+  tabs: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.55)', borderRadius: radius.full, padding: 4, gap: 4 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: radius.full },
   tabOn: { backgroundColor: colors.white, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
   tabText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.textSecondary },
@@ -112,12 +112,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 2,
     borderColor: colors.border,
+    backgroundColor: colors.white,
   },
-  promptPressed: { borderColor: colors.blue, backgroundColor: 'rgba(75,163,199,0.06)' },
+  promptPressed: { borderColor: colors.blue, backgroundColor: '#F1F8FB' },
   promptText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.text },
   chevron: { fontSize: 22, color: colors.textMuted },
   change: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.blue },
-  answerBox: { borderRadius: radius.md, backgroundColor: colors.bgSecondary, padding: 14, minHeight: 150 },
+  answerBox: { borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, padding: 14, minHeight: 150 },
   answer: { fontFamily: fonts.body, fontSize: 16, lineHeight: 22, color: colors.text, minHeight: 120, textAlignVertical: 'top', ...Platform.select({ web: { outlineWidth: 0 }, default: {} }) },
   count: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, textAlign: 'right', marginTop: -6 },
 });

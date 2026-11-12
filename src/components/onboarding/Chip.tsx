@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   chipSm: { paddingHorizontal: 12, paddingVertical: 7, gap: 5 },
-  chipSelected: { borderColor: colors.blue, backgroundColor: 'rgba(75,163,199,0.12)' },
+  chipSelected: { borderColor: colors.blue, backgroundColor: '#E1F0F7' },
   emoji: { fontSize: 16 },
   emojiSm: { fontSize: 14 },
   label: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.text },

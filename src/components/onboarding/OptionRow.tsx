@@ -40,7 +40,7 @@ export function OptionRow({ label, emoji, selected, onPress, detail, children, e
 
 const styles = StyleSheet.create({
   wrap: { borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.white },
-  wrapSelected: { borderColor: colors.blue, backgroundColor: 'rgba(75,163,199,0.06)' },
+  wrapSelected: { borderColor: colors.blue, backgroundColor: '#F1F8FB' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
   emoji: { fontSize: 22 },
   text: { flex: 1 },

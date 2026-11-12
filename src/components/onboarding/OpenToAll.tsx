@@ -42,7 +42,7 @@ export function OpenToAll(props: { label: string; selected: boolean; onPress: ()
 
 const styles = StyleSheet.create({
   border: { borderRadius: radius.md, padding: 2 },
-  borderOff: { backgroundColor: 'rgba(163,153,199,0.14)' },
+  borderOff: { backgroundColor: '#ECE7F7' },
   inner: {
     flexDirection: 'row',
     alignItems: 'center',
