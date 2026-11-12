@@ -147,3 +147,4 @@ exports.onNewReport = onDocumentCreated('reports/{reportId}', async (event) => {
 exports.metrics = require('./metrics').metrics;
 exports.accounts = require('./admin').accounts;
 exports.deleteAccounts = require('./admin').deleteAccounts;
+exports.joinApi = require('./join').joinApi;

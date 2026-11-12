@@ -3,27 +3,81 @@
 <title>Join Collab</title><meta name="description" content="Collab connects musicians and content creators who want to make something together.">
 <link rel="icon" href="/logo-mark.png">
 <style>
-:root{--bg:#F6F3EE;--card:#fff;--text:#1F2328;--muted:#5B6270;--line:#E6E2DA}
-@media (prefers-color-scheme:dark){:root{--bg:#121315;--card:#1B1D20;--text:#ECEDEE;--muted:#A3A9B3;--line:#2C2F34}}
+:root{--bg:#F6F3EE;--card:#fff;--text:#1F2328;--muted:#5B6270;--line:#E6E2DA;--blue:#2F7FA6}
+@media (prefers-color-scheme:dark){:root{--bg:#121315;--card:#1B1D20;--text:#ECEDEE;--muted:#A3A9B3;--line:#2C2F34;--blue:#6BB8DC}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 .wrap{max-width:480px;margin:0 auto;padding:48px 16px;text-align:center}
-img{width:120px;height:auto}h1{font-size:30px;line-height:1.2;margin:16px 0 6px}.sub{color:var(--muted);margin:0 0 24px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;text-align:left}
+img.logo{width:120px;height:auto}h1{font-size:30px;line-height:1.2;margin:16px 0 6px}.sub{color:var(--muted);margin:0 0 24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;text-align:left;margin-bottom:14px}
+.card h2{font-size:18px;margin:0 0 8px}
 ol{margin:0;padding-left:20px}li{margin:6px 0}
-a.btn{display:block;margin:20px 0 10px;padding:16px;border-radius:999px;background:linear-gradient(135deg,#F5D76E,#E8B04B);color:#1F2328;font-weight:700;text-decoration:none;text-align:center}
-.small{font-size:13px;color:var(--muted)}a{color:#2F7FA6}
+a.btn,button{display:block;width:100%;margin:16px 0 8px;padding:16px;border:0;border-radius:999px;background:linear-gradient(135deg,#F5D76E,#E8B04B);color:#1F2328;font:inherit;font-weight:700;text-decoration:none;text-align:center;cursor:pointer}
+button[disabled]{opacity:.6}
+input{font:inherit;width:100%;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);margin-top:12px}
+.small{font-size:13px;color:var(--muted)}a{color:var(--blue)}
+.ok{background:rgba(46,139,87,.12);color:#2E8B57;border-radius:12px;padding:12px 14px;font-weight:600;margin-top:12px}
+.err{color:#C0392B;font-size:14px;margin-top:8px}
+[hidden]{display:none!important}
 </style></head><body><div class="wrap">
-<img src="/logo-mark.png" alt="Collab">
+<img class="logo" src="/logo-mark.png" alt="Collab">
 <h1>Join Collab</h1>
 <p class="sub">Bringing artists together. Find musicians and creators near you, show your work, and start collaborating.</p>
-<div class="card">
+
+<section id="ios" class="card">
+  <h2>On iPhone</h2>
   <ol>
-    <li>Open this page on your <strong>iPhone</strong>.</li>
     <li>Tap the button below. It sets you up with TestFlight, Apple’s app for trying new apps.</li>
     <li>Install Collab, sign up and add at least one snippet.</li>
   </ol>
-  <a class="btn" id="go" href="https://testflight.apple.com/join/GTTK36kh">Get Collab on iPhone</a>
-  <p class="small">Collab is in early testing on iPhone. Android is coming later.</p>
-</div>
+  <a class="btn" href="https://testflight.apple.com/join/GTTK36kh">Get Collab on iPhone</a>
+  <p class="small">Collab is in early testing. Open this page on your iPhone if you’re on a computer.</p>
+</section>
+
+<section id="android" class="card">
+  <h2>Android is coming soon</h2>
+  <p style="margin:0">We’re building the Android version now. Leave your email and we’ll send you the link the day it’s ready.</p>
+  <form id="wl">
+    <label for="email" class="small" hidden>Email</label>
+    <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" required>
+    <button id="wlBtn" type="submit">Notify me</button>
+    <div id="wlErr" class="err"></div>
+  </form>
+  <div id="wlOk" class="ok" hidden>You’re on the list. We’ll email you when Collab is on Android.</div>
+  <p class="small">We’ll only use your email to tell you when Collab is available on Android.</p>
+</section>
+
 <p class="small" style="margin-top:24px"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:collabapphelp@gmail.com">Help</a></p>
-</div></body></html>
+</div>
+<script>
+(function () {
+  var ua = navigator.userAgent || '';
+  var isAndroid = /android/i.test(ua);
+  var isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var platform = isAndroid ? 'android' : isIOS ? 'ios' : 'other';
+  var source = new URLSearchParams(location.search).get('s') || 'direct';
+
+  // Phones see their own option first; computers see both.
+  if (isAndroid) document.getElementById('ios').hidden = true;
+  if (isIOS) document.getElementById('android').hidden = true;
+
+  function post(path, data) {
+    return fetch('/api/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  }
+  post('visit', { s: source, platform: platform }).catch(function () {});
+
+  document.getElementById('wl').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = document.getElementById('wlBtn'), err = document.getElementById('wlErr');
+    btn.disabled = true; err.textContent = '';
+    post('waitlist', { email: document.getElementById('email').value, s: source })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.j.error || 'Something went wrong.');
+        document.getElementById('wl').hidden = true;
+        document.getElementById('wlOk').hidden = false;
+      })
+      .catch(function (x) { err.textContent = x.message || 'Something went wrong. Try again.'; btn.disabled = false; });
+  });
+})();
+</script>
+</body></html>

@@ -269,6 +269,18 @@ function render(d) {
       <p class="muted small">Active in the last 7 days: <strong>${t.activeLast7Days}</strong></p></div>
   </div>
 
+  <div class="grid two">
+    <div class="card"><h2>Join page visits</h2>
+      ${d.joinPage.length ? `<div class="tablewrap"><table><thead><tr><th>Source</th><th class="r">Visits</th><th class="r">iPhone</th><th class="r">Android</th><th class="r">Computer</th></tr></thead>
+      <tbody>${d.joinPage.map((j) => `<tr><td>${esc(j.source)}</td><td class="r">${j.visits}</td><td class="r">${j.ios}</td><td class="r">${j.android}</td><td class="r">${j.other}</td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="muted small">No visits yet.</p>'}
+      <p class="muted small">“sticker” = scans of the sticker QR code. Visits, not installs.</p></div>
+    <div class="card"><h2>Android waitlist (${d.waitlist.length})</h2>
+      ${d.waitlist.length ? `<div class="tablewrap"><table><thead><tr><th>Email</th><th>From</th><th>Joined</th></tr></thead>
+      <tbody>${d.waitlist.map((w) => `<tr><td>${esc(w.email)}</td><td>${esc(w.source)}</td><td>${when(w.at)}</td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="muted small">Nobody yet.</p>'}</div>
+  </div>
+
   <div class="card"><h2>Testers</h2><div class="tablewrap"><table>
     <thead><tr><th>Name</th><th>Role</th><th>Joined</th><th>Setup</th><th class="r">Showcase</th><th class="r">Likes</th><th class="r">Passes</th><th class="r">Matches</th><th class="r">Msgs sent</th><th class="r">Days active</th><th>Last seen</th></tr></thead>
     <tbody>${d.people.map((u) => `<tr>

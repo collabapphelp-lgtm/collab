@@ -22,6 +22,15 @@
     "ignore": [
       "firebase.json",
       "**/.*"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": {
+          "functionId": "joinApi",
+          "region": "us-central1"
+        }
+      }
     ]
   }
 }
