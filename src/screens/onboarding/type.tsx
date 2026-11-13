@@ -97,7 +97,7 @@ export default function TypeStep() {
                         key={o.value}
                         size="sm"
                         label={o.label}
-                        emoji={o.emoji}
+                        value={o.value}
                         selected={picked.includes(o.value)}
                         onPress={() => setSkillsByType((s) => ({ ...s, [t.value]: toggleIn(s[t.value], o.value) }))}
                       />
@@ -113,7 +113,7 @@ export default function TypeStep() {
                             key={i.value}
                             size="sm"
                             label={i.label}
-                            emoji={i.emoji}
+                            value={i.value}
                             selected={instruments.includes(i.value)}
                             onPress={() => setInstruments((list) => toggleIn(list, i.value))}
                           />

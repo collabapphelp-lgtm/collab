@@ -126,7 +126,7 @@ function LookingRow(props: {
                 key={s.value}
                 size="sm"
                 label={s.label}
-                emoji={s.emoji}
+                value={s.value}
                 selected={subs.includes(s.value)}
                 onPress={() => props.onToggleSub(s.value)}
               />

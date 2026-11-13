@@ -66,11 +66,11 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
           <Section title="Looking to collab with">
             <ChipRow
               tone="blue"
-              items={looking.map((v) => {
-                const o = lookingOptionFor(v);
-                const details = profile.lookingForDetails?.[v];
-                const suffix = details?.length ? `: ${details.map((d) => optionFor(d).label).join(', ')}` : '';
-                return `${o.label}${suffix}`;
+              items={looking.flatMap((v) => {
+                // Picked specifics? Show just those ("Piano", "Videographers"), not "Instrument Players: Piano".
+                const details = canonicalList(profile.lookingForDetails?.[v]);
+                if (details.length) return details.map((d) => lookingOptionFor(d).label);
+                return [lookingOptionFor(v).label];
               })}
             />
           </Section>
