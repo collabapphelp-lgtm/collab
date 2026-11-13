@@ -9,6 +9,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
+import { DiscoverFilterSheet } from '@/components/DiscoverFilterSheet';
+import { NO_FILTERS, filterCount, passesFilters, saveFilters, type DiscoverFilters } from '@/lib/discover-filters';
 import { SafetyButton } from '@/components/SafetyButton';
 import { Quote, QUOTES } from '@/components/Quote';
 import { useAuth } from '@/lib/auth-context';
@@ -29,6 +31,9 @@ export default function Discover() {
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
   const [welcome, setWelcome] = useState(() => consumeJustFinished());
+  const [filters, setFilters] = useState<DiscoverFilters>(() => ({ ...NO_FILTERS, ...(profile?.discoverFilters ?? {}) }));
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilters = filterCount(filters);
   const scrollRef = useRef<ScrollViewInstance>(null);
 
   // Fetch and rank; callers decide how to show loading. Keyed on the user id so a profile
@@ -51,9 +56,11 @@ export default function Discover() {
     }
   }, []);
 
+  const filtersRef = useRef(filters);
   const apply = useCallback((r: Loaded) => {
-    setQueue(r.best);
-    setMore(r.more);
+    const f = filtersRef.current;
+    setQueue(r.best.filter((c) => passesFilters(c.profile, f)));
+    setMore(r.more.filter((c) => passesFilters(c.profile, f)));
     setExploring(false);
     setError(r.error);
   }, []);
@@ -73,6 +80,14 @@ export default function Discover() {
     setQueue(null);
     setError(null);
     apply(await fetchQueue());
+  }
+
+  async function applyFilters(f: DiscoverFilters) {
+    setFiltersOpen(false);
+    setFilters(f);
+    filtersRef.current = f;
+    if (profile) saveFilters(profile.id, f).catch((e) => console.warn('Saving filters failed', e));
+    await refresh();
   }
 
   function exploreMore() {
@@ -107,12 +122,23 @@ export default function Discover() {
       <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} />
       <View style={styles.header}>
         <Text style={styles.title}>Discover</Text>
-        {queue && queue.length > 0 ? (
-          <View style={styles.countPill}>
-            <View style={styles.countDot} />
-            <Text style={styles.count}>{exploring ? `Exploring · ${queue.length} more` : `${queue.length} to explore`}</Text>
-          </View>
-        ) : null}
+        <View style={styles.headerRight}>
+          {queue && queue.length > 0 ? (
+            <View style={styles.countPill}>
+              <View style={styles.countDot} />
+              <Text style={styles.count}>{exploring ? `Exploring · ${queue.length} more` : `${queue.length} to explore`}</Text>
+            </View>
+          ) : null}
+          <Pressable
+            onPress={() => setFiltersOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={activeFilters ? `Filters, ${activeFilters} active` : 'Filters'}
+            style={({ pressed }) => [styles.filterBtn, activeFilters > 0 && styles.filterBtnOn, pressed && { opacity: 0.8 }]}
+          >
+            <Ionicons name="options-outline" size={20} color={activeFilters ? colors.white : colors.text} />
+            {activeFilters ? <Text style={styles.filterCount}>{activeFilters}</Text> : null}
+          </Pressable>
+        </View>
       </View>
 
       {queue === null ? (
@@ -148,9 +174,20 @@ export default function Discover() {
       ) : !error && more.length > 0 ? (
         <ExploreMore count={more.length} onExplore={exploreMore} />
       ) : (
-        <EmptyState error={error} onRefresh={refresh} global={!!profile?.global} />
+        activeFilters > 0 && !error ? (
+          <FilteredEmpty onClear={() => applyFilters(NO_FILTERS)} onEdit={() => setFiltersOpen(true)} />
+        ) : (
+          <EmptyState error={error} onRefresh={refresh} global={!!profile?.global} />
+        )
       )}
 
+      <DiscoverFilterSheet
+        key={filtersOpen ? 'open' : 'closed'}
+        visible={filtersOpen}
+        value={filters}
+        onClose={() => setFiltersOpen(false)}
+        onApply={applyFilters}
+      />
       <WelcomeModal visible={welcome} name={profile?.firstName ?? ''} onClose={() => setWelcome(false)} />
     </SafeAreaView>
   );
@@ -178,6 +215,18 @@ function ActionButton({ kind, onPress, disabled }: { kind: 'pass' | 'like'; onPr
         <Ionicons name="close" size={30} color={colors.red} />
       )}
     </Pressable>
+  );
+}
+
+function FilteredEmpty({ onClear, onEdit }: { onClear: () => void; onEdit: () => void }) {
+  return (
+    <ScrollView contentContainerStyle={styles.empty}>
+      <Ionicons name="options-outline" size={44} color={colors.blue} />
+      <Text style={styles.emptyTitle}>No one matches those filters yet</Text>
+      <Text style={styles.emptyBody}>Try fewer filters, or clear them to see everyone who fits what you’re looking for.</Text>
+      <Button title="Clear filters" onPress={onClear} style={{ marginTop: 8, alignSelf: 'stretch' }} />
+      <Button title="Edit filters" variant="secondary" onPress={onEdit} style={{ alignSelf: 'stretch' }} />
+    </ScrollView>
   );
 }
 
@@ -252,6 +301,25 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 14 },
   title: { fontFamily: fonts.heading, fontSize: 28, color: colors.text },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  filterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 36,
+    minWidth: 36,
+    paddingHorizontal: 9,
+    borderRadius: 18,
+    justifyContent: 'center',
+    backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  filterBtnOn: { backgroundColor: colors.blue },
+  filterCount: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.white },
   countPill: {
     flexDirection: 'row',
     alignItems: 'center',

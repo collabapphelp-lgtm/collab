@@ -29,7 +29,13 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
   const tastes = profile.creatorType === 'content' ? profile.interests : profile.genres;
   const looking = profile.lookingFor ?? [];
   const showcase = profile.showcase ?? [];
-  const instruments = canonicalList(profile.instruments).map((i) => optionFor(i).label);
+  const instruments = [
+    ...canonicalList(profile.instruments).map((i) => optionFor(i).label),
+    ...(profile.instrumentsSpecific ?? []),
+  ];
+  const isGroup = profile.profileKind === 'group';
+  const intents = (profile.intents ?? []).map((i) => optionFor(i).label);
+  const experience = profile.experience ? optionFor(profile.experience).label : null;
 
   return (
     <View style={styles.wrap}>
@@ -39,7 +45,10 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
         {heroAccessory ? <View style={styles.heroAccessory}>{heroAccessory}</View> : null}
         <View style={styles.heroText}>
           <Text style={styles.name}>{name}</Text>
-          <Text style={styles.role}>{roleLine(profile, 3)}</Text>
+          <Text style={styles.role}>
+            {isGroup ? `Band / group${profile.groupSize ? ` · ${profile.groupSize} members` : ''} · ` : ''}
+            {roleLine(profile, 3)}
+          </Text>
           {distanceLabel || profile.location ? (
             <View style={styles.wherePill}>
               <Text style={styles.where}>📍 {distanceLabel ?? shortLocation(profile.location)}</Text>
@@ -60,6 +69,12 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
           </LinearGradient>
         ) : null}
 
+        {intents.length > 0 || experience ? (
+          <Section title={isSelf ? 'You’re here to' : 'Here to'}>
+            <ChipRow tone="purple" items={[...intents, ...(experience ? [experience] : [])]} />
+          </Section>
+        ) : null}
+
         {instruments.length > 0 ? <Section title={isSelf ? 'You play' : 'Plays'}>{<ChipRow items={instruments} tone="blue" />}</Section> : null}
 
         {looking.length > 0 ? (
@@ -71,7 +86,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
                 const details = canonicalList(profile.lookingForDetails?.[v]);
                 if (details.length) return details.map((d) => lookingOptionFor(d).label);
                 return [lookingOptionFor(v).label];
-              })}
+              }).concat(profile.lookingForSpecific ?? [])}
             />
           </Section>
         ) : null}

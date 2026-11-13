@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { displayName } from '@/lib/labels';
 import { ActionSheetIOS, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Sheet } from '@/components/onboarding/Sheet';
@@ -22,7 +23,7 @@ export function SafetyButton({ them, onBlocked, tone = 'dark' }: Props) {
 
   function confirmBlock() {
     Alert.alert(
-      `Block ${them.firstName}?`,
+      `Block ${displayName(them)}?`,
       'They won’t show up for you anymore, and if you’re connected, your chat will close. They won’t be told.',
       [
         { text: 'Cancel', style: 'cancel' },
@@ -44,7 +45,7 @@ export function SafetyButton({ them, onBlocked, tone = 'dark' }: Props) {
   }
 
   function openMenu() {
-    const options = [`Report ${them.firstName}`, `Block ${them.firstName}`, 'Cancel'];
+    const options = [`Report ${displayName(them)}`, `Block ${displayName(them)}`, 'Cancel'];
     const handle = (i: number) => {
       if (i === 0) setReporting(true);
       if (i === 1) confirmBlock();
@@ -52,7 +53,7 @@ export function SafetyButton({ them, onBlocked, tone = 'dark' }: Props) {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions({ options, destructiveButtonIndex: 1, cancelButtonIndex: 2 }, handle);
     } else {
-      Alert.alert(them.firstName, undefined, [
+      Alert.alert(displayName(them), undefined, [
         { text: options[0], onPress: () => handle(0) },
         { text: options[1], style: 'destructive', onPress: () => handle(1) },
         { text: 'Cancel', style: 'cancel' },
@@ -66,7 +67,7 @@ export function SafetyButton({ them, onBlocked, tone = 'dark' }: Props) {
         onPress={openMenu}
         hitSlop={10}
         accessibilityRole="button"
-        accessibilityLabel={`More options for ${them.firstName}`}
+        accessibilityLabel={`More options for ${displayName(them)}`}
         style={[styles.btn, tone === 'light' && styles.btnLight]}
       >
         <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
@@ -111,9 +112,9 @@ function ReportSheet(props: { visible: boolean; them: UserProfile; onClose: () =
     return (
       <Sheet visible={props.visible} title="Thanks for telling us" onClose={() => props.onDone(false)}>
         <Text style={styles.body}>
-          We’ll review your report. Reports are confidential, and {props.them.firstName} won’t know who sent it.
+          We’ll review your report. Reports are confidential, and {displayName(props.them)} won’t know who sent it.
         </Text>
-        <Button title={`Also block ${props.them.firstName}`} onPress={() => props.onDone(true)} />
+        <Button title={`Also block ${displayName(props.them)}`} onPress={() => props.onDone(true)} />
         <Button title="Done" variant="secondary" onPress={() => props.onDone(false)} />
       </Sheet>
     );
@@ -122,7 +123,7 @@ function ReportSheet(props: { visible: boolean; them: UserProfile; onClose: () =
   return (
     <Sheet
       visible={props.visible}
-      title={`Report ${props.them.firstName}`}
+      title={`Report ${displayName(props.them)}`}
       onClose={props.onClose}
       footer={<Button title="Send report" onPress={submit} disabled={!reason} loading={sending} />}
     >

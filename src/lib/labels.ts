@@ -1,5 +1,7 @@
 import {
   CONTENT_SKILLS,
+  EXPERIENCE,
+  INTENTS,
   GENRES,
   INSTRUMENTS,
   INTERESTS,
@@ -18,6 +20,8 @@ const ALL: Option[] = [
   ...INTERESTS,
   ...MUSICIAN_LOOKING,
   ...CONTENT_LOOKING,
+  ...INTENTS,
+  ...EXPERIENCE,
 ];
 
 const byValue = new Map<string, Option>();
@@ -63,7 +67,13 @@ export function roleLine(p: Pick<UserProfile, 'skills' | 'creatorType'>, max = 2
   return p.creatorType === 'content' ? 'Content Creator' : p.creatorType === 'musician' ? 'Musician' : 'Creative';
 }
 
-export function fullName(p: Pick<UserProfile, 'firstName' | 'lastName'>) {
+/** What to call someone in short UI ("Message Maya", "Block The Midnight Kings"). */
+export function displayName(p: Pick<UserProfile, 'firstName'> & Partial<Pick<UserProfile, 'profileKind' | 'groupName'>>) {
+  return p.profileKind === 'group' && p.groupName?.trim() ? p.groupName.trim() : p.firstName;
+}
+
+export function fullName(p: Pick<UserProfile, 'firstName' | 'lastName'> & Partial<Pick<UserProfile, 'profileKind' | 'groupName'>>) {
+  if (p.profileKind === 'group' && p.groupName?.trim()) return p.groupName.trim();
   return [p.firstName, p.lastName].filter(Boolean).join(' ');
 }
 

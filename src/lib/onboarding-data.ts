@@ -38,6 +38,29 @@ export const INSTRUMENTS: Option[] = [
   { value: 'brass', label: 'Brass', emoji: '🎺' },
 ];
 
+export const GROUP_SIZES = ['2', '3-5', '6+'] as const;
+
+/** Free-text instrument tags: how many and how long. */
+export const SPECIFIC_MAX = 8;
+export const SPECIFIC_MAX_CHARS = 24;
+
+// ---------- Why you're here ----------
+
+export const INTENTS: Option[] = [
+  { value: 'jam', label: 'Jam', emoji: '' },
+  { value: 'write', label: 'Write', emoji: '' },
+  { value: 'record', label: 'Record', emoji: '' },
+  { value: 'perform', label: 'Perform / gig', emoji: '' },
+  { value: 'content', label: 'Make content', emoji: '' },
+  { value: 'notsure', label: 'Not sure yet', emoji: '' },
+];
+
+export const EXPERIENCE: Option[] = [
+  { value: 'starting', label: 'Just starting', emoji: '' },
+  { value: 'experienced', label: 'Been at it a while', emoji: '' },
+  { value: 'pro', label: 'Pro (credits / gigs)', emoji: '' },
+];
+
 // ---------- Who you're looking for ----------
 
 /** A row on the "Looking to collab with" screen. If `subOptions` is set, the row expands. */

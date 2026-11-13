@@ -19,7 +19,8 @@ service cloud.firestore {
         && request.resource.data.firstName is string
         && request.resource.data.firstName.size() > 0
         && request.resource.data.firstName.size() <= 50
-        && (!('bio' in request.resource.data) || request.resource.data.bio.size() <= 500);
+        && (!('bio' in request.resource.data) || request.resource.data.bio.size() <= 500)
+        && (!('groupName' in request.resource.data) || request.resource.data.groupName.size() <= 50);
       allow delete: if isMe(uid);
 
       // "I liked them". The liked person may read it: that's how a mutual like is detected.

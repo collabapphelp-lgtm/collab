@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { lookingOptionFor, optionFor } from '@/lib/labels';
+import { lookingOptionFor, optionFor, displayName } from '@/lib/labels';
 import { distanceMiles, formatDistance, scoreCandidate } from '@/lib/matching';
 import { detectPlatform } from '@/lib/onboarding-data';
 import type { ShowcaseMedia, ShowcasePrompt, UserProfile } from '@/lib/types';
@@ -93,7 +93,7 @@ export function ChatProfileCard(props: { me: UserProfile | null; them: UserProfi
             style={({ pressed }) => [styles.more, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
           >
-            <Text style={styles.moreText}>View {them.firstName}’s full profile</Text>
+            <Text style={styles.moreText}>View {displayName(them)}’s full profile</Text>
             <Ionicons name="chevron-forward" size={15} color={colors.blue} />
           </Pressable>
         </View>

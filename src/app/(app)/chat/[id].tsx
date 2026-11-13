@@ -32,7 +32,7 @@ import {
   setReaction,
   type ChatMessage,
 } from '@/lib/connections';
-import { roleLine } from '@/lib/labels';
+import { roleLine, displayName } from '@/lib/labels';
 import { clockTime, dayLabel, sameDay } from '@/lib/time';
 import type { UserProfile } from '@/lib/types';
 import { useMatches } from '@/lib/use-matches';
@@ -198,16 +198,16 @@ export default function ChatScreen() {
             style={styles.headerWho}
             onPress={() => router.push({ pathname: '/user/[id]', params: { id: them.id } })}
             accessibilityRole="button"
-            accessibilityLabel={`View ${them.firstName}'s profile`}
+            accessibilityLabel={`View ${displayName(them)}'s profile`}
           >
             <LinearGradient colors={[colors.blue, colors.purple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.ring}>
               <View style={styles.ringInner}>
-                <Avatar uri={them.photoURL} name={them.firstName} seed={them.id} size={40} />
+                <Avatar uri={them.photoURL} name={displayName(them)} seed={them.id} size={40} />
               </View>
             </LinearGradient>
             <View style={styles.flex}>
               <Text style={styles.headerName} numberOfLines={1}>
-                {them.firstName}
+                {displayName(them)}
               </Text>
               <Text style={styles.headerRole} numberOfLines={1}>
                 {roleLine(them)} · View profile
@@ -226,7 +226,7 @@ export default function ChatScreen() {
         {empty && them ? (
           <ScrollView contentContainerStyle={styles.empty} keyboardShouldPersistTaps="handled">
             <Text style={styles.emptyEmoji}>👋</Text>
-            <Text style={styles.emptyTitle}>You and {them.firstName} are connected</Text>
+            <Text style={styles.emptyTitle}>You and {displayName(them)} are connected</Text>
             <Text style={styles.emptyBody}>Break the ice. Tap one to use it, or write your own.</Text>
             <View style={styles.breakers}>
               {icebreakers(them).map((t) => (
@@ -316,7 +316,7 @@ export default function ChatScreen() {
             <TextInput
               value={draft}
               onChangeText={setDraft}
-              placeholder={them ? `Message ${them.firstName}…` : 'Message…'}
+              placeholder={them ? `Message ${displayName(them)}…` : 'Message…'}
               placeholderTextColor={colors.textMuted}
               multiline
               maxLength={MESSAGE_MAX_CHARS}

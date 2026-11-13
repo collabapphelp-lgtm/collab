@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { StepScreen } from '@/components/onboarding/StepScreen';
 import { Chip, ChipGrid } from '@/components/onboarding/Chip';
-import { OptionIcon } from '@/components/OptionIcon';
+import { OptionIcon, type IconName } from '@/components/OptionIcon';
+import { TagInput } from '@/components/onboarding/TagInput';
+import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { useOnboarding } from '@/lib/onboarding-context';
-import { CONTENT_SKILLS, INSTRUMENTS, MUSICIAN_SKILLS, type CreatorType, type Option } from '@/lib/onboarding-data';
+import { CONTENT_SKILLS, GROUP_SIZES, INSTRUMENTS, MUSICIAN_SKILLS, type CreatorType, type Option } from '@/lib/onboarding-data';
 import { toggleIn } from '@/lib/toggle';
 import { canonicalList } from '@/lib/labels';
 import { colors, fonts, radius } from '@/lib/theme';
@@ -12,6 +15,11 @@ import { colors, fonts, radius } from '@/lib/theme';
 const TYPES: { value: CreatorType; label: string; emoji: string; prompt: string; options: Option[] }[] = [
   { value: 'musician', label: 'Musician', emoji: '🎵', prompt: 'What kind of musician?', options: MUSICIAN_SKILLS },
   { value: 'content', label: 'Content Creator', emoji: '🎬', prompt: 'What do you make?', options: CONTENT_SKILLS },
+];
+
+const KINDS: { value: 'individual' | 'group'; label: string; icon: IconName }[] = [
+  { value: 'individual', label: 'Just me', icon: 'account' },
+  { value: 'group', label: 'Band / group', icon: 'account-group' },
 ];
 
 const preview = (options: Option[]) => options.slice(0, 3).map((o) => o.label).join(', ') + '…';
@@ -26,15 +34,22 @@ export default function TypeStep() {
     content: draft.creatorType === 'content' ? (draft.skills ?? []) : [],
   }));
   const [instruments, setInstruments] = useState<string[]>(canonicalList(draft.instruments));
+  const [specific, setSpecific] = useState<string[]>(draft.instrumentsSpecific ?? []);
+  const [showSpecific, setShowSpecific] = useState((draft.instrumentsSpecific ?? []).length > 0);
+  const [kind, setKind] = useState<'individual' | 'group'>(draft.profileKind ?? 'individual');
+  const [groupName, setGroupName] = useState(draft.groupName ?? '');
+  const [groupSize, setGroupSize] = useState(draft.groupSize ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const skills = type ? skillsByType[type] : [];
   const playsInstruments = type === 'musician' && skills.includes('instrumentalist');
   const needsInstrument = playsInstruments && instruments.length === 0;
+  const needsGroupName = kind === 'group' && !groupName.trim();
 
   async function next() {
-    if (!type || needsInstrument) return;
+    if (!type || needsInstrument || needsGroupName) return;
+    if (kind === 'group' && hasBlockedLanguage(groupName)) return setError(BLOCKED_LANGUAGE_MESSAGE);
     setSaving(true);
     setError(null);
     try {
@@ -44,6 +59,10 @@ export default function TypeStep() {
         creatorType: type,
         skills,
         instruments: playsInstruments ? instruments : [],
+        instrumentsSpecific: playsInstruments ? specific : [],
+        profileKind: kind,
+        groupName: kind === 'group' ? groupName.trim() : '',
+        groupSize: kind === 'group' ? groupSize : '',
         ...(switched ? { lookingFor: [], lookingForDetails: {} } : {}),
       });
       advance('/onboarding/looking');
@@ -58,14 +77,53 @@ export default function TypeStep() {
     <StepScreen
       step="type"
       emoji="✨"
-      title="I am a..."
+      title={kind === 'group' ? 'We are a...' : 'I am a...'}
       subtitle="Choose your path, then pick everything that fits."
       onContinue={next}
-      continueDisabled={!type || needsInstrument}
+      continueDisabled={!type || needsInstrument || needsGroupName}
       saving={saving}
       error={error}
-      footerHint={!type ? 'Choose one to continue' : needsInstrument ? 'Pick at least one instrument' : undefined}
+      footerHint={
+        needsGroupName ? 'Add your band or group name' : !type ? 'Choose one to continue' : needsInstrument ? 'Pick at least one instrument' : undefined
+      }
     >
+      <View style={styles.kindRow} accessibilityRole="radiogroup">
+        {KINDS.map((k) => {
+          const on = kind === k.value;
+          return (
+            <Pressable
+              key={k.value}
+              onPress={() => setKind(k.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on }}
+              style={[styles.kind, on && styles.kindOn]}
+            >
+              <MaterialCommunityIcons name={k.icon} size={18} color={on ? colors.white : colors.textSecondary} />
+              <Text style={[styles.kindText, on && styles.kindTextOn]}>{k.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {kind === 'group' ? (
+        <View style={styles.groupBox}>
+          <TextInput
+            value={groupName}
+            onChangeText={setGroupName}
+            maxLength={50}
+            placeholder="Band or group name"
+            placeholderTextColor={colors.textMuted}
+            style={styles.groupInput}
+            accessibilityLabel="Band or group name"
+          />
+          <View style={styles.sizeRow}>
+            <Text style={styles.subHint}>Members</Text>
+            {GROUP_SIZES.map((g) => (
+              <Chip key={g} size="sm" label={g} selected={groupSize === g} onPress={() => setGroupSize(groupSize === g ? '' : g)} />
+            ))}
+          </View>
+          <Text style={styles.subHint}>Below, pick what your group does as a whole.</Text>
+        </View>
+      ) : null}
       <View style={styles.list}>
         {TYPES.map((t) => {
           const selected = type === t.value;
@@ -119,6 +177,18 @@ export default function TypeStep() {
                           />
                         ))}
                       </ChipGrid>
+                      {showSpecific ? (
+                        <TagInput
+                          tags={specific}
+                          onChange={setSpecific}
+                          placeholder="e.g. Cello, Talkbox, 808s"
+                          label="Specific instruments"
+                        />
+                      ) : (
+                        <Pressable onPress={() => setShowSpecific(true)} hitSlop={8} accessibilityRole="button">
+                          <Text style={styles.addSpecific}>＋ Add specific instruments (optional)</Text>
+                        </Pressable>
+                      )}
                     </View>
                   ) : null}
                 </View>
@@ -146,4 +216,33 @@ const styles = StyleSheet.create({
   subPrompt: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
   subHint: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
   instruments: { gap: 10, marginTop: 4 },
+  addSpecific: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.blue },
+  kindRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  kind: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 11,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  kindOn: { backgroundColor: colors.blue, borderColor: colors.blue },
+  kindText: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.textSecondary },
+  kindTextOn: { color: colors.white },
+  groupBox: { gap: 10, marginBottom: 14, padding: 14, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: '#E3EEF4' },
+  groupInput: {
+    borderRadius: 10,
+    backgroundColor: '#F4F8FB',
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    fontFamily: fonts.bodySemibold,
+    fontSize: 16,
+    color: colors.text,
+    ...Platform.select({ web: { outlineWidth: 0 }, default: {} }),
+  },
+  sizeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

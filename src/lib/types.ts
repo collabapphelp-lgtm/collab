@@ -32,14 +32,26 @@ export type UserProfile = {
   global?: boolean; // open to collabs anywhere
 
   // Who you are
+  /** A person, or a band/group sharing one profile. Missing = individual. */
+  profileKind?: 'individual' | 'group';
+  groupName?: string;
+  groupSize?: string; // '2' | '3-5' | '6+'
   creatorType?: CreatorType;
   skills?: string[];
   instruments?: string[];
+  /** Free-text specifics typed by the user (Cello, Talkbox, 808s). Display only; matching uses `instruments`. */
+  instrumentsSpecific?: string[];
+
+  // Why they're here
+  intents?: string[]; // jam | write | record | perform | content | notsure
+  experience?: string; // starting | experienced | pro
 
   // Who you're looking for. `lookingFor` holds top-level values (e.g. 'instrumentalist', 'content');
   // `lookingForDetails` narrows a row (e.g. { instrumentalist: ['guitar'] }). Empty/missing = any.
   lookingFor?: string[];
   lookingForDetails?: Record<string, string[]>;
+  /** Specific instruments they want, typed in (display only). */
+  lookingForSpecific?: string[];
 
   // Musicians pick genres, content creators pick interests.
   genres?: string[];
@@ -48,6 +60,9 @@ export type UserProfile = {
 
   showcase?: ShowcaseItem[];
   bio?: string;
+
+  /** Discover quick filters (see lib/discover-filters.ts). */
+  discoverFilters?: { roles: string[]; instruments: string[]; sounds: string[]; intents: string[]; experience: string[] };
 };
 
 /** Everything onboarding collects, before it's saved. */

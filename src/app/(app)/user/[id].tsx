@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { displayName } from '@/lib/labels';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -64,7 +65,7 @@ export default function UserProfileScreen() {
       </SafeAreaView>
       {likedYou && !connected && me ? (
         <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
-          <Text style={styles.likedNote}>{them.firstName} wants to collab with you 👀</Text>
+          <Text style={styles.likedNote}>{displayName(them)} wants to collab with you 👀</Text>
           <View style={styles.actions}>
             <Button
               title="Pass"
@@ -104,7 +105,7 @@ export default function UserProfileScreen() {
       {connected && me ? (
         <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
           <Button
-            title={`Message ${them.firstName}`}
+            title={`Message ${displayName(them)}`}
             onPress={() => router.push({ pathname: '/chat/[id]', params: { id: pairId(me.id, them.id) } })}
           />
         </SafeAreaView>

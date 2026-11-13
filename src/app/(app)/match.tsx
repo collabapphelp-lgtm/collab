@@ -9,7 +9,7 @@ import { Button } from '@/components/Button';
 import { Quote, QUOTES } from '@/components/Quote';
 import { useAuth } from '@/lib/auth-context';
 import { getProfile, pairId } from '@/lib/discover';
-import { optionFor } from '@/lib/labels';
+import { optionFor, displayName } from '@/lib/labels';
 import type { UserProfile } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
 
@@ -47,7 +47,7 @@ export default function ConnectionScreen() {
 
           <Text style={styles.title}>Let’s Collab!</Text>
           <Text style={styles.body}>
-            You and {them?.firstName ?? 'this creative'} are now connected. Say hi and start making something.
+            You and {(them ? displayName(them) : undefined) ?? 'this creative'} are now connected. Say hi and start making something.
           </Text>
 
           <Quote quote={QUOTES.maxwell} tone="light" style={{ marginTop: 22 }} />
@@ -76,17 +76,17 @@ function PersonCard({ person, tilt, accent }: { person: UserProfile | null | und
           <Image source={{ uri: person.photoURL }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />
         ) : (
           <LinearGradient colors={[accent, colors.yellow]} style={[StyleSheet.absoluteFill, styles.center]}>
-            <Text style={styles.initial}>{person?.firstName?.charAt(0).toUpperCase() ?? ''}</Text>
+            <Text style={styles.initial}>{(person ? displayName(person) : undefined)?.charAt(0).toUpperCase() ?? ''}</Text>
           </LinearGradient>
         )}
       </View>
       <View style={styles.labels}>
         <View style={styles.badge}>
           <Text style={styles.badgeText} numberOfLines={1}>
-            {role ? `${role.emoji} ${role.label}` : person?.firstName ?? ''}
+            {role ? `${role.emoji} ${role.label}` : person ? displayName(person) : ''}
           </Text>
         </View>
-        {person?.firstName && role ? <Text style={styles.name}>{person.firstName}</Text> : null}
+        {person && role ? <Text style={styles.name}>{displayName(person)}</Text> : null}
       </View>
     </View>
   );
