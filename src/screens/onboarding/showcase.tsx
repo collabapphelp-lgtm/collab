@@ -6,6 +6,8 @@ import { MediaSheet } from '@/components/onboarding/MediaSheet';
 import { PromptSheet } from '@/components/onboarding/PromptSheet';
 import { useOnboarding } from '@/lib/onboarding-context';
 import { useAuth } from '@/lib/auth-context';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import type { IconName } from '@/components/OptionIcon';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { BIO_MAX_CHARS, CONTENT_PROMPTS, detectPlatform, MUSICIAN_PROMPTS, normalizeUrl, SHOWCASE } from '@/lib/onboarding-data';
 import { roleLine } from '@/lib/labels';
@@ -34,6 +36,12 @@ function toSlots(items: ShowcaseItem[] | undefined): Slot[] {
 // Last step: show your work. The two easiest things sit right on the page (one prompt answer,
 // one pasted link) so nobody has to open a sheet; more slots and uploads are tucked under "Add more".
 // Plus an optional note on what they want in a collab partner (stored as `bio`).
+const BRANDS: { platform: string; label: string; icon: IconName; color: string }[] = [
+  { platform: 'spotify', label: 'Spotify', icon: 'spotify', color: '#1DB954' },
+  { platform: 'soundcloud', label: 'SoundCloud', icon: 'soundcloud', color: '#FF5500' },
+  { platform: 'applemusic', label: 'Apple Music', icon: 'apple', color: '#FA2D48' },
+];
+
 const LINK_SLOT = 0; // first media slot
 const PROMPT_SLOT = 1; // first prompt slot
 
@@ -123,7 +131,72 @@ export default function ShowcaseStep() {
       footerHint={filled === 0 ? 'Answer the prompt or paste a link to finish' : `${filled} added · looking good`}
       footerHintStrong={filled === 0}
     >
-      {/* 1. Quick prompt, answered right here */}
+      {/* 1. What they want in a partner (bio) */}
+      <View style={styles.partner}>
+        <Text style={styles.partnerTitle}>
+          What are you looking for in a collab partner? <Text style={styles.optionalInline}>Optional</Text>
+        </Text>
+        <TextInput
+          value={partner}
+          onChangeText={setPartner}
+          multiline
+          maxLength={BIO_MAX_CHARS}
+          placeholder="e.g. Someone consistent who’s down to link weekly. Into moody R&B and big hooks."
+          placeholderTextColor={colors.textMuted}
+          style={styles.partnerInput}
+          accessibilityLabel="What are you looking for in a collab partner"
+        />
+        {partner.length > BIO_MAX_CHARS - 100 ? (
+          <Text style={styles.partnerCount}>
+            {partner.length}/{BIO_MAX_CHARS}
+          </Text>
+        ) : null}
+      </View>
+
+      {/* 2. Paste a link */}
+      <View style={styles.box}>
+        <View style={styles.boxHead}>
+          <Text style={styles.boxLabel}>Link to your work</Text>
+          <View style={styles.brands}>
+            {BRANDS.map((b) => {
+              const on = linkPlatform?.platform === b.platform;
+              return (
+                <View key={b.platform} style={[styles.brand, on && { backgroundColor: b.color }]} accessibilityLabel={b.label}>
+                  <MaterialCommunityIcons name={b.icon} size={16} color={on ? '#FFFFFF' : b.color} />
+                </View>
+              );
+            })}
+          </View>
+        </View>
+        {uploaded ? (
+          <SlotCard index={LINK_SLOT} slot={uploaded} onPress={() => onSlotPress(LINK_SLOT)} />
+        ) : (
+          <>
+            <View style={styles.linkRow}>
+              <MaterialCommunityIcons name="link-variant" size={18} color={colors.textMuted} />
+              <TextInput
+                value={link}
+                onChangeText={onLink}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                placeholder="Paste a link"
+                placeholderTextColor={colors.textMuted}
+                style={styles.linkInput}
+                accessibilityLabel="Link to your work"
+              />
+              {linkPlatform ? <Text style={styles.linkOk}>✓ {linkPlatform.label}</Text> : null}
+            </View>
+            {link.trim() && !linkUrl ? <Text style={styles.linkErr}>That doesn’t look like a link yet.</Text> : null}
+            <Text style={styles.optional}>Spotify, SoundCloud, Apple Music, YouTube, Instagram or any link</Text>
+            <Pressable onPress={() => setEditing({ index: LINK_SLOT, kind: 'media' })} hitSlop={8} accessibilityRole="button">
+              <Text style={styles.uploadLink}>or upload a file from your phone</Text>
+            </Pressable>
+          </>
+        )}
+      </View>
+
+      {/* 3. Quick prompt, answered right here */}
       <View style={styles.box}>
         <View style={styles.boxHead}>
           <Text style={styles.boxLabel}>Quick prompt</Text>
@@ -150,39 +223,6 @@ export default function ShowcaseStep() {
         />
       </View>
 
-      {/* 2. Paste a link */}
-      <View style={styles.box}>
-        <View style={styles.boxHead}>
-          <Text style={styles.boxLabel}>Link to your work</Text>
-        </View>
-        {uploaded ? (
-          <SlotCard index={LINK_SLOT} slot={uploaded} onPress={() => onSlotPress(LINK_SLOT)} />
-        ) : (
-          <>
-            <View style={styles.linkRow}>
-              <Text style={styles.linkIcon}>{linkPlatform ? linkPlatform.emoji : '🔗'}</Text>
-              <TextInput
-                value={link}
-                onChangeText={onLink}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                placeholder="Paste a link"
-                placeholderTextColor={colors.textMuted}
-                style={styles.linkInput}
-                accessibilityLabel="Link to your work"
-              />
-              {linkPlatform ? <Text style={styles.linkOk}>✓ {linkPlatform.label}</Text> : null}
-            </View>
-            {link.trim() && !linkUrl ? <Text style={styles.linkErr}>That doesn’t look like a link yet.</Text> : null}
-            <Text style={styles.optional}>Spotify, SoundCloud, YouTube, Instagram, TikTok or any link</Text>
-            <Pressable onPress={() => setEditing({ index: LINK_SLOT, kind: 'media' })} hitSlop={8} accessibilityRole="button">
-              <Text style={styles.uploadLink}>or upload a file from your phone</Text>
-            </Pressable>
-          </>
-        )}
-      </View>
-
       {/* Live preview */}
       {filled > 0 ? <PreviewCard name={profile?.firstName ?? ''} role={roleLine(draft)} slots={slots} /> : null}
 
@@ -197,27 +237,6 @@ export default function ShowcaseStep() {
           <Text style={styles.moreText}>＋ Add more snippets or prompts</Text>
         </Pressable>
       )}
-
-      <View style={styles.partner}>
-        <Text style={styles.partnerTitle}>
-          What are you looking for in a collab partner? <Text style={styles.optionalInline}>Optional</Text>
-        </Text>
-        <TextInput
-          value={partner}
-          onChangeText={setPartner}
-          multiline
-          maxLength={BIO_MAX_CHARS}
-          placeholder="e.g. Someone consistent who’s down to link weekly. Into moody R&B and big hooks."
-          placeholderTextColor={colors.textMuted}
-          style={styles.partnerInput}
-          accessibilityLabel="What are you looking for in a collab partner"
-        />
-        {partner.length > BIO_MAX_CHARS - 100 ? (
-          <Text style={styles.partnerCount}>
-            {partner.length}/{BIO_MAX_CHARS}
-          </Text>
-        ) : null}
-      </View>
 
       <MediaSheet
         visible={editing?.kind === 'media'}
@@ -347,6 +366,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   boxHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  brands: { flexDirection: 'row', gap: 6 },
+  brand: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F3F5' },
   boxLabel: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
   badge: {
     fontFamily: fonts.bodySemibold,
@@ -375,7 +396,6 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { outlineWidth: 0 }, default: {} }),
   },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, backgroundColor: '#F4F8FB', paddingHorizontal: 12 },
-  linkIcon: { fontSize: 16 },
   linkInput: {
     flex: 1,
     paddingVertical: 12,

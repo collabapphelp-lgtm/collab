@@ -8,9 +8,10 @@ import {
   CONTENT_SKILLS,
   EXPERIENCE,
   GENRES,
+  CONTENT_INTENTS,
   INSTRUMENTS,
-  INTENTS,
   INTERESTS,
+  MUSIC_INTENTS,
   MUSICIAN_SKILLS,
   type Option,
 } from '@/lib/onboarding-data';
@@ -22,8 +23,9 @@ type Group = { key: keyof DiscoverFilters; title: string; options: Option[]; ico
 const GROUPS: Group[] = [
   { key: 'roles', title: 'Who', options: [...MUSICIAN_SKILLS, ...CONTENT_SKILLS], icons: true },
   { key: 'instruments', title: 'Plays', options: INSTRUMENTS, icons: true },
-  { key: 'sounds', title: 'Sound / vibe', options: [...GENRES, ...INTERESTS] },
-  { key: 'intents', title: 'Here to', options: INTENTS },
+  { key: 'sounds', title: 'Music genre', options: GENRES },
+  { key: 'sounds', title: 'Content vibe', options: INTERESTS },
+  { key: 'intents', title: 'Here to', options: [...MUSIC_INTENTS, ...CONTENT_INTENTS] },
   { key: 'experience', title: 'Experience', options: EXPERIENCE },
 ];
 
@@ -57,7 +59,7 @@ export function DiscoverFilterSheet(props: {
         const seen = new Set<string>();
         const opts = g.options.filter((o) => (seen.has(o.value) ? false : (seen.add(o.value), true)));
         return (
-          <View key={g.key} style={styles.group}>
+          <View key={g.title} style={styles.group}>
             <Text style={styles.groupTitle}>{g.title}</Text>
             <ChipGrid>
               {opts.map((o) => (

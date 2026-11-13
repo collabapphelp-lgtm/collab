@@ -2,6 +2,8 @@ import {
   CONTENT_SKILLS,
   EXPERIENCE,
   INTENTS,
+  INSTRUMENT_TYPES,
+  DAWS,
   GENRES,
   INSTRUMENTS,
   INTERESTS,
@@ -22,6 +24,8 @@ const ALL: Option[] = [
   ...CONTENT_LOOKING,
   ...INTENTS,
   ...EXPERIENCE,
+  ...Object.values(INSTRUMENT_TYPES).flat(),
+  ...DAWS,
 ];
 
 const byValue = new Map<string, Option>();

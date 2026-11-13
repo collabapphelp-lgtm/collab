@@ -39,6 +39,10 @@ export type UserProfile = {
   creatorType?: CreatorType;
   skills?: string[];
   instruments?: string[];
+  /** Exact types within the chosen families ('type:saxophone'). Display only. */
+  instrumentTypes?: string[];
+  /** Producers: DAWs ('daw:ableton'). */
+  daws?: string[];
   /** Free-text specifics typed by the user (Cello, Talkbox, 808s). Display only; matching uses `instruments`. */
   instrumentsSpecific?: string[];
 

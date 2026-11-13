@@ -29,13 +29,72 @@ export const CONTENT_SKILLS: Option[] = [
 
 /** Shared by "what do you play?" and "which instruments are you looking for?" so they match. */
 export const INSTRUMENTS: Option[] = [
-  { value: 'guitar', label: 'Guitar', emoji: '🎸' },
   { value: 'piano', label: 'Piano', emoji: '🎹' },
+  { value: 'guitar', label: 'Guitar', emoji: '🎸' },
   { value: 'bass', label: 'Bass', emoji: '🎸' },
   { value: 'strings', label: 'Strings', emoji: '🎻' },
   { value: 'percussion', label: 'Percussion', emoji: '🪘' },
   { value: 'woodwinds', label: 'Woodwinds', emoji: '🎷' },
   { value: 'brass', label: 'Brass', emoji: '🎺' },
+];
+
+/**
+ * Optional exact types under each instrument family ("Woodwinds" → Saxophone, Flute…).
+ * Stored in `instrumentTypes` as 'type:<name>'; matching still uses the family.
+ */
+export const INSTRUMENT_TYPES: Record<string, Option[]> = {
+  piano: [
+    { value: 'type:acoustic-piano', label: 'Acoustic piano', emoji: '' },
+    { value: 'type:keys-synth', label: 'Keys / synth', emoji: '' },
+    { value: 'type:organ', label: 'Organ', emoji: '' },
+  ],
+  guitar: [
+    { value: 'type:acoustic-guitar', label: 'Acoustic', emoji: '' },
+    { value: 'type:electric-guitar', label: 'Electric', emoji: '' },
+    { value: 'type:classical-guitar', label: 'Classical / nylon', emoji: '' },
+  ],
+  bass: [
+    { value: 'type:electric-bass', label: 'Electric bass', emoji: '' },
+    { value: 'type:upright-bass', label: 'Upright bass', emoji: '' },
+    { value: 'type:synth-bass', label: 'Synth bass', emoji: '' },
+  ],
+  strings: [
+    { value: 'type:violin', label: 'Violin', emoji: '' },
+    { value: 'type:viola', label: 'Viola', emoji: '' },
+    { value: 'type:cello', label: 'Cello', emoji: '' },
+    { value: 'type:harp', label: 'Harp', emoji: '' },
+    { value: 'type:ukulele', label: 'Ukulele', emoji: '' },
+    { value: 'type:banjo', label: 'Banjo', emoji: '' },
+    { value: 'type:mandolin', label: 'Mandolin', emoji: '' },
+  ],
+  percussion: [
+    { value: 'type:drum-kit', label: 'Drum kit', emoji: '' },
+    { value: 'type:electronic-drums', label: 'Electronic drums', emoji: '' },
+    { value: 'type:hand-percussion', label: 'Hand percussion', emoji: '' },
+    { value: 'type:cajon', label: 'Cajón', emoji: '' },
+    { value: 'type:mallets', label: 'Mallets (vibes, marimba)', emoji: '' },
+  ],
+  woodwinds: [
+    { value: 'type:saxophone', label: 'Saxophone', emoji: '' },
+    { value: 'type:flute', label: 'Flute', emoji: '' },
+    { value: 'type:clarinet', label: 'Clarinet', emoji: '' },
+    { value: 'type:oboe', label: 'Oboe', emoji: '' },
+    { value: 'type:bassoon', label: 'Bassoon', emoji: '' },
+  ],
+  brass: [
+    { value: 'type:trumpet', label: 'Trumpet', emoji: '' },
+    { value: 'type:trombone', label: 'Trombone', emoji: '' },
+    { value: 'type:french-horn', label: 'French horn', emoji: '' },
+    { value: 'type:tuba', label: 'Tuba', emoji: '' },
+  ],
+};
+
+/** Producers: which DAW they work in. */
+export const DAWS: Option[] = [
+  { value: 'daw:ableton', label: 'Ableton Live', emoji: '' },
+  { value: 'daw:fl', label: 'FL Studio', emoji: '' },
+  { value: 'daw:logic', label: 'Logic Pro', emoji: '' },
+  { value: 'daw:other', label: 'Something else', emoji: '' },
 ];
 
 export const GROUP_SIZES = ['2', '3-5', '6+'] as const;
@@ -46,19 +105,30 @@ export const SPECIFIC_MAX_CHARS = 24;
 
 // ---------- Why you're here ----------
 
-export const INTENTS: Option[] = [
+export const MUSIC_INTENTS: Option[] = [
   { value: 'jam', label: 'Jam', emoji: '' },
-  { value: 'write', label: 'Write', emoji: '' },
   { value: 'record', label: 'Record', emoji: '' },
-  { value: 'perform', label: 'Perform / gig', emoji: '' },
-  { value: 'content', label: 'Make content', emoji: '' },
   { value: 'notsure', label: 'Not sure yet', emoji: '' },
+];
+
+export const CONTENT_INTENTS: Option[] = [
+  { value: 'shoot', label: 'Shoot / film', emoji: '' },
+  { value: 'content', label: 'Make content together', emoji: '' },
+  { value: 'notsure', label: 'Not sure yet', emoji: '' },
+];
+
+/** Everything someone may have saved (older values included) so labels still resolve. */
+export const INTENTS: Option[] = [
+  ...MUSIC_INTENTS,
+  ...CONTENT_INTENTS.filter((o) => o.value !== 'notsure'),
+  { value: 'write', label: 'Write', emoji: '' },
+  { value: 'perform', label: 'Perform / gig', emoji: '' },
 ];
 
 export const EXPERIENCE: Option[] = [
   { value: 'starting', label: 'Just starting', emoji: '' },
   { value: 'experienced', label: 'Been at it a while', emoji: '' },
-  { value: 'pro', label: 'Pro (credits / gigs)', emoji: '' },
+  { value: 'pro', label: 'Pro', emoji: '' },
 ];
 
 // ---------- Who you're looking for ----------
@@ -116,32 +186,32 @@ export const CONTENT_LOOKING: LookingOption[] = [
 // ---------- Your sound / your vibe ----------
 
 export const GENRES: Option[] = [
+  { value: 'afrobeats', label: 'Afrobeats', emoji: '🌍' },
+  { value: 'classical', label: 'Classical', emoji: '🎻' },
+  { value: 'country', label: 'Country', emoji: '🤠' },
+  { value: 'electronic', label: 'Electronic / EDM', emoji: '🎛️' },
   { value: 'hiphop', label: 'Hip Hop', emoji: '🎧' },
+  { value: 'indie', label: 'Indie', emoji: '🌙' },
+  { value: 'jazz', label: 'Jazz', emoji: '🎷' },
+  { value: 'latin', label: 'Latin', emoji: '💃' },
   { value: 'pop', label: 'Pop', emoji: '🎵' },
   { value: 'rnb', label: 'R&B / Soul', emoji: '🎤' },
-  { value: 'electronic', label: 'Electronic / EDM', emoji: '🎛️' },
   { value: 'rock', label: 'Rock', emoji: '🎸' },
-  { value: 'indie', label: 'Indie', emoji: '🌙' },
-  { value: 'latin', label: 'Latin', emoji: '💃' },
-  { value: 'afrobeats', label: 'Afrobeats', emoji: '🌍' },
-  { value: 'country', label: 'Country', emoji: '🤠' },
-  { value: 'jazz', label: 'Jazz', emoji: '🎷' },
-  { value: 'classical', label: 'Classical', emoji: '🎻' },
 ];
 
 export const INTERESTS: Option[] = [
-  { value: 'music', label: 'Music', emoji: '🎵' },
+  { value: 'art', label: 'Art / Design', emoji: '🎨' },
   { value: 'comedy', label: 'Comedy', emoji: '😂' },
-  { value: 'gaming', label: 'Gaming', emoji: '🎮' },
-  { value: 'vlog', label: 'Vlog / Lifestyle', emoji: '📹' },
+  { value: 'educational', label: 'Educational', emoji: '📚' },
   { value: 'fashion', label: 'Fashion', emoji: '👗' },
   { value: 'fitness', label: 'Fitness', emoji: '💪' },
   { value: 'culinary', label: 'Food', emoji: '🍳' },
-  { value: 'travel', label: 'Travel', emoji: '✈️' },
-  { value: 'tech', label: 'Tech', emoji: '💻' },
-  { value: 'educational', label: 'Educational', emoji: '📚' },
+  { value: 'gaming', label: 'Gaming', emoji: '🎮' },
+  { value: 'music', label: 'Music', emoji: '🎵' },
   { value: 'sports', label: 'Sports', emoji: '🏀' },
-  { value: 'art', label: 'Art / Design', emoji: '🎨' },
+  { value: 'tech', label: 'Tech', emoji: '💻' },
+  { value: 'travel', label: 'Travel', emoji: '✈️' },
+  { value: 'vlog', label: 'Vlog / Lifestyle', emoji: '📹' },
 ];
 
 // ---------- Showcase prompts ----------

@@ -5,7 +5,7 @@ import { Chip, ChipGrid } from '@/components/onboarding/Chip';
 import { OptionRow } from '@/components/onboarding/OptionRow';
 import { OpenToAll } from '@/components/onboarding/OpenToAll';
 import { useOnboarding } from '@/lib/onboarding-context';
-import { CONTENT_LOOKING, EXPERIENCE, INTENTS, MUSICIAN_LOOKING, type LookingOption } from '@/lib/onboarding-data';
+import { CONTENT_INTENTS, CONTENT_LOOKING, EXPERIENCE, MUSIC_INTENTS, MUSICIAN_LOOKING, type LookingOption } from '@/lib/onboarding-data';
 import { TagInput } from '@/components/onboarding/TagInput';
 import { toggleIn } from '@/lib/toggle';
 import { canonicalList } from '@/lib/labels';
@@ -16,6 +16,7 @@ export default function LookingStep() {
   const { draft, saveStep, advance } = useOnboarding();
   const isMusician = draft.creatorType !== 'content';
   const options = isMusician ? MUSICIAN_LOOKING : CONTENT_LOOKING;
+  const intentOptions = isMusician ? MUSIC_INTENTS : CONTENT_INTENTS;
 
   const [looking, setLooking] = useState<string[]>(draft.lookingFor ?? []);
   const [details, setDetails] = useState<Record<string, string[]>>(() =>
@@ -50,7 +51,7 @@ export default function LookingStep() {
         lookingFor: looking,
         lookingForDetails: kept,
         lookingForSpecific: looking.includes('instrumentalist') ? specific : [],
-        intents,
+        intents: intents.filter((i) => intentOptions.some((o) => o.value === i)),
         experience,
       });
       advance('/onboarding/taste');
@@ -106,7 +107,7 @@ export default function LookingStep() {
           You’re here to… <Text style={styles.aboutHint}>Pick any · optional</Text>
         </Text>
         <ChipGrid>
-          {INTENTS.map((o) => (
+          {intentOptions.map((o) => (
             <Chip key={o.value} size="sm" label={o.label} selected={intents.includes(o.value)} onPress={() => setIntents((l) => toggleIn(l, o.value))} />
           ))}
         </ChipGrid>

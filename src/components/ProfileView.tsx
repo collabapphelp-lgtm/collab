@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import { HeroPhoto } from '@/components/Avatar';
-import { detectPlatform } from '@/lib/onboarding-data';
+import { detectPlatform, INSTRUMENT_TYPES } from '@/lib/onboarding-data';
 import { canonicalList, fullName, lookingOptionFor, optionFor, roleLine, shortLocation } from '@/lib/labels';
 import type { ShowcaseItem, UserProfile } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
@@ -29,9 +29,15 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
   const tastes = profile.creatorType === 'content' ? profile.interests : profile.genres;
   const looking = profile.lookingFor ?? [];
   const showcase = profile.showcase ?? [];
+  // Exact types replace their family ("Woodwinds" + Saxophone → "Saxophone"); DAWs ride along.
+  const types = profile.instrumentTypes ?? [];
   const instruments = [
-    ...canonicalList(profile.instruments).map((i) => optionFor(i).label),
+    ...canonicalList(profile.instruments).flatMap((fam) => {
+      const picked = (INSTRUMENT_TYPES[fam] ?? []).filter((o) => types.includes(o.value));
+      return picked.length ? picked.map((o) => o.label) : [optionFor(fam).label];
+    }),
     ...(profile.instrumentsSpecific ?? []),
+    ...(profile.daws ?? []).filter((d) => d !== 'daw:other').map((d) => optionFor(d).label),
   ];
   const isGroup = profile.profileKind === 'group';
   const intents = (profile.intents ?? []).map((i) => optionFor(i).label);
@@ -75,7 +81,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
           </Section>
         ) : null}
 
-        {instruments.length > 0 ? <Section title={isSelf ? 'You play' : 'Plays'}>{<ChipRow items={instruments} tone="blue" />}</Section> : null}
+        {instruments.length > 0 ? <Section title={profile.instruments?.length ? (isSelf ? 'You play' : 'Plays') : 'Works in'}>{<ChipRow items={instruments} tone="blue" />}</Section> : null}
 
         {looking.length > 0 ? (
           <Section title="Looking to collab with">

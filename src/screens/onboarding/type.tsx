@@ -7,7 +7,7 @@ import { OptionIcon, type IconName } from '@/components/OptionIcon';
 import { TagInput } from '@/components/onboarding/TagInput';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { useOnboarding } from '@/lib/onboarding-context';
-import { CONTENT_SKILLS, GROUP_SIZES, INSTRUMENTS, MUSICIAN_SKILLS, type CreatorType, type Option } from '@/lib/onboarding-data';
+import { CONTENT_SKILLS, DAWS, GROUP_SIZES, INSTRUMENT_TYPES, INSTRUMENTS, MUSICIAN_SKILLS, type CreatorType, type Option } from '@/lib/onboarding-data';
 import { toggleIn } from '@/lib/toggle';
 import { canonicalList } from '@/lib/labels';
 import { colors, fonts, radius } from '@/lib/theme';
@@ -35,6 +35,8 @@ export default function TypeStep() {
   }));
   const [instruments, setInstruments] = useState<string[]>(canonicalList(draft.instruments));
   const [specific, setSpecific] = useState<string[]>(draft.instrumentsSpecific ?? []);
+  const [types, setTypes] = useState<string[]>(draft.instrumentTypes ?? []);
+  const [daws, setDaws] = useState<string[]>(draft.daws ?? []);
   const [showSpecific, setShowSpecific] = useState((draft.instrumentsSpecific ?? []).length > 0);
   const [kind, setKind] = useState<'individual' | 'group'>(draft.profileKind ?? 'individual');
   const [groupName, setGroupName] = useState(draft.groupName ?? '');
@@ -60,6 +62,11 @@ export default function TypeStep() {
         skills,
         instruments: playsInstruments ? instruments : [],
         instrumentsSpecific: playsInstruments ? specific : [],
+        // Keep exact types only for families still picked.
+        instrumentTypes: playsInstruments
+          ? types.filter((v) => instruments.some((fam) => (INSTRUMENT_TYPES[fam] ?? []).some((o) => o.value === v)))
+          : [],
+        daws: type === 'musician' && skills.includes('producer') ? daws : [],
         profileKind: kind,
         groupName: kind === 'group' ? groupName.trim() : '',
         groupSize: kind === 'group' ? groupSize : '',
@@ -162,6 +169,19 @@ export default function TypeStep() {
                     ))}
                   </ChipGrid>
 
+                  {t.value === 'musician' && picked.includes('producer') ? (
+                    <View style={styles.instruments}>
+                      <Text style={styles.subPrompt}>
+                        Which DAW? <Text style={styles.subHint}>Optional</Text>
+                      </Text>
+                      <ChipGrid>
+                        {DAWS.map((d) => (
+                          <Chip key={d.value} size="sm" label={d.label} selected={daws.includes(d.value)} onPress={() => setDaws((l) => toggleIn(l, d.value))} />
+                        ))}
+                      </ChipGrid>
+                    </View>
+                  ) : null}
+
                   {playsInstruments ? (
                     <View style={styles.instruments}>
                       <Text style={styles.subPrompt}>What do you play?</Text>
@@ -177,16 +197,28 @@ export default function TypeStep() {
                           />
                         ))}
                       </ChipGrid>
+                      {INSTRUMENTS.filter((i) => instruments.includes(i.value) && INSTRUMENT_TYPES[i.value]).map((i) => (
+                        <View key={i.value} style={styles.typeBox}>
+                          <Text style={styles.typePrompt}>
+                            Which {i.label.toLowerCase()}? <Text style={styles.subHint}>Optional</Text>
+                          </Text>
+                          <ChipGrid>
+                            {INSTRUMENT_TYPES[i.value].map((o) => (
+                              <Chip key={o.value} size="sm" label={o.label} selected={types.includes(o.value)} onPress={() => setTypes((l) => toggleIn(l, o.value))} />
+                            ))}
+                          </ChipGrid>
+                        </View>
+                      ))}
                       {showSpecific ? (
                         <TagInput
                           tags={specific}
                           onChange={setSpecific}
-                          placeholder="e.g. Cello, Talkbox, 808s"
-                          label="Specific instruments"
+                          placeholder="e.g. Harmonica, Steel pan, Talkbox"
+                          label="Instruments not listed"
                         />
                       ) : (
                         <Pressable onPress={() => setShowSpecific(true)} hitSlop={8} accessibilityRole="button">
-                          <Text style={styles.addSpecific}>＋ Add specific instruments (optional)</Text>
+                          <Text style={styles.addSpecific}>＋ Play something not listed? (optional)</Text>
                         </Pressable>
                       )}
                     </View>
@@ -216,6 +248,8 @@ const styles = StyleSheet.create({
   subPrompt: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
   subHint: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
   instruments: { gap: 10, marginTop: 4 },
+  typeBox: { gap: 8, padding: 12, borderRadius: 12, backgroundColor: '#F4F8FB' },
+  typePrompt: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text },
   addSpecific: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.blue },
   kindRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   kind: {
