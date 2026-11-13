@@ -10,7 +10,7 @@ import type { UserProfile } from './types';
  * 2. Fit: does this person match what you're looking for, and do you match what they're looking for?
  *    If you both listed specific needs and neither of you fits the other, they're hidden.
  *    Skipped "looking for" = open to anyone.
- * 3. Ranking: two-way fit first, then one-way; shared genres/niches and closeness break ties.
+ * 3. Ranking: two-way fit first, then one-way; profiles that show work get a boost; shared genres/niches and closeness break ties.
  */
 
 export type Candidate = {
@@ -113,6 +113,9 @@ export function scoreCandidate(me: UserProfile, them: UserProfile, mode: 'best' 
   score += Math.min(shared.length, 3) * 5;
   if (shared.length) reasons.push(`Both into ${shared.slice(0, 2).map((s) => optionFor(s).label).join(' & ')}`);
   if (them.openToAll) score += 3;
+  // Profiles that show their work go first (we tell people this during setup).
+  const work = them.showcase?.length ?? 0;
+  if (work > 0) score += 12 + Math.min(work - 1, 3) * 2;
 
   if (miles !== null) {
     const r = me.maxDistance ?? DEFAULT_RADIUS_MILES;

@@ -10,6 +10,7 @@
  * Notifications go out through Expo's push service, which forwards them to Apple / Google.
  */
 const { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -148,6 +149,10 @@ exports.onProfileCompleted = onDocumentUpdated('users/{uid}', async (event) => {
   const before = event.data?.before.data();
   const after = event.data?.after.data();
   if (!after || before?.onboardingComplete || !after.onboardingComplete) return;
+  // Skipped the "Show your work" step? Remind them once, a day later (see sendShowcaseNudges).
+  if (!(after.showcase ?? []).length) {
+    await db.doc(`nudges/${event.params.uid}`).set({ kind: 'showcase', dueAt: Date.now() + 24 * 60 * 60 * 1000 });
+  }
   const admins = adminUids().filter((uid) => uid !== event.params.uid);
   const name = after.firstName || 'Someone';
   const where = after.location ? ` · ${String(after.location).split(',')[0]}` : '';
@@ -161,6 +166,22 @@ exports.onProfileCompleted = onDocumentUpdated('users/{uid}', async (event) => {
       }),
     ),
   );
+});
+
+// Hourly: send due reminders to add work. Skipped if they've added something since.
+exports.sendShowcaseNudges = onSchedule('every 60 minutes', async () => {
+  const due = await db.collection('nudges').where('dueAt', '<=', Date.now()).limit(200).get();
+  for (const doc of due.docs) {
+    const user = (await db.doc(`users/${doc.id}`).get()).data();
+    if (user && !(user.showcase ?? []).length) {
+      await notify(doc.id, {
+        title: 'Get noticed on Collab 👀',
+        body: 'Profiles with work get shown first. Answer one prompt or paste a link. It takes 30 seconds.',
+        data: { type: 'nudge', url: '/edit/showcase' },
+      });
+    }
+    await doc.ref.delete();
+  }
 });
 
 // Tester dashboard (private).

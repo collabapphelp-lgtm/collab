@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { type Href, router, Stack } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '@/lib/auth-context';
 import { registerForPush } from '@/lib/push';
@@ -10,10 +10,11 @@ import { LikedYouProvider } from '@/lib/liked-you';
 
 export const unstable_settings = { anchor: '(tabs)' };
 
-type PushData = { type?: 'match' | 'message' | 'like' | 'report' | 'signup'; matchId?: string };
+type PushData = { type?: 'match' | 'message' | 'like' | 'report' | 'signup' | 'nudge'; matchId?: string; url?: string };
 
 function openFromNotification(data: PushData | undefined) {
   if (data?.type === 'like') return router.push('/connections');
+  if (data?.type === 'nudge' && data.url?.startsWith('/edit')) return router.push(data.url as Href);
   if (!data?.matchId) return;
   router.push(`/chat/${data.matchId}`);
 }

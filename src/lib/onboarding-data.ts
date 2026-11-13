@@ -195,6 +195,19 @@ export const LINK_PLATFORMS: { match: RegExp; platform: string; label: string; e
   { match: /music\.apple\.com/i, platform: 'applemusic', label: 'Apple Music', emoji: '🍎' },
 ];
 
+/** Accepts "open.spotify.com/…" without https:// and returns a full URL, or null if it isn't one. */
+export function normalizeUrl(raw: string): string | null {
+  const t = raw.trim();
+  if (!t) return null;
+  const withScheme = /^https?:\/\//i.test(t) ? t : `https://${t}`;
+  try {
+    const u = new URL(withScheme);
+    return u.hostname.includes('.') ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export function detectPlatform(url: string) {
   return LINK_PLATFORMS.find((p) => p.match.test(url)) ?? { platform: 'link', label: 'Link', emoji: '🔗' };
 }

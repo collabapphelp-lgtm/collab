@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ErrorText';
 import { TextField } from '@/components/TextField';
 import { useAuth } from '@/lib/auth-context';
-import { detectPlatform, SHOWCASE } from '@/lib/onboarding-data';
+import { detectPlatform, normalizeUrl, SHOWCASE } from '@/lib/onboarding-data';
 import { uploadMedia } from '@/lib/upload';
 import type { ShowcaseMedia } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
@@ -179,19 +179,6 @@ function PickButton(props: { emoji: string; title: string; body: string; onPress
       <Text style={styles.pickBody}>{props.body}</Text>
     </Pressable>
   );
-}
-
-/** Accepts "open.spotify.com/…" without https:// and returns a full URL, or null if it isn't one. */
-function normalizeUrl(raw: string): string | null {
-  const t = raw.trim();
-  if (!t) return null;
-  const withScheme = /^https?:\/\//i.test(t) ? t : `https://${t}`;
-  try {
-    const u = new URL(withScheme);
-    return u.hostname.includes('.') ? u.toString() : null;
-  } catch {
-    return null;
-  }
 }
 
 const styles = StyleSheet.create({

@@ -5,14 +5,14 @@ import { StepScreen } from '@/components/onboarding/StepScreen';
 import { MediaSheet } from '@/components/onboarding/MediaSheet';
 import { PromptSheet } from '@/components/onboarding/PromptSheet';
 import { useOnboarding } from '@/lib/onboarding-context';
+import { useAuth } from '@/lib/auth-context';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
-import { BIO_MAX_CHARS, CONTENT_PROMPTS, detectPlatform, MUSICIAN_PROMPTS, SHOWCASE } from '@/lib/onboarding-data';
+import { BIO_MAX_CHARS, CONTENT_PROMPTS, detectPlatform, MUSICIAN_PROMPTS, normalizeUrl, SHOWCASE } from '@/lib/onboarding-data';
+import { roleLine } from '@/lib/labels';
 import type { ShowcaseItem, ShowcaseMedia, ShowcasePrompt } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
 
 type Slot = ShowcaseItem | null;
-
-const INITIAL_SLOTS = 3;
 
 // What each empty slot says, in order. Media and prompts alternate.
 const EMPTY_COPY = [
@@ -31,25 +31,50 @@ function toSlots(items: ShowcaseItem[] | undefined): Slot[] {
   return SHOWCASE.slots.map((kind) => (kind === 'media' ? media.shift() : prompts.shift()) ?? null);
 }
 
-// Last step: show off your best work (snippets + prompts, at least one), plus an optional note on
-// what they want in a collab partner (stored as `bio`). Finishing flips onboardingComplete.
+// Last step: show your work. The two easiest things sit right on the page (one prompt answer,
+// one pasted link) so nobody has to open a sheet; more slots and uploads are tucked under "Add more".
+// Plus an optional note on what they want in a collab partner (stored as `bio`).
+const LINK_SLOT = 0; // first media slot
+const PROMPT_SLOT = 1; // first prompt slot
+
 export default function ShowcaseStep() {
   const { draft, finish, advance, mode } = useOnboarding();
+  const { profile } = useAuth();
   const [partner, setPartner] = useState(draft.bio ?? '');
   const prompts = draft.creatorType === 'content' ? CONTENT_PROMPTS : MUSICIAN_PROMPTS;
 
   const [slots, setSlots] = useState<Slot[]>(() => toSlots(draft.showcase));
-  // Show 3 slots up front so it doesn't feel like homework; the rest open on request (or if already used).
-  const [showAll, setShowAll] = useState(() => slots.slice(INITIAL_SLOTS).some(Boolean));
+  const [showMore, setShowMore] = useState(() => slots.slice(2).some(Boolean));
   const [editing, setEditing] = useState<{ index: number; kind: 'media' | 'prompt' } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Inline prompt
+  const firstPrompt = slots[PROMPT_SLOT] as ShowcasePrompt | null;
+  const [question, setQuestion] = useState(firstPrompt?.question ?? prompts.work[0]);
+  const [answer, setAnswer] = useState(firstPrompt?.answer ?? '');
+  // Inline link (an uploaded file in that slot shows as a card instead)
+  const firstMedia = slots[LINK_SLOT] as ShowcaseMedia | null;
+  const [link, setLink] = useState(firstMedia?.source === 'link' ? firstMedia.url : '');
+  const linkUrl = normalizeUrl(link);
+  const linkPlatform = linkUrl ? detectPlatform(linkUrl) : null;
 
   const filled = slots.filter(Boolean).length;
   const usedQuestions = slots.filter((s): s is ShowcasePrompt => s?.type === 'prompt').map((s) => s.question);
 
   function put(index: number, item: Slot) {
     setSlots((s) => s.map((v, i) => (i === index ? item : v)));
+  }
+
+  function onAnswer(text: string, q = question) {
+    setAnswer(text);
+    put(PROMPT_SLOT, text.trim() ? { type: 'prompt', question: q, answer: text.trim() } : null);
+  }
+
+  function onLink(text: string) {
+    setLink(text);
+    const url = normalizeUrl(text);
+    put(LINK_SLOT, url ? { type: 'media', source: 'link', url, platform: detectPlatform(url).platform } : null);
   }
 
   function onSlotPress(index: number) {
@@ -64,7 +89,8 @@ export default function ShowcaseStep() {
   }
 
   async function save(withShowcase: boolean) {
-    if (hasBlockedLanguage(partner)) return setError(BLOCKED_LANGUAGE_MESSAGE);
+    const answers = slots.filter((s): s is ShowcasePrompt => s?.type === 'prompt').map((s) => s.answer);
+    if (hasBlockedLanguage(partner, ...answers)) return setError(BLOCKED_LANGUAGE_MESSAGE);
     setSaving(true);
     setError(null);
     try {
@@ -72,7 +98,6 @@ export default function ShowcaseStep() {
         ...(withShowcase ? { showcase: slots.filter((s): s is ShowcaseItem => s !== null) } : {}),
         bio: partner.trim(),
       });
-      // Onboarding: the app sees setup is complete and moves them in. Editing: back to Edit profile.
       if (mode === 'edit') advance('/onboarding/showcase');
     } catch {
       setError('Couldn’t save. Check your connection and try again.');
@@ -82,40 +107,101 @@ export default function ShowcaseStep() {
   const next = () => (filled >= SHOWCASE.minItems ? save(true) : undefined);
 
   const editingPrompt = editing?.kind === 'prompt' ? (slots[editing.index] as ShowcasePrompt | null) : null;
+  const uploaded = firstMedia?.source === 'upload' ? firstMedia : null;
 
   return (
     <StepScreen
       step="showcase"
       onSkip={() => save(false)}
-      continueLabel={mode === 'edit' ? 'Save' : 'Complete profile 🚀'}
-      emoji="🔥"
-      inlineEmoji
-      title="Show your best work"
-      subtitle="Snippets and prompts show what you’re about. One is enough to start."
+      continueLabel={mode === 'edit' ? 'Save' : 'Complete profile'}
+      title="Show your work"
+      subtitle="Profiles with work get shown first. One line or one link is enough."
       onContinue={next}
       continueDisabled={filled < SHOWCASE.minItems}
       saving={saving}
       error={error}
-      footerHint={filled === 0 ? '☝️ Add at least one snippet or prompt' : `${filled} of ${SHOWCASE.slots.length} added · the rest are optional`}
+      footerHint={filled === 0 ? 'Answer the prompt or paste a link to finish' : `${filled} added · looking good`}
       footerHintStrong={filled === 0}
     >
-      <View style={styles.list}>
-        {slots.map((slot, i) =>
-          showAll || i < INITIAL_SLOTS ? <SlotCard key={i} index={i} slot={slot} onPress={() => onSlotPress(i)} /> : null,
-        )}
-        {showAll ? null : (
-          <Pressable onPress={() => setShowAll(true)} hitSlop={8} style={styles.more} accessibilityRole="button">
-            <Text style={styles.moreText}>＋ Room for {SHOWCASE.slots.length - INITIAL_SLOTS} more</Text>
-          </Pressable>
+      {/* 1. Quick prompt, answered right here */}
+      <View style={styles.box}>
+        <View style={styles.boxHead}>
+          <Text style={styles.boxLabel}>Quick prompt</Text>
+          <Text style={styles.badge}>30 sec</Text>
+        </View>
+        <Pressable
+          onPress={() => setEditing({ index: PROMPT_SLOT, kind: 'prompt' })}
+          accessibilityRole="button"
+          accessibilityLabel={`Prompt: ${question} Tap to change the question.`}
+          style={styles.questionRow}
+        >
+          <Text style={styles.question}>{question}</Text>
+          <Text style={styles.change}>Change</Text>
+        </Pressable>
+        <TextInput
+          value={answer}
+          onChangeText={(t) => onAnswer(t)}
+          multiline
+          maxLength={SHOWCASE.promptMaxChars}
+          placeholder={draft.creatorType === 'content' ? 'e.g. A short doc series on NYC street musicians.' : 'e.g. Finishing a 5-song R&B EP. Need a producer for 2 tracks.'}
+          placeholderTextColor={colors.textMuted}
+          style={styles.input}
+          accessibilityLabel="Your answer"
+        />
+      </View>
+
+      {/* 2. Paste a link */}
+      <View style={styles.box}>
+        <View style={styles.boxHead}>
+          <Text style={styles.boxLabel}>Link to your work</Text>
+        </View>
+        {uploaded ? (
+          <SlotCard index={LINK_SLOT} slot={uploaded} onPress={() => onSlotPress(LINK_SLOT)} />
+        ) : (
+          <>
+            <View style={styles.linkRow}>
+              <Text style={styles.linkIcon}>{linkPlatform ? linkPlatform.emoji : '🔗'}</Text>
+              <TextInput
+                value={link}
+                onChangeText={onLink}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                placeholder="Paste a link"
+                placeholderTextColor={colors.textMuted}
+                style={styles.linkInput}
+                accessibilityLabel="Link to your work"
+              />
+              {linkPlatform ? <Text style={styles.linkOk}>✓ {linkPlatform.label}</Text> : null}
+            </View>
+            {link.trim() && !linkUrl ? <Text style={styles.linkErr}>That doesn’t look like a link yet.</Text> : null}
+            <Text style={styles.optional}>Spotify, SoundCloud, YouTube, Instagram, TikTok or any link</Text>
+            <Pressable onPress={() => setEditing({ index: LINK_SLOT, kind: 'media' })} hitSlop={8} accessibilityRole="button">
+              <Text style={styles.uploadLink}>or upload a file from your phone</Text>
+            </Pressable>
+          </>
         )}
       </View>
 
-      <View style={styles.partner}>
-        <View style={styles.partnerHead}>
-          <Text style={styles.partnerTitle}>
-            🤝 What are you looking for in a collab partner? <Text style={styles.optionalInline}>Optional</Text>
-          </Text>
+      {/* Live preview */}
+      {filled > 0 ? <PreviewCard name={profile?.firstName ?? ''} role={roleLine(draft)} slots={slots} /> : null}
+
+      {/* 3. More, optional */}
+      {showMore ? (
+        <View style={styles.list}>
+          <Text style={styles.moreTitle}>More (optional)</Text>
+          {slots.map((slot, i) => (i > PROMPT_SLOT ? <SlotCard key={i} index={i} slot={slot} onPress={() => onSlotPress(i)} /> : null))}
         </View>
+      ) : (
+        <Pressable onPress={() => setShowMore(true)} hitSlop={8} style={styles.more} accessibilityRole="button">
+          <Text style={styles.moreText}>＋ Add more snippets or prompts</Text>
+        </Pressable>
+      )}
+
+      <View style={styles.partner}>
+        <Text style={styles.partnerTitle}>
+          What are you looking for in a collab partner? <Text style={styles.optionalInline}>Optional</Text>
+        </Text>
         <TextInput
           value={partner}
           onChangeText={setPartner}
@@ -137,7 +223,10 @@ export default function ShowcaseStep() {
         visible={editing?.kind === 'media'}
         onClose={() => setEditing(null)}
         onAdd={(item) => {
-          if (editing) put(editing.index, item);
+          if (editing) {
+            put(editing.index, item);
+            if (editing.index === LINK_SLOT) setLink(item.source === 'link' ? item.url : '');
+          }
           setEditing(null);
         }}
       />
@@ -146,14 +235,47 @@ export default function ShowcaseStep() {
         visible={editing?.kind === 'prompt'}
         prompts={prompts}
         usedQuestions={usedQuestions}
-        initial={editingPrompt}
+        initial={editing?.index === PROMPT_SLOT ? { type: 'prompt', question: '', answer } : editingPrompt}
         onClose={() => setEditing(null)}
         onSave={(item) => {
-          if (editing) put(editing.index, item);
+          if (editing?.index === PROMPT_SLOT) {
+            // Picked a new question for the inline prompt: keep what they'd typed if the sheet's answer is empty.
+            setQuestion(item.question);
+            onAnswer(item.answer || answer, item.question);
+          } else if (editing) put(editing.index, item);
           setEditing(null);
         }}
       />
     </StepScreen>
+  );
+}
+
+/** "How you'll show up": a tiny version of their Discover card, so the effort feels worth it. */
+function PreviewCard({ name, role, slots }: { name: string; role: string; slots: Slot[] }) {
+  const prompt = slots.find((s): s is ShowcasePrompt => s?.type === 'prompt');
+  const media = slots.find((s): s is ShowcaseMedia => s?.type === 'media');
+  const p = media?.source === 'link' ? detectPlatform(media.url) : null;
+  return (
+    <View style={styles.preview}>
+      <Text style={styles.previewLabel}>How you’ll show up</Text>
+      <LinearGradient colors={['#E6F1F7', '#EFEBF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.previewCard}>
+        <Text style={styles.previewName}>{name || 'You'}</Text>
+        <Text style={styles.previewRole}>{role}</Text>
+        {prompt ? (
+          <View style={styles.previewPrompt}>
+            <Text style={styles.previewQ}>{prompt.question}</Text>
+            <Text style={styles.previewA} numberOfLines={3}>
+              {prompt.answer}
+            </Text>
+          </View>
+        ) : null}
+        {media ? (
+          <Text style={styles.previewMedia}>
+            {p ? `${p.emoji} ${p.label}` : media.mediaKind === 'audio' ? '🎵 Audio snippet' : '🎬 Snippet'}
+          </Text>
+        ) : null}
+      </LinearGradient>
+    </View>
   );
 }
 
@@ -210,10 +332,73 @@ function SlotCard({ index, slot, onPress }: { index: number; slot: Slot; onPress
 }
 
 const styles = StyleSheet.create({
-  list: { gap: 8, marginTop: -8 },
+  list: { gap: 8 },
+  box: {
+    gap: 10,
+    padding: 14,
+    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: '#E3EEF4',
+    shadowColor: '#2A3B4D',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
+  },
+  boxHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  boxLabel: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
+  badge: {
+    fontFamily: fonts.bodySemibold,
+    fontSize: 12,
+    color: '#7A5A00',
+    backgroundColor: '#FCEFC7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  optional: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, marginTop: -4 },
+  questionRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  question: { flex: 1, fontFamily: fonts.heading, fontSize: 17, color: colors.text },
+  change: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.blue },
+  input: {
+    minHeight: 64,
+    borderRadius: 12,
+    backgroundColor: '#F4F8FB',
+    padding: 12,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 21,
+    color: colors.text,
+    textAlignVertical: 'top',
+    ...Platform.select({ web: { outlineWidth: 0 }, default: {} }),
+  },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, backgroundColor: '#F4F8FB', paddingHorizontal: 12 },
+  linkIcon: { fontSize: 16 },
+  linkInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    color: colors.text,
+    ...Platform.select({ web: { outlineWidth: 0 }, default: {} }),
+  },
+  linkOk: { fontFamily: fonts.bodySemibold, fontSize: 12, color: '#2E8B57' },
+  linkErr: { fontFamily: fonts.body, fontSize: 12, color: colors.red },
+  uploadLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.blue },
+  moreTitle: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.textSecondary },
+  preview: { gap: 6 },
+  previewLabel: { fontFamily: fonts.bodySemibold, fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted },
+  previewCard: { borderRadius: radius.md, padding: 14, gap: 4 },
+  previewName: { fontFamily: fonts.heading, fontSize: 20, color: colors.text },
+  previewRole: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textSecondary },
+  previewPrompt: { marginTop: 8, padding: 10, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.75)', gap: 2 },
+  previewQ: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary },
+  previewA: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text },
+  previewMedia: { marginTop: 6, fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.blue },
   partner: {
     gap: 8,
-    marginTop: -4,
     padding: 12,
     borderRadius: radius.md,
     backgroundColor: colors.white,

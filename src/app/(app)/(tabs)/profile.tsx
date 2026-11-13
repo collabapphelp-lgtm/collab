@@ -2,9 +2,10 @@ import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'r
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
+import { ProfileStrength } from '@/components/ProfileStrength';
 import { useAuth } from '@/lib/auth-context';
 import { shortLocation } from '@/lib/labels';
 import { openLegal, SUPPORT_EMAIL } from '@/lib/legal';
@@ -21,11 +22,15 @@ function versionLine() {
 // Your own profile, as others see it.
 export default function MyProfile() {
   const { profile, signOutUser } = useAuth();
+  const insets = useSafeAreaInsets();
   if (!profile) return null;
 
   return (
     <View style={styles.fill}>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+        <View style={{ paddingTop: insets.top + 8 }}>
+          <ProfileStrength profile={profile} />
+        </View>
         <ProfileView profile={profile} isSelf distanceLabel={shortLocation(profile.location) ?? 'Location not set'} />
         <View style={styles.actions}>
           <Text style={styles.note}>This is how other creatives see your profile.</Text>
