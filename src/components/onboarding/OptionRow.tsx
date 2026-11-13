@@ -1,10 +1,13 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, radius } from '@/lib/theme';
+import { OptionIcon } from '@/components/OptionIcon';
 
 type Props = {
   label: string;
   emoji: string;
+  /** Option value, used to pick a line icon (falls back to the emoji). */
+  value?: string;
   selected: boolean;
   onPress: () => void;
   /** Extra line under the label (e.g. "Guitar, Drums"). */
@@ -15,7 +18,7 @@ type Props = {
 };
 
 /** Full-width selectable row. Expandable rows reveal their children once selected. */
-export function OptionRow({ label, emoji, selected, onPress, detail, children, expandable }: Props) {
+export function OptionRow({ label, emoji, value, selected, onPress, detail, children, expandable }: Props) {
   return (
     <View style={[styles.wrap, selected && styles.wrapSelected]}>
       <Pressable
@@ -24,7 +27,7 @@ export function OptionRow({ label, emoji, selected, onPress, detail, children, e
         accessibilityState={{ checked: selected, expanded: expandable ? selected : undefined }}
         style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
       >
-        <Text style={styles.emoji}>{emoji}</Text>
+        <OptionIcon value={value ?? ''} fallback={emoji} size={36} selected={selected} />
         <View style={styles.text}>
           <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
           {detail ? <Text style={styles.detail}>{detail}</Text> : null}
@@ -42,7 +45,6 @@ const styles = StyleSheet.create({
   wrap: { borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.white },
   wrapSelected: { borderColor: colors.blue, backgroundColor: '#F1F8FB' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
-  emoji: { fontSize: 22 },
   text: { flex: 1 },
   label: { fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.text },
   labelSelected: { fontFamily: fonts.bodySemibold, color: colors.blue },

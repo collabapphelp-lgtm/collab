@@ -24,8 +24,27 @@ const byValue = new Map<string, Option>();
 for (const o of ALL) if (!byValue.has(o.value)) byValue.set(o.value, o);
 
 // Options we've since merged: older profiles still show a sensible label.
-const RETIRED: Record<string, string> = { violin: 'strings', cello: 'strings', ukulele: 'strings', trumpet: 'brass', edm: 'electronic' };
+const RETIRED: Record<string, string> = {
+  violin: 'strings',
+  cello: 'strings',
+  ukulele: 'strings',
+  trumpet: 'brass',
+  edm: 'electronic',
+  drums: 'percussion',
+  saxophone: 'woodwinds',
+  flute: 'woodwinds',
+};
 for (const [old, now] of Object.entries(RETIRED)) byValue.set(old, byValue.get(now)!);
+
+/** Map a stored value to its current option value ('drums' → 'percussion'), for matching and re-saving. */
+export function canonical(value: string): string {
+  return RETIRED[value] ?? value;
+}
+
+/** Canonical values, de-duplicated (['saxophone', 'flute'] → ['woodwinds']). */
+export function canonicalList(values: string[] = []): string[] {
+  return [...new Set(values.map(canonical))];
+}
 
 /** Turn a stored value like 'producer' into what people see: { label: 'Producer', emoji: '💻' }. */
 export function optionFor(value: string): Option {

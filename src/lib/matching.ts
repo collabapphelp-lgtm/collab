@@ -1,5 +1,5 @@
 import { DEFAULT_RADIUS_MILES } from './onboarding-data';
-import { lookingOptionFor, optionFor } from './labels';
+import { canonicalList, lookingOptionFor, optionFor } from './labels';
 import type { UserProfile } from './types';
 
 /**
@@ -34,7 +34,10 @@ export function distanceMiles(a?: { lat: number; lng: number } | null, b?: { lat
 
 const article = (word: string) => (/^[aeiou]/i.test(word) ? 'an' : 'a');
 
-const intersects = (a: string[] = [], b: string[] = []) => a.some((x) => b.includes(x));
+const intersects = (a: string[] = [], b: string[] = []) => {
+  const bb = canonicalList(b);
+  return canonicalList(a).some((x) => bb.includes(x));
+};
 
 /** Does `person` satisfy one "looking for" entry of the searcher? */
 function satisfies(person: UserProfile, entry: string, details: string[] = []): boolean {

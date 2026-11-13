@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
 import { SafetyButton } from '@/components/SafetyButton';
@@ -15,6 +16,9 @@ import { like, loadUnseenProfiles, passOn } from '@/lib/discover';
 import { formatDistance, rankCandidates, type Candidate } from '@/lib/matching';
 import { consumeJustFinished } from '@/lib/onboarding-context';
 import { colors, fonts } from '@/lib/theme';
+
+const LOGO = require('../../../../assets/logo.png');
+const LOGO_WHITE = require('../../../../assets/logo-white.png');
 
 export default function Discover() {
   const { profile } = useAuth();
@@ -159,7 +163,7 @@ function ActionButton({ kind, onPress, disabled }: { kind: 'pass' | 'like'; onPr
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityLabel={like ? 'Like' : 'Pass'}
+      accessibilityLabel={like ? 'Collab' : 'Pass'}
       style={({ pressed }) => [
         styles.action,
         like ? styles.actionLike : styles.actionPass,
@@ -168,7 +172,7 @@ function ActionButton({ kind, onPress, disabled }: { kind: 'pass' | 'like'; onPr
     >
       {like ? (
         <LinearGradient colors={[colors.blue, colors.purple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}>
-          <Ionicons name="heart" size={34} color={colors.white} />
+          <Image source={LOGO_WHITE} style={styles.likeLogo} contentFit="contain" />
         </LinearGradient>
       ) : (
         <Ionicons name="close" size={30} color={colors.red} />
@@ -204,7 +208,7 @@ function EmptyState({ error, onRefresh, global }: { error: string | null; onRefr
   }
   return (
     <ScrollView contentContainerStyle={styles.empty}>
-      <Text style={styles.emptyEmoji}>🌱</Text>
+      <Image source={LOGO} style={styles.emptyLogo} contentFit="contain" />
       <Text style={styles.emptyTitle}>You’re all caught up</Text>
       <Text style={styles.emptyBody}>
         Collab is brand new, and we’re adding creatives every day. Check back soon: more people will be popping up here.
@@ -233,7 +237,7 @@ function WelcomeModal({ visible, name, onClose }: { visible: boolean; name: stri
           <Text style={styles.welcomeEmoji}>🎉</Text>
           <Text style={styles.welcomeTitle}>You’re in{name ? `, ${name}` : ''}!</Text>
           <Text style={styles.welcomeBody}>
-            Here’s how Discover works: tap ♥ if you’d like to collab, ✕ to pass. When it’s mutual, you’re connected and can
+            Here’s how Discover works: tap the Collab button if you’d like to work with someone, ✕ to pass. When it’s mutual, you’re connected and can
             start talking.
           </Text>
           <Button title="Start exploring" onPress={onClose} />
@@ -303,6 +307,8 @@ const styles = StyleSheet.create({
   },
   actionPass: { backgroundColor: colors.white },
   actionLike: { width: 74, height: 74, borderRadius: 37, backgroundColor: colors.blue },
+  likeLogo: { width: 44, height: 26 },
+  emptyLogo: { width: 120, height: 70, marginBottom: 4 },
   actionFill: { width: '100%', height: '100%', borderRadius: 37, alignItems: 'center', justifyContent: 'center' },
   empty: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 10 },
   emptyEmoji: { fontSize: 52 },

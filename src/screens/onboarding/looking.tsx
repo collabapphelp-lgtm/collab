@@ -7,6 +7,7 @@ import { OpenToAll } from '@/components/onboarding/OpenToAll';
 import { useOnboarding } from '@/lib/onboarding-context';
 import { CONTENT_LOOKING, MUSICIAN_LOOKING, type LookingOption } from '@/lib/onboarding-data';
 import { toggleIn } from '@/lib/toggle';
+import { canonicalList } from '@/lib/labels';
 import { colors, fonts } from '@/lib/theme';
 
 // Step 3: who do you want to collab with? Includes the other creator type (cross-type matching).
@@ -16,7 +17,9 @@ export default function LookingStep() {
   const options = isMusician ? MUSICIAN_LOOKING : CONTENT_LOOKING;
 
   const [looking, setLooking] = useState<string[]>(draft.lookingFor ?? []);
-  const [details, setDetails] = useState<Record<string, string[]>>(draft.lookingForDetails ?? {});
+  const [details, setDetails] = useState<Record<string, string[]>>(() =>
+    Object.fromEntries(Object.entries(draft.lookingForDetails ?? {}).map(([k, v]) => [k, canonicalList(v)])),
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -108,6 +111,7 @@ function LookingRow(props: {
     <OptionRow
       label={option.label}
       emoji={option.emoji}
+      value={option.value}
       selected={selected}
       expandable={expandable}
       detail={detail}

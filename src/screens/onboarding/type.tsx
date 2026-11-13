@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { StepScreen } from '@/components/onboarding/StepScreen';
 import { Chip, ChipGrid } from '@/components/onboarding/Chip';
+import { OptionIcon } from '@/components/OptionIcon';
 import { useOnboarding } from '@/lib/onboarding-context';
 import { CONTENT_SKILLS, INSTRUMENTS, MUSICIAN_SKILLS, type CreatorType, type Option } from '@/lib/onboarding-data';
 import { toggleIn } from '@/lib/toggle';
+import { canonicalList } from '@/lib/labels';
 import { colors, fonts, radius } from '@/lib/theme';
 
 const TYPES: { value: CreatorType; label: string; emoji: string; prompt: string; options: Option[] }[] = [
@@ -23,7 +25,7 @@ export default function TypeStep() {
     musician: draft.creatorType === 'musician' ? (draft.skills ?? []) : [],
     content: draft.creatorType === 'content' ? (draft.skills ?? []) : [],
   }));
-  const [instruments, setInstruments] = useState<string[]>(draft.instruments ?? []);
+  const [instruments, setInstruments] = useState<string[]>(canonicalList(draft.instruments));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,7 +78,7 @@ export default function TypeStep() {
                 accessibilityState={{ selected }}
                 style={({ pressed }) => [styles.cardHeader, pressed && { opacity: 0.8 }]}
               >
-                <Text style={styles.cardEmoji}>{t.emoji}</Text>
+                <OptionIcon value={t.value} fallback={t.emoji} size={48} selected={selected} />
                 <View style={styles.flex}>
                   <Text style={[styles.cardTitle, selected && { color: colors.blue }]}>{t.label}</Text>
                   {selected ? null : <Text style={styles.cardHint}>{preview(t.options)}</Text>}
@@ -135,7 +137,6 @@ const styles = StyleSheet.create({
   card: { borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.white, overflow: 'hidden' },
   cardOn: { borderColor: colors.blue, backgroundColor: '#F4FAFC' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 18 },
-  cardEmoji: { fontSize: 32 },
   cardTitle: { fontFamily: fonts.heading, fontSize: 21, color: colors.text },
   cardHint: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted, marginTop: 2 },
   radio: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },

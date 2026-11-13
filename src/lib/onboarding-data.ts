@@ -31,13 +31,11 @@ export const CONTENT_SKILLS: Option[] = [
 export const INSTRUMENTS: Option[] = [
   { value: 'guitar', label: 'Guitar', emoji: '🎸' },
   { value: 'piano', label: 'Piano', emoji: '🎹' },
-  { value: 'drums', label: 'Drums', emoji: '🥁' },
   { value: 'bass', label: 'Bass', emoji: '🎸' },
   { value: 'strings', label: 'Strings', emoji: '🎻' },
   { value: 'percussion', label: 'Percussion', emoji: '🪘' },
-  { value: 'saxophone', label: 'Saxophone', emoji: '🎷' },
+  { value: 'woodwinds', label: 'Woodwinds', emoji: '🎷' },
   { value: 'brass', label: 'Brass', emoji: '🎺' },
-  { value: 'flute', label: 'Flute', emoji: '🪈' },
 ];
 
 // ---------- Who you're looking for ----------

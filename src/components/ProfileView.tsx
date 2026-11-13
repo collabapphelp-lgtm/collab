@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import { HeroPhoto } from '@/components/Avatar';
 import { detectPlatform } from '@/lib/onboarding-data';
-import { fullName, lookingOptionFor, optionFor, roleLine, shortLocation } from '@/lib/labels';
+import { canonicalList, fullName, lookingOptionFor, optionFor, roleLine, shortLocation } from '@/lib/labels';
 import type { ShowcaseItem, UserProfile } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
 
@@ -29,7 +29,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
   const tastes = profile.creatorType === 'content' ? profile.interests : profile.genres;
   const looking = profile.lookingFor ?? [];
   const showcase = profile.showcase ?? [];
-  const instruments = (profile.instruments ?? []).map((i) => optionFor(i).label);
+  const instruments = canonicalList(profile.instruments).map((i) => optionFor(i).label);
 
   return (
     <View style={styles.wrap}>
@@ -70,7 +70,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
                 const o = lookingOptionFor(v);
                 const details = profile.lookingForDetails?.[v];
                 const suffix = details?.length ? `: ${details.map((d) => optionFor(d).label).join(', ')}` : '';
-                return `${o.emoji} ${o.label}${suffix}`;
+                return `${o.label}${suffix}`;
               })}
             />
           </Section>
@@ -81,7 +81,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
             <ChipRow
               tone="purple"
               items={[
-                ...(tastes ?? []).map((t) => `${optionFor(t).emoji} ${optionFor(t).label}`),
+                ...(tastes ?? []).map((t) => optionFor(t).label),
                 ...(profile.openToAll ? ['♾️ Open to all'] : []),
               ]}
             />

@@ -3,6 +3,7 @@ import { colors, fonts, radius } from '@/lib/theme';
 
 type ChipProps = {
   label: string;
+  /** Ignored: chips are text-only (emojis on every chip read as cluttered). Kept so callers don't break. */
   emoji?: string;
   selected: boolean;
   onPress: () => void;
@@ -10,7 +11,7 @@ type ChipProps = {
 };
 
 /** Selectable pill used for skills, genres, instruments and sub-options. */
-export function Chip({ label, emoji, selected, onPress, size = 'md' }: ChipProps) {
+export function Chip({ label, selected, onPress, size = 'md' }: ChipProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -23,7 +24,6 @@ export function Chip({ label, emoji, selected, onPress, size = 'md' }: ChipProps
         pressed && { opacity: 0.7 },
       ]}
     >
-      {emoji ? <Text style={size === 'sm' ? styles.emojiSm : styles.emoji}>{emoji}</Text> : null}
       <Text style={[styles.label, size === 'sm' && styles.labelSm, selected && styles.labelSelected]}>{label}</Text>
     </Pressable>
   );
@@ -48,8 +48,6 @@ const styles = StyleSheet.create({
   },
   chipSm: { paddingHorizontal: 12, paddingVertical: 7, gap: 5 },
   chipSelected: { borderColor: colors.blue, backgroundColor: '#E1F0F7' },
-  emoji: { fontSize: 16 },
-  emojiSm: { fontSize: 14 },
   label: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.text },
   labelSm: { fontSize: 14 },
   labelSelected: { color: colors.blue, fontFamily: fonts.bodySemibold },

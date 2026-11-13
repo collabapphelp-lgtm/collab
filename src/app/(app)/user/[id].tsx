@@ -83,7 +83,7 @@ export default function UserProfileScreen() {
               }}
             />
             <Button
-              title="♥ Collab back"
+              title="Collab back"
               loading={busy}
               style={styles.flex2}
               onPress={async () => {

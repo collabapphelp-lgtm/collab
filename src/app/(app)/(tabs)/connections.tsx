@@ -42,7 +42,7 @@ export default function Connections() {
               <Text style={styles.emptyEmoji}>{error ? '📡' : '💫'}</Text>
               <Text style={styles.emptyTitle}>{error ? 'Something went wrong' : 'No connections yet'}</Text>
               <Text style={styles.emptyBody}>
-                {error ?? 'When you and another creative both tap ♥, you’re connected and they’ll show up here.'}
+                {error ?? 'When you and another creative both tap Collab, you’re connected and they’ll show up here.'}
               </Text>
             </View>
           }
@@ -78,7 +78,7 @@ function LikedYouRow() {
         <Text style={styles.likedTitle}>Wants to collab</Text>
         <Text style={styles.likedCount}>{likedYou.length}</Text>
       </View>
-      <Text style={styles.likedSub}>These creatives tapped ♥ on you. Collab back to connect.</Text>
+      <Text style={styles.likedSub}>These creatives want to work with you. Collab back to connect.</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.likedList}>
         {likedYou.map((p) => (
           <LikedPerson key={p.id} p={p} />
