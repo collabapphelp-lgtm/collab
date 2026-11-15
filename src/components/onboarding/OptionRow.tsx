@@ -15,16 +15,19 @@ type Props = {
   /** Shown under the row when selected, e.g. sub-option chips. */
   children?: ReactNode;
   expandable?: boolean;
+  /** Shown selected but can't be changed (e.g. while "Open to anything" is on). Hides children. */
+  locked?: boolean;
 };
 
 /** Full-width selectable row. Expandable rows reveal their children once selected. */
-export function OptionRow({ label, emoji, value, selected, onPress, detail, children, expandable }: Props) {
+export function OptionRow({ label, emoji, value, selected, onPress, detail, children, expandable, locked }: Props) {
   return (
     <View style={[styles.wrap, selected && styles.wrapSelected]}>
       <Pressable
         onPress={onPress}
+        disabled={locked}
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: selected, expanded: expandable ? selected : undefined }}
+        accessibilityState={{ checked: selected, disabled: locked, expanded: expandable && !locked ? selected : undefined }}
         style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
       >
         <OptionIcon value={value ?? ''} fallback={emoji} size={36} selected={selected} />
@@ -36,7 +39,7 @@ export function OptionRow({ label, emoji, value, selected, onPress, detail, chil
           {selected ? <Text style={styles.checkMark}>✓</Text> : null}
         </View>
       </Pressable>
-      {selected && children ? <View style={styles.children}>{children}</View> : null}
+      {selected && !locked && children ? <View style={styles.children}>{children}</View> : null}
     </View>
   );
 }

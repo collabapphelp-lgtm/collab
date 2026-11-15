@@ -7,6 +7,7 @@ import { PromptSheet } from '@/components/onboarding/PromptSheet';
 import { useOnboarding } from '@/lib/onboarding-context';
 import { useAuth } from '@/lib/auth-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import type { IconName } from '@/components/OptionIcon';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { BIO_MAX_CHARS, CONTENT_PROMPTS, detectPlatform, MUSICIAN_PROMPTS, normalizeUrl, SHOWCASE } from '@/lib/onboarding-data';
@@ -36,11 +37,24 @@ function toSlots(items: ShowcaseItem[] | undefined): Slot[] {
 // Last step: show your work. The two easiest things sit right on the page (one prompt answer,
 // one pasted link) so nobody has to open a sheet; more slots and uploads are tucked under "Add more".
 // Plus an optional note on what they want in a collab partner (stored as `bio`).
-const BRANDS: { platform: string; label: string; icon: IconName; color: string }[] = [
+type Brand = { platform: string; label: string; icon: IconName | 'tiktok'; color: string };
+const YOUTUBE: Brand = { platform: 'youtube', label: 'YouTube', icon: 'youtube', color: '#FF0000' };
+const MUSIC_BRANDS: Brand[] = [
   { platform: 'spotify', label: 'Spotify', icon: 'spotify', color: '#1DB954' },
   { platform: 'soundcloud', label: 'SoundCloud', icon: 'soundcloud', color: '#FF5500' },
   { platform: 'applemusic', label: 'Apple Music', icon: 'apple', color: '#FA2D48' },
+  YOUTUBE,
 ];
+const CONTENT_BRANDS: Brand[] = [
+  { platform: 'instagram', label: 'Instagram', icon: 'instagram', color: '#E1306C' },
+  { platform: 'tiktok', label: 'TikTok', icon: 'tiktok', color: '#111111' },
+  YOUTUBE,
+];
+
+function BrandIcon({ brand, color }: { brand: Brand; color: string }) {
+  if (brand.icon === 'tiktok') return <FontAwesome6 name="tiktok" brand size={14} color={color} />;
+  return <MaterialCommunityIcons name={brand.icon} size={16} color={color} />;
+}
 
 const LINK_SLOT = 0; // first media slot
 const PROMPT_SLOT = 1; // first prompt slot
@@ -49,7 +63,9 @@ export default function ShowcaseStep() {
   const { draft, finish, advance, mode } = useOnboarding();
   const { profile } = useAuth();
   const [partner, setPartner] = useState(draft.bio ?? '');
-  const prompts = draft.creatorType === 'content' ? CONTENT_PROMPTS : MUSICIAN_PROMPTS;
+  const isContent = draft.creatorType === 'content';
+  const prompts = isContent ? CONTENT_PROMPTS : MUSICIAN_PROMPTS;
+  const brands = isContent ? CONTENT_BRANDS : MUSIC_BRANDS;
 
   const [slots, setSlots] = useState<Slot[]>(() => toSlots(draft.showcase));
   const [showMore, setShowMore] = useState(() => slots.slice(2).some(Boolean));
@@ -112,7 +128,10 @@ export default function ShowcaseStep() {
       setSaving(false);
     }
   }
-  const next = () => (filled >= SHOWCASE.minItems ? save(true) : undefined);
+  // Either a piece of work or just the partner note is enough to save (the note alone is fine).
+  const hasBio = partner.trim().length > 0;
+  const canSave = filled >= SHOWCASE.minItems || hasBio;
+  const next = () => (canSave ? save(filled > 0) : undefined);
 
   const editingPrompt = editing?.kind === 'prompt' ? (slots[editing.index] as ShowcasePrompt | null) : null;
   const uploaded = firstMedia?.source === 'upload' ? firstMedia : null;
@@ -123,13 +142,23 @@ export default function ShowcaseStep() {
       onSkip={() => save(false)}
       continueLabel={mode === 'edit' ? 'Save' : 'Complete profile'}
       title="Show your work"
-      subtitle="Profiles with work get shown first. One line or one link is enough."
+      subtitle={
+        isContent
+          ? 'Link your Instagram, TikTok or YouTube so people can see your stuff. All optional.'
+          : 'Profiles with work get shown first. One line or one link is enough.'
+      }
       onContinue={next}
-      continueDisabled={filled < SHOWCASE.minItems}
+      continueDisabled={!canSave}
       saving={saving}
       error={error}
-      footerHint={filled === 0 ? 'Answer the prompt or paste a link to finish' : `${filled} added · looking good`}
-      footerHintStrong={filled === 0}
+      footerHint={
+        filled > 0
+          ? `${filled} added · looking good`
+          : hasBio
+            ? 'You can add work later from your profile'
+            : 'Write a note, answer the prompt or paste a link'
+      }
+      footerHintStrong={!canSave}
     >
       {/* 1. What they want in a partner (bio) */}
       <View style={styles.partner}>
@@ -158,11 +187,11 @@ export default function ShowcaseStep() {
         <View style={styles.boxHead}>
           <Text style={styles.boxLabel}>Link to your work</Text>
           <View style={styles.brands}>
-            {BRANDS.map((b) => {
+            {brands.map((b) => {
               const on = linkPlatform?.platform === b.platform;
               return (
                 <View key={b.platform} style={[styles.brand, on && { backgroundColor: b.color }]} accessibilityLabel={b.label}>
-                  <MaterialCommunityIcons name={b.icon} size={16} color={on ? '#FFFFFF' : b.color} />
+                  <BrandIcon brand={b} color={on ? '#FFFFFF' : b.color} />
                 </View>
               );
             })}
@@ -180,7 +209,7 @@ export default function ShowcaseStep() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"
-                placeholder="Paste a link"
+                placeholder={isContent ? 'Paste your Instagram, TikTok or YouTube' : 'Paste a link'}
                 placeholderTextColor={colors.textMuted}
                 style={styles.linkInput}
                 accessibilityLabel="Link to your work"
@@ -188,7 +217,9 @@ export default function ShowcaseStep() {
               {linkPlatform ? <Text style={styles.linkOk}>✓ {linkPlatform.label}</Text> : null}
             </View>
             {link.trim() && !linkUrl ? <Text style={styles.linkErr}>That doesn’t look like a link yet.</Text> : null}
-            <Text style={styles.optional}>Spotify, SoundCloud, Apple Music, YouTube, Instagram or any link</Text>
+            <Text style={styles.optional}>
+              {isContent ? 'Your Instagram, TikTok or YouTube, or any link' : 'Spotify, SoundCloud, Apple Music, YouTube or any link'}
+            </Text>
             <Pressable onPress={() => setEditing({ index: LINK_SLOT, kind: 'media' })} hitSlop={8} accessibilityRole="button">
               <Text style={styles.uploadLink}>or upload a file from your phone</Text>
             </Pressable>
@@ -216,7 +247,7 @@ export default function ShowcaseStep() {
           onChangeText={(t) => onAnswer(t)}
           multiline
           maxLength={SHOWCASE.promptMaxChars}
-          placeholder={draft.creatorType === 'content' ? 'e.g. A short doc series on NYC street musicians.' : 'e.g. Finishing a 5-song R&B EP. Need a producer for 2 tracks.'}
+          placeholder={isContent ? 'e.g. A short doc series on NYC street musicians.' : 'e.g. Finishing a 5-song R&B EP. Need a producer for 2 tracks.'}
           placeholderTextColor={colors.textMuted}
           style={styles.input}
           accessibilityLabel="Your answer"

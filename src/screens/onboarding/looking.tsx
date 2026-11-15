@@ -30,11 +30,16 @@ export default function LookingStep() {
 
   function toggleRow(value: string) {
     setLooking((list) => {
-      // "Open to anything" stands alone; picking a specific row turns it off, and vice versa.
-      if (value === 'anything') return list.includes('anything') ? [] : ['anything'];
-      return toggleIn(list.filter((v) => v !== 'anything'), value);
+      // "Open to anything" switches every row on and locks them. Rows picked before stay in the list
+      // (after 'anything') so matching can still put those people first.
+      if (value === 'anything') return list.includes('anything') ? list.filter((v) => v !== 'anything') : ['anything', ...list];
+      if (list.includes('anything')) return list; // locked
+      return toggleIn(list, value);
     });
   }
+
+  const openAll = looking.includes('anything');
+  const picked = looking.filter((v) => v !== 'anything');
 
   function toggleSub(row: string, sub: string) {
     setDetails((d) => ({ ...d, [row]: toggleIn(d[row] ?? [], sub) }));
@@ -82,14 +87,23 @@ export default function LookingStep() {
         />
         <View style={styles.orRow}>
           <View style={styles.orLine} />
-          <Text style={styles.orText}>or pick specific types</Text>
+          <Text style={styles.orText}>{openAll ? 'everyone included' : 'or pick specific types'}</Text>
           <View style={styles.orLine} />
         </View>
+        {openAll ? (
+          <Text style={styles.openNote}>
+            {picked.length
+              ? 'You’ll see everyone, with your top picks shown first. Turn this off to change them.'
+              : 'You’ll see everyone. Want some people first? Turn this off, pick them, then turn it back on.'}
+          </Text>
+        ) : null}
         {options.filter((o) => o.value !== 'anything').map((o) => (
           <LookingRow
             key={o.value}
             option={o}
-            selected={looking.includes(o.value)}
+            locked={openAll}
+            topPick={openAll && picked.includes(o.value)}
+            selected={openAll || looking.includes(o.value)}
             subs={details[o.value] ?? []}
             onToggle={() => toggleRow(o.value)}
             onToggleSub={(sub) => toggleSub(o.value, sub)}
@@ -131,11 +145,16 @@ function LookingRow(props: {
   onToggle: () => void;
   onToggleSub: (sub: string) => void;
   extra?: React.ReactNode;
+  locked?: boolean;
+  topPick?: boolean;
 }) {
-  const { option, selected, subs } = props;
+  const { option, selected, subs, locked, topPick } = props;
   const expandable = !!option.subOptions;
-  const detail =
-    expandable && selected
+  const detail = locked
+    ? topPick
+      ? '★ Top pick · shown first'
+      : undefined
+    : expandable && selected
       ? subs.length > 0
         ? subs.map((v) => option.subOptions!.find((s) => s.value === v)?.label ?? v).join(', ')
         : 'Any'
@@ -150,6 +169,7 @@ function LookingRow(props: {
       value={option.value}
       selected={selected}
       expandable={expandable}
+      locked={locked}
       detail={detail}
       onPress={props.onToggle}
     >
@@ -183,5 +203,6 @@ const styles = StyleSheet.create({
   orRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 2 },
   orLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   orText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
+  openNote: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 8 },
   subPrompt: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSecondary },
 });

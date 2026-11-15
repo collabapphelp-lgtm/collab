@@ -55,12 +55,16 @@ function satisfies(person: UserProfile, entry: string, details: string[] = []): 
   }
 }
 
-/** Which of the searcher's "looking for" entries this person fits. Empty list = searcher is open to anyone. */
+/**
+ * Which of the searcher's "looking for" entries this person fits. Empty list = open to anyone.
+ * "Open to anything" plus some picks = open to anyone, but people who fit a pick still score higher.
+ */
 function fitsWanted(searcher: UserProfile, person: UserProfile): { open: boolean; matched: string[] } {
   const wanted = searcher.lookingFor ?? [];
-  if (wanted.length === 0 || wanted.includes('anything')) return { open: true, matched: [] };
+  const picks = wanted.filter((w) => w !== 'anything');
+  const open = picks.length === 0 || wanted.includes('anything');
   const details = searcher.lookingForDetails ?? {};
-  return { open: false, matched: wanted.filter((w) => satisfies(person, w, details[w])) };
+  return { open, matched: picks.filter((w) => satisfies(person, w, details[w])) };
 }
 
 function withinReach(me: UserProfile, them: UserProfile, miles: number | null) {
