@@ -67,6 +67,14 @@ th{color:var(--muted);font-weight:600}td.r,th.r{text-align:right;font-variant-nu
   </section>
 
   <p id="loading" class="muted">Loading…</p>
+  <section id="evCard" class="card" style="margin-bottom:12px" hidden>
+    <h2 style="margin-top:0">📍 Event submissions <span id="evCount"></span></h2>
+    <p class="muted small" style="margin-top:0">Events people post in the app wait here until you approve them. Tick “Collab event” to give it the gold Hosted by Collab pin. The weekly open mics are built into the app (src/lib/events-data.ts) and don’t show here.</p>
+    <div id="evPending"></div>
+    <h3 class="small muted" style="margin:16px 0 6px">Live upcoming events</h3>
+    <div id="evLive"></div>
+    <div id="evMsg" class="small" style="margin-top:8px"></div>
+  </section>
   <main id="dash" hidden></main>
   <section id="acctCard" class="card" style="margin-top:12px" hidden>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
@@ -100,6 +108,8 @@ const fns = getFunctions(app, 'us-central1');
 const metrics = httpsCallable(fns, 'metrics');
 const listAccounts = httpsCallable(fns, 'accounts');
 const deleteAccounts = httpsCallable(fns, 'deleteAccounts', { timeout: 300000 });
+const eventSubmissions = httpsCallable(fns, 'eventSubmissions');
+const reviewEvent = httpsCallable(fns, 'reviewEvent');
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '–');
@@ -111,7 +121,7 @@ onAuthStateChanged(auth, (user) => {
   $('logout').hidden = $('refresh').hidden = !user;
   $('who').textContent = user ? user.email : '';
   if (user) load();
-  else { $('dash').hidden = true; $('acctCard').hidden = true; }
+  else { $('dash').hidden = true; $('acctCard').hidden = true; $('evCard').hidden = true; }
 });
 
 $('form').addEventListener('submit', async (e) => {
@@ -133,6 +143,7 @@ async function load() {
     const { data } = await metrics();
     render(data);
     $('loading').hidden = true;
+    loadEvents();
     loadAccounts();
   } catch (e) {
     $('dash').hidden = true;
@@ -142,6 +153,61 @@ async function load() {
         : 'Couldn’t load the numbers. Check your connection and press Refresh.';
   }
 }
+
+// ---------- Event submissions ----------
+const evWhen = (ms) => new Date(ms).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+const TYPE_LABEL = { 'open-mic': 'Open mic', jam: 'Jam session', show: 'Show', meetup: 'Meetup' };
+
+function evRow(e, pending) {
+  return `<div class="card" style="padding:12px 14px;margin-bottom:8px">
+    <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <strong>${esc(e.title)}</strong> <span class="muted small">· ${esc(TYPE_LABEL[e.type] || e.type)}${e.collabHosted ? ' · Hosted by Collab' : ''}</span><br>
+        <span class="small">${esc(evWhen(e.startsAt))} · ${esc(e.venue)}, ${esc(e.address)} (${esc(e.neighborhood)})</span><br>
+        <span class="small muted">${esc(e.description)}</span>
+        ${e.cost || e.signUp ? `<br><span class="small muted">${esc([e.cost, e.signUp].filter(Boolean).join(' · '))}</span>` : ''}
+        ${e.link ? `<br><a class="small" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.link)}</a>` : ''}
+        <br><span class="small muted">Posted by ${esc(e.hostName)} <code class="small">${esc(e.hostId)}</code></span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        ${pending ? `<label class="small"><input type="checkbox" data-collab="${esc(e.id)}" style="width:auto;margin:0 4px 0 0">Collab event</label>
+          <button data-ev="${esc(e.id)}" data-d="approve">Approve</button>
+          <button class="ghost" data-ev="${esc(e.id)}" data-d="reject">Reject</button>`
+        : `<button class="ghost" data-ev="${esc(e.id)}" data-d="remove">Take down</button>`}
+      </div>
+    </div></div>`;
+}
+
+async function loadEvents() {
+  $('evCard').hidden = false;
+  $('evMsg').textContent = 'Loading events…';
+  try {
+    const { data } = await eventSubmissions();
+    $('evCount').textContent = data.pending.length ? `(${data.pending.length} waiting)` : '';
+    $('evCard').style.borderColor = data.pending.length ? '#E5C547' : '';
+    $('evPending').innerHTML = data.pending.map((e) => evRow(e, true)).join('') || '<p class="muted small" style="margin:0">Nothing waiting. You’ll get a notification when someone posts.</p>';
+    $('evLive').innerHTML = data.approved.map((e) => evRow(e, false)).join('') || '<p class="muted small" style="margin:0">No approved events coming up.</p>';
+    $('evMsg').textContent = '';
+  } catch (e) {
+    $('evMsg').innerHTML = `<span class="err">Couldn’t load events (${esc(e.code || '')}: ${esc(e.message || e)}).</span>`;
+  }
+}
+
+$('evCard').addEventListener('click', async (ev) => {
+  const btn = ev.target.closest('button[data-ev]');
+  if (!btn) return;
+  const id = btn.dataset.ev, decision = btn.dataset.d;
+  if (decision === 'remove' && !confirm('Take this event down? It disappears from the app for everyone.')) return;
+  const collabHosted = !!document.querySelector(`input[data-collab="${CSS.escape(id)}"]`)?.checked;
+  btn.disabled = true;
+  try {
+    await reviewEvent({ id, decision, collabHosted });
+    await loadEvents();
+  } catch (e) {
+    btn.disabled = false;
+    $('evMsg').innerHTML = `<span class="err">That didn’t work (${esc(e.message || e)}).</span>`;
+  }
+});
 
 let accounts = [];
 const selected = new Set();

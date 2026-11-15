@@ -7,13 +7,15 @@ import { registerForPush } from '@/lib/push';
 import { UI_PREVIEW } from '@/lib/preview';
 import { MatchesProvider } from '@/lib/use-matches';
 import { LikedYouProvider } from '@/lib/liked-you';
+import { EventsProvider } from '@/lib/use-events';
 
 export const unstable_settings = { anchor: '(tabs)' };
 
-type PushData = { type?: 'match' | 'message' | 'like' | 'report' | 'signup' | 'nudge'; matchId?: string; url?: string };
+type PushData = { type?: 'match' | 'message' | 'like' | 'report' | 'signup' | 'nudge' | 'event'; matchId?: string; url?: string };
 
 function openFromNotification(data: PushData | undefined) {
   if (data?.type === 'like') return router.push('/connections');
+  if (data?.type === 'event') return router.push('/events');
   if (data?.type === 'nudge' && data.url?.startsWith('/edit')) return router.push(data.url as Href);
   if (!data?.matchId) return;
   router.push(`/chat/${data.matchId}`);
@@ -46,6 +48,7 @@ export default function AppLayout() {
   return (
     <MatchesProvider>
       <LikedYouProvider>
+      <EventsProvider>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#fff' } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="user/[id]" options={{ presentation: 'card' }} />
@@ -53,7 +56,10 @@ export default function AppLayout() {
         <Stack.Screen name="match" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="delete-account" options={{ presentation: 'modal' }} />
         <Stack.Screen name="edit" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="event/[key]" options={{ presentation: 'card' }} />
+        <Stack.Screen name="event/new" options={{ presentation: 'modal' }} />
       </Stack>
+      </EventsProvider>
       </LikedYouProvider>
     </MatchesProvider>
   );

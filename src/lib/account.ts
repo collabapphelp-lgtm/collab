@@ -4,6 +4,7 @@ import { deleteObject, listAll, ref } from 'firebase/storage';
 import { auth, db, storage } from './firebase';
 import { UI_PREVIEW } from './preview';
 import { deletePushTokens } from './push';
+import { deleteMyEventData } from './events';
 
 async function deleteAllIn(path: [string, ...string[]]) {
   const snap = await getDocs(collection(db, ...path));
@@ -61,6 +62,7 @@ export async function deleteAccount(password: string) {
   await deleteStorageFolder(`voice/${me}`);
 
   // 4. Push tokens, profile, then the login itself.
+  await deleteMyEventData(me).catch(() => {});
   await deletePushTokens(me);
   await deleteDoc(doc(db, 'activity', me)).catch(() => {});
   await deleteDoc(doc(db, 'users', me));

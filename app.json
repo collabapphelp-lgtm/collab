@@ -71,7 +71,8 @@
           "isIosBackgroundLocationEnabled": false,
           "isAndroidBackgroundLocationEnabled": false
         }
-      ]
+      ],
+      "expo-maps"
     ],
     "scheme": "collab",
     "experiments": {

@@ -36,6 +36,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="discover" options={{ title: 'Discover', tabBarIcon: icon('compass', 'compass-outline') }} />
+      <Tabs.Screen name="events" options={{ title: 'Events', tabBarIcon: icon('calendar', 'calendar-outline') }} />
       <Tabs.Screen
         name="connections"
         options={{
@@ -68,8 +69,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -3 },
     elevation: 10,
   },
-  pill: { width: 58, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  pill: { width: 52, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   pillOn: { backgroundColor: 'rgba(75,163,199,0.14)' },
-  label: { fontFamily: fonts.bodySemibold, fontSize: 12, marginTop: 4 },
+  label: { fontFamily: fonts.bodySemibold, fontSize: 11, marginTop: 4 },
   badge: { backgroundColor: colors.red, fontFamily: fonts.bodySemibold, fontSize: 11, top: 2 },
 });

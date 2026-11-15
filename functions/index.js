@@ -185,7 +185,36 @@ exports.sendShowcaseNudges = onSchedule('every 60 minutes', async () => {
 });
 
 // Tester dashboard (private).
+// Tell the team when someone posts an event that needs review.
+exports.onEventSubmitted = onDocumentCreated('events/{eventId}', async (event) => {
+  const e = event.data?.data();
+  if (!e || e.status !== 'pending') return;
+  await Promise.all(
+    adminUids().map((uid) =>
+      notify(uid, {
+        title: `📍 New event to review: ${e.title}`,
+        body: `${e.hostName} posted ${e.title} at ${e.venue}. Approve it on the dashboard.`,
+        data: { type: 'report' },
+      }),
+    ),
+  );
+});
+
+// Tell the host when their event is approved.
+exports.onEventReviewed = onDocumentUpdated('events/{eventId}', async (event) => {
+  const before = event.data?.before.data();
+  const after = event.data?.after.data();
+  if (!before || !after || before.status === after.status || after.status !== 'approved') return;
+  await notify(after.hostId, {
+    title: 'Your event is live 🎉',
+    body: `${after.title} is on the Events map. Share it with your people.`,
+    data: { type: 'event' },
+  });
+});
+
 exports.metrics = require('./metrics').metrics;
+exports.eventSubmissions = require('./events').eventSubmissions;
+exports.reviewEvent = require('./events').reviewEvent;
 exports.accounts = require('./admin').accounts;
 exports.deleteAccounts = require('./admin').deleteAccounts;
 exports.joinApi = require('./join').joinApi;

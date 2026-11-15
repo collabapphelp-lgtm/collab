@@ -132,6 +132,44 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // ---------- Events ----------
+    // events/{id}: one-off events people post. Created as 'pending'; the Collab team approves or
+    // rejects them from /admin (Cloud Function, which bypasses these rules). Recurring open mics
+    // are built into the app (src/lib/events-data.ts), not stored here.
+    match /events/{eventId} {
+      allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.hostId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.hostId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && !('collabHosted' in request.resource.data)
+        && request.resource.data.type in ['open-mic', 'jam', 'show', 'meetup']
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 80
+        && request.resource.data.venue is string && request.resource.data.venue.size() > 0 && request.resource.data.venue.size() <= 80
+        && request.resource.data.address is string && request.resource.data.address.size() <= 140
+        && request.resource.data.description is string && request.resource.data.description.size() <= 1000
+        && request.resource.data.hostName is string && request.resource.data.hostName.size() <= 60
+        && request.resource.data.startsAt is number
+        && request.resource.data.lat is number && request.resource.data.lat > 40.45 && request.resource.data.lat < 40.95
+        && request.resource.data.lng is number && request.resource.data.lng > -74.3 && request.resource.data.lng < -73.65
+        && (!('link' in request.resource.data) || (request.resource.data.link is string && request.resource.data.link.size() <= 300))
+        && (!('cost' in request.resource.data) || request.resource.data.cost.size() <= 60)
+        && (!('signUp' in request.resource.data) || request.resource.data.signUp.size() <= 120);
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.hostId == request.auth.uid;
+    }
+
+    // rsvps/{occurrenceKey}__{uid}: "I'm going". Visible to every signed-in member (that's the point).
+    match /rsvps/{rsvpId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.key is string && request.resource.data.key.size() <= 120
+        && request.resource.data.date is string && request.resource.data.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && rsvpId == request.resource.data.key + '__' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['key', 'date', 'uid', 'at']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
     // Everything else is closed.
     match /{document=**} {
       allow read, write: if false;
