@@ -25,7 +25,7 @@ const hits = (want: string[], have: string[] = []) => want.length === 0 || want.
 export function passesFilters(p: UserProfile, f: DiscoverFilters) {
   return (
     hits(f.roles, p.skills) &&
-    hits(f.instruments, canonicalList(p.instruments)) &&
+    hits(f.instruments, [...canonicalList(p.instruments), ...(p.instrumentTypes ?? [])]) &&
     hits(f.sounds, [...(p.genres ?? []), ...(p.interests ?? [])]) &&
     hits(f.intents, p.intents) &&
     hits(f.experience, p.experience ? [p.experience] : [])

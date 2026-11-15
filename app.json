@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "icon": {
         "light": "./assets/icons/ios-light.png",
@@ -51,7 +51,11 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#C5DAE8"
+          "backgroundColor": "#C5DAE8",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#101216"
+          }
         }
       ],
       "expo-web-browser",

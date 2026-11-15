@@ -76,7 +76,12 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
     .flatMap((v) => {
       // Picked specifics? Show just those ("Piano", "Videographers"), not "Instrument Players: Piano".
       const details = canonicalList(profile.lookingForDetails?.[v]);
-      return details.length ? details.map((d) => lookingOptionFor(d).label) : [lookingOptionFor(v).label];
+      // Exact instruments replace their family ("Strings" + Cello → "Cello").
+      const shown = details.filter((d) => {
+        const famTypes = (INSTRUMENT_TYPES[d] ?? []).map((o) => o.value);
+        return !famTypes.some((t) => details.includes(t));
+      });
+      return shown.length ? shown.map((d) => lookingOptionFor(d).label) : [lookingOptionFor(v).label];
     })
     .concat(profile.lookingForSpecific ?? []);
 

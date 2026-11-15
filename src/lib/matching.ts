@@ -1,4 +1,4 @@
-import { DEFAULT_RADIUS_MILES } from './onboarding-data';
+import { DEFAULT_RADIUS_MILES, INSTRUMENT_TYPES } from './onboarding-data';
 import { canonicalList, lookingOptionFor, optionFor } from './labels';
 import type { UserProfile } from './types';
 
@@ -39,6 +39,25 @@ const intersects = (a: string[] = [], b: string[] = []) => {
   return canonicalList(a).some((x) => bb.includes(x));
 };
 
+/**
+ * Looking for players: details mix families ('strings') and exact types ('type:cello').
+ * A family with exact types picked under it wants one of those types; someone who plays the family
+ * but never said which exact instrument still counts (we can't tell, so don't hide them).
+ */
+function playsWanted(person: UserProfile, details: string[]) {
+  const theirFamilies = canonicalList(person.instruments);
+  const theirTypes = person.instrumentTypes ?? [];
+  const wantedTypes = details.filter((d) => d.startsWith('type:'));
+  return canonicalList(details.filter((d) => !d.startsWith('type:'))).some((fam) => {
+    if (!theirFamilies.includes(fam)) return false;
+    const famTypes = (INSTRUMENT_TYPES[fam] ?? []).map((o) => o.value);
+    const want = wantedTypes.filter((t) => famTypes.includes(t));
+    if (want.length === 0) return true;
+    const theirsInFam = theirTypes.filter((t) => famTypes.includes(t));
+    return theirsInFam.length === 0 || want.some((t) => theirsInFam.includes(t));
+  });
+}
+
 /** Does `person` satisfy one "looking for" entry of the searcher? */
 function satisfies(person: UserProfile, entry: string, details: string[] = []): boolean {
   const skills = person.skills ?? [];
@@ -49,7 +68,7 @@ function satisfies(person: UserProfile, entry: string, details: string[] = []): 
     case 'content':
       return person.creatorType === entry && (details.length === 0 || intersects(details, skills));
     case 'instrumentalist':
-      return skills.includes('instrumentalist') && (details.length === 0 || intersects(details, person.instruments));
+      return skills.includes('instrumentalist') && (details.length === 0 || playsWanted(person, details));
     default:
       return skills.includes(entry);
   }

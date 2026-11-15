@@ -5,10 +5,10 @@ import { Chip, ChipGrid } from '@/components/onboarding/Chip';
 import { OptionRow } from '@/components/onboarding/OptionRow';
 import { OpenToAll } from '@/components/onboarding/OpenToAll';
 import { useOnboarding } from '@/lib/onboarding-context';
-import { CONTENT_INTENTS, CONTENT_LOOKING, EXPERIENCE, MUSIC_INTENTS, MUSICIAN_LOOKING, type LookingOption } from '@/lib/onboarding-data';
+import { CONTENT_INTENTS, CONTENT_LOOKING, EXPERIENCE, INSTRUMENT_TYPES, MUSIC_INTENTS, MUSICIAN_LOOKING, type LookingOption } from '@/lib/onboarding-data';
 import { TagInput } from '@/components/onboarding/TagInput';
 import { toggleIn } from '@/lib/toggle';
-import { canonicalList } from '@/lib/labels';
+import { canonicalList, optionFor } from '@/lib/labels';
 import { fonts, makeStyles } from '@/lib/theme';
 
 // Step 3: who do you want to collab with? Includes the other creator type (cross-type matching).
@@ -43,7 +43,13 @@ export default function LookingStep() {
   const picked = looking.filter((v) => v !== 'anything');
 
   function toggleSub(row: string, sub: string) {
-    setDetails((d) => ({ ...d, [row]: toggleIn(d[row] ?? [], sub) }));
+    setDetails((d) => {
+      let next = toggleIn(d[row] ?? [], sub);
+      // Unpicking a family also drops the exact instruments picked under it.
+      const famTypes = (INSTRUMENT_TYPES[sub] ?? []).map((o) => o.value);
+      if (famTypes.length && !next.includes(sub)) next = next.filter((v) => !famTypes.includes(v));
+      return { ...d, [row]: next };
+    });
   }
 
   async function next() {
@@ -110,7 +116,7 @@ export default function LookingStep() {
             onToggleSub={(sub) => toggleSub(o.value, sub)}
             extra={
               o.value === 'instrumentalist' ? (
-                <TagInput tags={specific} onChange={setSpecific} placeholder="Something specific? e.g. Cello, Talkbox" label="Specific instruments you're looking for" />
+                <TagInput tags={specific} onChange={setSpecific} placeholder="Something else? e.g. Harmonica, Talkbox" label="Specific instruments you're looking for" />
               ) : null
             }
           />
@@ -158,7 +164,10 @@ function LookingRow(props: {
       : undefined
     : expandable && selected
       ? subs.length > 0
-        ? subs.map((v) => option.subOptions!.find((s) => s.value === v)?.label ?? v).join(', ')
+        ? subs
+            .filter((v) => !(INSTRUMENT_TYPES[v] ?? []).some((t) => subs.includes(t.value)))
+            .map((v) => option.subOptions!.find((s) => s.value === v)?.label ?? optionFor(v).label)
+            .join(', ')
         : 'Any'
       : expandable
         ? 'Tap to choose specific types'
@@ -190,6 +199,21 @@ function LookingRow(props: {
               />
             ))}
           </ChipGrid>
+          {/* Exact instruments under each picked family ("Which strings?" → Cello, Violin…). Optional. */}
+          {subs
+            .filter((fam) => INSTRUMENT_TYPES[fam]?.length)
+            .map((fam) => (
+              <View key={fam} style={styles.types}>
+                <Text style={styles.typesTitle}>
+                  Which {optionFor(fam).label.toLowerCase()}? <Text style={styles.typesHint}>optional</Text>
+                </Text>
+                <ChipGrid>
+                  {INSTRUMENT_TYPES[fam].map((t) => (
+                    <Chip key={t.value} size="sm" label={t.label} selected={subs.includes(t.value)} onPress={() => props.onToggleSub(t.value)} />
+                  ))}
+                </ChipGrid>
+              </View>
+            ))}
           {props.extra}
         </>
       ) : null}
@@ -206,5 +230,8 @@ const useStyles = makeStyles((colors) => ({
   orLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   orText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   openNote: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 8 },
+  types: { gap: 8, padding: 12, borderRadius: 12, backgroundColor: '#F4F8FB' },
+  typesTitle: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text },
+  typesHint: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
   subPrompt: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSecondary },
 }));

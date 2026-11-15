@@ -86,6 +86,7 @@ function quickChips(me: UserProfile): QuickChipDef[] {
   // Instruments, if you want players.
   if (open || wanted.includes('instrumentalist') || wanted.includes('musician')) {
     const picked = canonicalList(me.lookingForDetails?.instrumentalist);
+    picked.filter((v) => v.startsWith('type:')).forEach((v) => add('instruments', v));
     (picked.length ? picked : INSTRUMENTS.map((o) => o.value)).forEach((v) => INSTRUMENTS.some((o) => o.value === v) && add('instruments', v));
   }
   // Your own sound or niche.
