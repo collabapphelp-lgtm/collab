@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import { TagInput } from '@/components/onboarding/TagInput';
+import { colors, fonts } from '@/lib/theme';
 import { StepScreen } from '@/components/onboarding/StepScreen';
 import { Chip, ChipGrid } from '@/components/onboarding/Chip';
 import { OpenToAll } from '@/components/onboarding/OpenToAll';
@@ -14,17 +17,19 @@ export default function TasteStep() {
 
   const [picked, setPicked] = useState<string[]>((isMusician ? draft.genres : draft.interests) ?? []);
   const [openToAll, setOpenToAll] = useState(draft.openToAll ?? false);
+  const [custom, setCustom] = useState<string[]>(draft.soundsCustom ?? []);
+  const [showCustom, setShowCustom] = useState((draft.soundsCustom ?? []).length > 0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const ready = picked.length > 0 || openToAll;
+  const ready = picked.length > 0 || openToAll || custom.length > 0;
 
   async function next() {
     if (!ready) return;
     setSaving(true);
     setError(null);
     try {
-      await saveStep(isMusician ? { genres: picked, openToAll } : { interests: picked, openToAll });
+      await saveStep({ ...(isMusician ? { genres: picked } : { interests: picked }), openToAll, soundsCustom: custom });
       advance('/onboarding/showcase');
     } catch {
       setError('Couldn’t save. Check your connection and try again.');
@@ -61,6 +66,19 @@ export default function TasteStep() {
         ))}
       </ChipGrid>
 
+      {showCustom ? (
+        <TagInput
+          tags={custom}
+          onChange={setCustom}
+          placeholder={isMusician ? 'e.g. Gospel, Drill, Lo-fi' : 'e.g. Skincare, Cars, DIY'}
+          label={isMusician ? 'Other genres' : 'Other niches'}
+        />
+      ) : (
+        <Pressable onPress={() => setShowCustom(true)} hitSlop={8} accessibilityRole="button">
+          <Text style={styles.addOther}>{isMusician ? '＋ Add another genre' : '＋ Add another niche'}</Text>
+        </Pressable>
+      )}
+
       <OpenToAll
         label={isMusician ? 'Open to all genres' : 'Open to all niches'}
         selected={openToAll}
@@ -69,3 +87,7 @@ export default function TasteStep() {
     </StepScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  addOther: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue, marginTop: 4 },
+});

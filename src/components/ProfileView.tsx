@@ -103,6 +103,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
               tone="purple"
               items={[
                 ...(tastes ?? []).map((t) => optionFor(t).label),
+                ...(profile.soundsCustom ?? []),
                 ...(profile.openToAll ? ['♾️ Open to all'] : []),
               ]}
             />

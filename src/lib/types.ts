@@ -65,6 +65,9 @@ export type UserProfile = {
   showcase?: ShowcaseItem[];
   bio?: string;
 
+  /** Typed-in sounds/niches not in the list (display only). */
+  soundsCustom?: string[];
+
   /** Discover quick filters (see lib/discover-filters.ts). */
   discoverFilters?: { roles: string[]; instruments: string[]; sounds: string[]; intents: string[]; experience: string[] };
 };

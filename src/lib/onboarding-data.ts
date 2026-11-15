@@ -43,15 +43,9 @@ export const INSTRUMENTS: Option[] = [
  * Stored in `instrumentTypes` as 'type:<name>'; matching still uses the family.
  */
 export const INSTRUMENT_TYPES: Record<string, Option[]> = {
-  piano: [
-    { value: 'type:acoustic-piano', label: 'Acoustic piano', emoji: '' },
-    { value: 'type:keys-synth', label: 'Keys / synth', emoji: '' },
-    { value: 'type:organ', label: 'Organ', emoji: '' },
-  ],
   guitar: [
     { value: 'type:acoustic-guitar', label: 'Acoustic', emoji: '' },
     { value: 'type:electric-guitar', label: 'Electric', emoji: '' },
-    { value: 'type:classical-guitar', label: 'Classical / nylon', emoji: '' },
   ],
   bass: [
     { value: 'type:electric-bass', label: 'Electric bass', emoji: '' },
@@ -186,32 +180,32 @@ export const CONTENT_LOOKING: LookingOption[] = [
 // ---------- Your sound / your vibe ----------
 
 export const GENRES: Option[] = [
-  { value: 'afrobeats', label: 'Afrobeats', emoji: '🌍' },
-  { value: 'classical', label: 'Classical', emoji: '🎻' },
-  { value: 'country', label: 'Country', emoji: '🤠' },
-  { value: 'electronic', label: 'Electronic / EDM', emoji: '🎛️' },
   { value: 'hiphop', label: 'Hip Hop', emoji: '🎧' },
-  { value: 'indie', label: 'Indie', emoji: '🌙' },
-  { value: 'jazz', label: 'Jazz', emoji: '🎷' },
-  { value: 'latin', label: 'Latin', emoji: '💃' },
   { value: 'pop', label: 'Pop', emoji: '🎵' },
   { value: 'rnb', label: 'R&B / Soul', emoji: '🎤' },
   { value: 'rock', label: 'Rock', emoji: '🎸' },
+  { value: 'electronic', label: 'Electronic / EDM', emoji: '🎛️' },
+  { value: 'latin', label: 'Latin', emoji: '💃' },
+  { value: 'afrobeats', label: 'Afrobeats', emoji: '🌍' },
+  { value: 'country', label: 'Country', emoji: '🤠' },
+  { value: 'indie', label: 'Indie', emoji: '🌙' },
+  { value: 'jazz', label: 'Jazz', emoji: '🎷' },
+  { value: 'classical', label: 'Classical', emoji: '🎻' },
 ];
 
 export const INTERESTS: Option[] = [
-  { value: 'art', label: 'Art / Design', emoji: '🎨' },
   { value: 'comedy', label: 'Comedy', emoji: '😂' },
-  { value: 'educational', label: 'Educational', emoji: '📚' },
+  { value: 'vlog', label: 'Vlog / Lifestyle', emoji: '📹' },
+  { value: 'music', label: 'Music', emoji: '🎵' },
   { value: 'fashion', label: 'Fashion', emoji: '👗' },
   { value: 'fitness', label: 'Fitness', emoji: '💪' },
   { value: 'culinary', label: 'Food', emoji: '🍳' },
   { value: 'gaming', label: 'Gaming', emoji: '🎮' },
-  { value: 'music', label: 'Music', emoji: '🎵' },
+  { value: 'travel', label: 'Travel', emoji: '✈️' },
   { value: 'sports', label: 'Sports', emoji: '🏀' },
   { value: 'tech', label: 'Tech', emoji: '💻' },
-  { value: 'travel', label: 'Travel', emoji: '✈️' },
-  { value: 'vlog', label: 'Vlog / Lifestyle', emoji: '📹' },
+  { value: 'educational', label: 'Educational', emoji: '📚' },
+  { value: 'art', label: 'Art / Design', emoji: '🎨' },
 ];
 
 // ---------- Showcase prompts ----------
