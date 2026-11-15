@@ -28,10 +28,22 @@ export default function MyProfile() {
   return (
     <View style={styles.fill}>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        <View style={{ paddingTop: insets.top + 8 }}>
-          <ProfileStrength profile={profile} />
-        </View>
-        <ProfileView profile={profile} isSelf distanceLabel={shortLocation(profile.location) ?? 'Location not set'} />
+        <ProfileView
+          profile={profile}
+          isSelf
+          heroHeight={470 + insets.top}
+          distanceLabel={shortLocation(profile.location) ?? 'Location not set'}
+          heroAccessory={
+            <Pressable
+              onPress={() => router.push('/edit')}
+              accessibilityRole="button"
+              style={[styles.heroEdit, { marginTop: insets.top }]}
+            >
+              <Text style={styles.heroEditText}>Edit</Text>
+            </Pressable>
+          }
+          belowHero={<ProfileStrength profile={profile} />}
+        />
         <View style={styles.actions}>
           <Text style={styles.note}>This is how other creatives see your profile.</Text>
           <Button
@@ -73,7 +85,7 @@ export default function MyProfile() {
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: colors.white },
+  fill: { flex: 1, backgroundColor: '#F7F5F0' },
   actions: { paddingHorizontal: 20, gap: 12 },
   note: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted, textAlign: 'center', marginBottom: 4 },
   deleteLink: { alignSelf: 'center', paddingVertical: 12 },
@@ -82,5 +94,7 @@ const styles = StyleSheet.create({
   legalLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   legalDot: { fontSize: 13, color: colors.textMuted },
   version: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, textAlign: 'center', marginTop: 6 },
+  heroEdit: { height: 36, paddingHorizontal: 18, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.95)', justifyContent: 'center' },
+  heroEditText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue },
   topFade: { position: 'absolute', top: 0, left: 0, right: 0 },
 });

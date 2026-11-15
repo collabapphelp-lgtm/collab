@@ -3,10 +3,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { HeroPhoto } from '@/components/Avatar';
 import { detectPlatform, INSTRUMENT_TYPES } from '@/lib/onboarding-data';
 import { canonicalList, fullName, lookingOptionFor, optionFor, roleLine, shortLocation } from '@/lib/labels';
-import type { ShowcaseItem, UserProfile } from '@/lib/types';
+import { accentFor } from '@/lib/accent';
+import type { ShowcaseItem, ShowcaseMedia, UserProfile } from '@/lib/types';
 import { colors, fonts, radius } from '@/lib/theme';
 
 type Props = {
@@ -17,18 +19,32 @@ type Props = {
   reasons?: string[];
   /** Rendered at the very top-right of the hero (e.g. a close button). */
   heroAccessory?: ReactNode;
+  /** Rendered right under the hero (e.g. Profile strength on your own profile). */
+  belowHero?: ReactNode;
   /** Viewing your own profile: section titles say "Your" instead of "Their". */
   isSelf?: boolean;
   /** Photo height. Discover uses a shorter one so more of the profile shows without scrolling. */
   heroHeight?: number;
 };
 
-/** One person's full profile: photo, roles, why you match, what they want, their sound, their work, bio. */
-export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, isSelf, heroHeight = 420 }: Props) {
+const GOLD = '#F2C14E';
+const PAGE = '#F7F5F0';
+
+/**
+ * One person's full profile, "Spotlight" style: the photo fades into a color taken from their sound,
+ * their first track is featured, prompts read big, everything else as clean chips.
+ */
+export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, belowHero, isSelf, heroHeight = 460 }: Props) {
   const name = fullName(profile);
-  const tastes = profile.creatorType === 'content' ? profile.interests : profile.genres;
+  const isContent = profile.creatorType === 'content';
+  const tastes = isContent ? profile.interests : profile.genres;
+  const accent = accentFor(profile);
   const looking = profile.lookingFor ?? [];
   const showcase = profile.showcase ?? [];
+  const media = showcase.filter((s): s is ShowcaseMedia => s.type === 'media');
+  const featured = media.find((m) => !(m.source === 'upload' && m.mediaKind === 'image')) ?? null;
+  const rest = showcase.filter((s) => s !== featured);
+
   // Exact types replace their family ("Woodwinds" + Saxophone → "Saxophone"); DAWs ride along.
   const types = profile.instrumentTypes ?? [];
   const instruments = [
@@ -42,81 +58,104 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
   const isGroup = profile.profileKind === 'group';
   const intents = (profile.intents ?? []).map((i) => optionFor(i).label);
   const experience = profile.experience ? optionFor(profile.experience).label : null;
+  const soundLine = [...(tastes ?? []).map((t) => optionFor(t).label), ...(profile.soundsCustom ?? [])]
+    .slice(0, 3)
+    .join(' · ')
+    .toUpperCase();
+  const where = distanceLabel ?? shortLocation(profile.location);
+  const lookingItems = looking
+    .flatMap((v) => {
+      // Picked specifics? Show just those ("Piano", "Videographers"), not "Instrument Players: Piano".
+      const details = canonicalList(profile.lookingForDetails?.[v]);
+      return details.length ? details.map((d) => lookingOptionFor(d).label) : [lookingOptionFor(v).label];
+    })
+    .concat(profile.lookingForSpecific ?? []);
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.hero, { height: heroHeight }]}>
+      <View style={[styles.hero, { height: heroHeight, backgroundColor: accent }]}>
         <HeroPhoto uri={profile.photoURL} name={name} seed={profile.id} />
-        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={styles.heroShade} />
+        <LinearGradient colors={['rgba(0,0,0,0.25)', 'transparent']} style={styles.heroTop} />
+        <LinearGradient colors={['transparent', accent + 'E6', accent]} locations={[0, 0.7, 1]} style={styles.heroShade} />
         {heroAccessory ? <View style={styles.heroAccessory}>{heroAccessory}</View> : null}
         <View style={styles.heroText}>
-          <Text style={styles.name}>{name}</Text>
+          {soundLine ? <Text style={styles.soundLine}>{soundLine}</Text> : null}
+          <Text style={styles.name} numberOfLines={2}>
+            {name}
+          </Text>
           <Text style={styles.role}>
             {isGroup ? `Band / group${profile.groupSize ? ` · ${profile.groupSize} members` : ''} · ` : ''}
             {roleLine(profile, 3)}
           </Text>
-          {distanceLabel || profile.location ? (
+          {where ? (
             <View style={styles.wherePill}>
-              <Text style={styles.where}>📍 {distanceLabel ?? shortLocation(profile.location)}</Text>
+              <MaterialCommunityIcons name="map-marker-outline" size={14} color={colors.white} />
+              <Text style={styles.whereText}>{where}</Text>
             </View>
           ) : null}
         </View>
       </View>
 
       <View style={styles.body}>
+        {belowHero}
+
         {reasons && reasons.length > 0 ? (
-          <LinearGradient colors={['rgba(229,197,71,0.22)', 'rgba(163,153,199,0.14)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.reasons}>
+          <View style={styles.reasons}>
             <Text style={styles.reasonsTitle}>Why you two fit</Text>
             {reasons.map((r) => (
-              <Text key={r} style={styles.reasonText}>
-                ✨ {r}
-              </Text>
+              <View key={r} style={styles.reasonRow}>
+                <MaterialCommunityIcons name="star-four-points" size={13} color="#B7791F" />
+                <Text style={styles.reasonText}>{r}</Text>
+              </View>
             ))}
-          </LinearGradient>
+          </View>
         ) : null}
 
         {intents.length > 0 || experience ? (
           <Section title={isSelf ? 'You’re here to' : 'Here to'}>
-            <ChipRow tone="purple" items={[...intents, ...(experience ? [experience] : [])]} />
+            <View style={styles.chips}>
+              {intents.map((t) => (
+                <View key={t} style={[styles.chip, { backgroundColor: accent, borderColor: accent }]}>
+                  <Text style={[styles.chipText, { color: colors.white }]}>{t}</Text>
+                </View>
+              ))}
+              {experience ? (
+                <View style={[styles.chip, styles.chipLight]}>
+                  <Text style={styles.chipText}>{experience}</Text>
+                </View>
+              ) : null}
+            </View>
           </Section>
         ) : null}
 
-        {instruments.length > 0 ? <Section title={profile.instruments?.length ? (isSelf ? 'You play' : 'Plays') : 'Works in'}>{<ChipRow items={instruments} tone="blue" />}</Section> : null}
+        {featured ? <FeaturedTrack item={featured} /> : null}
 
-        {looking.length > 0 ? (
-          <Section title="Looking to collab with">
-            <ChipRow
-              tone="blue"
-              items={looking.flatMap((v) => {
-                // Picked specifics? Show just those ("Piano", "Videographers"), not "Instrument Players: Piano".
-                const details = canonicalList(profile.lookingForDetails?.[v]);
-                if (details.length) return details.map((d) => lookingOptionFor(d).label);
-                return [lookingOptionFor(v).label];
-              }).concat(profile.lookingForSpecific ?? [])}
-            />
-          </Section>
-        ) : null}
-
-        {tastes?.length || profile.openToAll ? (
-          <Section title={`${isSelf ? 'Your' : 'Their'} ${profile.creatorType === 'content' ? 'vibe' : 'sound'}`}>
-            <ChipRow
-              tone="purple"
-              items={[
-                ...(tastes ?? []).map((t) => optionFor(t).label),
-                ...(profile.soundsCustom ?? []),
-                ...(profile.openToAll ? ['♾️ Open to all'] : []),
-              ]}
-            />
-          </Section>
-        ) : null}
-
-        {showcase.map((item, i) => (
+        {rest.map((item, i) => (
           <ShowcaseCard key={i} item={item} />
         ))}
 
-        {profile.bio ? (
-          <Section title={isSelf ? "What you’re looking for in a collab" : "Looking for in a collab"}>
-            <Text style={styles.bio}>{profile.bio}</Text>
+        {instruments.length > 0 ? (
+          <Section title={profile.instruments?.length ? (isSelf ? 'You play' : 'Plays') : 'Works in'}>
+            <ChipRow items={instruments} />
+          </Section>
+        ) : null}
+
+        {lookingItems.length > 0 || profile.bio ? (
+          <Section title="Looking to collab with">
+            {lookingItems.length > 0 ? <ChipRow items={lookingItems} tone="blue" /> : null}
+            {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
+          </Section>
+        ) : null}
+
+        {tastes?.length || profile.soundsCustom?.length || profile.openToAll ? (
+          <Section title={`${isSelf ? 'Your' : 'Their'} ${isContent ? 'vibe' : 'sound'}`}>
+            <ChipRow
+              items={[
+                ...(tastes ?? []).map((t) => optionFor(t).label),
+                ...(profile.soundsCustom ?? []),
+                ...(profile.openToAll ? ['Open to all'] : []),
+              ]}
+            />
           </Section>
         ) : null}
       </View>
@@ -127,21 +166,69 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, is
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionTitle}>{title.toUpperCase()}</Text>
       {children}
     </View>
   );
 }
 
-function ChipRow({ items, tone }: { items: string[]; tone: 'blue' | 'purple' }) {
+function ChipRow({ items, tone }: { items: string[]; tone?: 'blue' }) {
   return (
     <View style={styles.chips}>
       {items.map((t) => (
-        <View key={t} style={[styles.chip, tone === 'blue' ? styles.chipBlue : styles.chipPurple]}>
-          <Text style={styles.chipText}>{t}</Text>
+        <View key={t} style={[styles.chip, tone === 'blue' ? styles.chipBlue : styles.chipLight]}>
+          <Text style={[styles.chipText, tone === 'blue' && { color: '#1F5F7F' }]}>{t}</Text>
         </View>
       ))}
     </View>
+  );
+}
+
+// A fixed-looking waveform per track (decorative; not real levels).
+function bars(seed: string, n = 30) {
+  let h = 7;
+  for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return Array.from({ length: n }, (_, i) => {
+    h = (h * 1103515245 + 12345) >>> 0;
+    return 0.3 + 0.7 * Math.abs(Math.sin(i / 2.7 + ((h >>> 16) % 7)));
+  });
+}
+
+function mediaMeta(item: ShowcaseMedia) {
+  const platform = item.source === 'link' ? detectPlatform(item.url) : null;
+  const kind = platform ? platform.label : item.mediaKind === 'audio' ? 'Audio' : item.mediaKind === 'image' ? 'Photo' : 'Video';
+  return { kind, title: item.title ?? (platform ? `${kind} link` : `${kind} snippet`) };
+}
+
+/** The first track/video, big and dark, like a "now playing" card. */
+function FeaturedTrack({ item }: { item: ShowcaseMedia }) {
+  const { kind, title } = mediaMeta(item);
+  const wave = bars(item.url);
+  return (
+    <Pressable
+      onPress={() => WebBrowser.openBrowserAsync(item.url).catch(() => {})}
+      accessibilityRole="link"
+      accessibilityLabel={`Featured: ${title}. Opens ${kind}.`}
+      style={({ pressed }) => [styles.featured, pressed && { opacity: 0.9 }]}
+    >
+      <Text style={styles.featuredLabel}>FEATURED</Text>
+      <View style={styles.featuredRow}>
+        <View style={styles.featuredPlay}>
+          <MaterialCommunityIcons name="play" size={26} color="#17151F" />
+        </View>
+        <View style={styles.flex}>
+          <Text style={styles.featuredTitle} numberOfLines={1}>
+            {title}
+          </Text>
+          <Text style={styles.featuredKind}>{kind}</Text>
+        </View>
+      </View>
+      <View style={styles.wave}>
+        {wave.map((v, i) => (
+          <View key={i} style={[styles.waveBar, { height: 6 + v * 26, backgroundColor: i < 9 ? GOLD : '#5B5570' }]} />
+        ))}
+      </View>
+    </Pressable>
   );
 }
 
@@ -164,84 +251,85 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
     );
   }
 
-  const platform = item.source === 'link' ? detectPlatform(item.url) : null;
-  const icon = platform ? platform.emoji : item.mediaKind === 'audio' ? '🎵' : '🎬';
-  const kind = platform ? platform.label : item.mediaKind === 'audio' ? 'Audio' : 'Video';
+  const { kind, title } = mediaMeta(item);
   return (
     <Pressable
       onPress={() => WebBrowser.openBrowserAsync(item.url).catch(() => {})}
       accessibilityRole="link"
-      accessibilityLabel={`${item.title ?? kind}. Opens ${kind}.`}
+      accessibilityLabel={`${title}. Opens ${kind}.`}
       style={({ pressed }) => [styles.media, pressed && { opacity: 0.8 }]}
     >
       <View style={styles.mediaIcon}>
-        <Text style={styles.mediaIconText}>{icon}</Text>
+        <MaterialCommunityIcons name={item.mediaKind === 'video' ? 'play-circle-outline' : 'music-note'} size={22} color={colors.blue} />
       </View>
-      <View style={styles.mediaText}>
+      <View style={styles.flex}>
         <Text style={styles.mediaTitle} numberOfLines={1}>
-          {item.title ?? `${kind} link`}
+          {title}
         </Text>
         <Text style={styles.mediaKind}>{kind}</Text>
       </View>
-      <View style={styles.playBtn}>
-        <Text style={styles.play}>▶</Text>
-      </View>
+      <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textMuted} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { backgroundColor: colors.white },
-  hero: { justifyContent: 'flex-end', backgroundColor: colors.purple, overflow: 'hidden' },
-  heroShade: { position: 'absolute', left: 0, right: 0, bottom: 0, top: '45%' },
+  flex: { flex: 1 },
+  wrap: { backgroundColor: PAGE },
+  hero: { justifyContent: 'flex-end', overflow: 'hidden' },
+  heroTop: { position: 'absolute', left: 0, right: 0, top: 0, height: 120 },
+  heroShade: { position: 'absolute', left: 0, right: 0, bottom: 0, top: '40%' },
   heroAccessory: { position: 'absolute', top: 12, right: 12 },
-  heroText: { padding: 20, gap: 4 },
-  name: { fontFamily: fonts.heading, fontSize: 34, lineHeight: 38, color: colors.white },
-  role: { fontFamily: fonts.bodySemibold, fontSize: 16, color: 'rgba(255,255,255,0.95)' },
-  wherePill: { alignSelf: 'flex-start', marginTop: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 4 },
-  where: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.white },
-
-  body: { padding: 20, gap: 20 },
-  reasons: { borderRadius: radius.md, padding: 16, gap: 6 },
-  reasonsTitle: { fontFamily: fonts.heading, fontSize: 15, color: colors.text, marginBottom: 2 },
-  reasonText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.text },
-
-  section: { gap: 10 },
-  sectionTitle: { fontFamily: fonts.heading, fontSize: 16, color: colors.text },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1 },
-  chipBlue: { backgroundColor: 'rgba(75,163,199,0.08)', borderColor: 'rgba(75,163,199,0.25)' },
-  chipPurple: { backgroundColor: 'rgba(163,153,199,0.12)', borderColor: 'rgba(163,153,199,0.35)' },
-  chipText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.text },
-
-  prompt: { padding: 18, borderRadius: radius.md, backgroundColor: 'rgba(163,153,199,0.12)', gap: 8 },
-  promptQ: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.textSecondary },
-  promptA: { fontFamily: fonts.heading, fontSize: 21, lineHeight: 28, color: colors.text },
-
-  media: {
+  heroText: { paddingHorizontal: 20, paddingBottom: 22, gap: 6 },
+  soundLine: { fontFamily: fonts.bodySemibold, fontSize: 12, letterSpacing: 2, color: GOLD },
+  name: { fontFamily: fonts.heading, fontSize: 40, lineHeight: 42, letterSpacing: -1, color: colors.white },
+  role: { fontFamily: fonts.bodySemibold, fontSize: 16, color: 'rgba(255,255,255,0.92)' },
+  wherePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    gap: 4,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
-  mediaIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(75,163,199,0.14)', alignItems: 'center', justifyContent: 'center' },
-  mediaIconText: { fontSize: 22 },
-  mediaText: { flex: 1 },
+  whereText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.white },
+
+  body: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 8, gap: 18 },
+  reasons: { borderRadius: 18, padding: 16, gap: 6, backgroundColor: '#FBF1D6' },
+  reasonsTitle: { fontFamily: fonts.heading, fontSize: 15, color: colors.text, marginBottom: 2 },
+  reasonRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  reasonText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.text },
+
+  section: { gap: 10 },
+  sectionTitle: { fontFamily: fonts.bodySemibold, fontSize: 12, letterSpacing: 1.5, color: colors.textSecondary },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
+  chipLight: { backgroundColor: colors.white, borderColor: '#E6E1D8' },
+  chipBlue: { backgroundColor: '#E3F0F6', borderColor: '#E3F0F6' },
+  chipText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text },
+
+  featured: { backgroundColor: '#17151F', borderRadius: 22, padding: 16, gap: 12 },
+  featuredLabel: { fontFamily: fonts.bodySemibold, fontSize: 11, letterSpacing: 1.8, color: GOLD },
+  featuredRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  featuredPlay: { width: 50, height: 50, borderRadius: 25, backgroundColor: GOLD, alignItems: 'center', justifyContent: 'center' },
+  featuredTitle: { fontFamily: fonts.heading, fontSize: 19, color: colors.white },
+  featuredKind: { fontFamily: fonts.body, fontSize: 13, color: '#B9B3C9' },
+  wave: { flexDirection: 'row', alignItems: 'center', gap: 3, height: 34 },
+  waveBar: { flex: 1, borderRadius: 2 },
+
+  prompt: { padding: 18, borderRadius: 22, backgroundColor: colors.white, gap: 8 },
+  promptQ: { fontFamily: fonts.body, fontSize: 14, color: colors.textSecondary },
+  promptA: { fontFamily: fonts.heading, fontSize: 21, lineHeight: 27, letterSpacing: -0.2, color: colors.text },
+
+  media: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, backgroundColor: colors.white },
+  mediaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#E3F0F6', alignItems: 'center', justifyContent: 'center' },
   mediaTitle: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
   mediaKind: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },
-  playBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
-  play: { fontSize: 14, color: colors.white, marginLeft: 2 },
   mediaImageWrap: { gap: 6 },
-  mediaImage: { width: '100%', aspectRatio: 4 / 5, borderRadius: radius.md, backgroundColor: colors.bgSecondary },
+  mediaImage: { width: '100%', aspectRatio: 4 / 5, borderRadius: 22, backgroundColor: colors.bgSecondary },
   mediaCaption: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },
 
   bio: { fontFamily: fonts.body, fontSize: 16, lineHeight: 23, color: colors.text },

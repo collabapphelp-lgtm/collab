@@ -39,8 +39,6 @@ export function ProfileStrength({ profile }: { profile: UserProfile }) {
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 20,
-    marginBottom: 12,
     padding: 16,
     gap: 10,
     borderRadius: radius.md,
