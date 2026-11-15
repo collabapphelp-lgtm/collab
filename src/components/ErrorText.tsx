@@ -1,7 +1,8 @@
 import { StyleSheet, Text } from 'react-native';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles } from '@/lib/theme';
 
 export function ErrorText({ message }: { message: string | null }) {
+  const styles = useStyles();
   if (!message) return null;
   return (
     <Text accessibilityLiveRegion="polite" style={styles.text}>
@@ -10,6 +11,6 @@ export function ErrorText({ message }: { message: string | null }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   text: { fontFamily: fonts.body, fontSize: 14, color: colors.red, textAlign: 'center' },
-});
+}));

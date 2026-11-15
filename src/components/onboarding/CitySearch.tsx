@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as Location from 'expo-location';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 export type PickedCity = { label: string; lat: number; lng: number };
 
@@ -71,6 +71,8 @@ async function cityFromDevice(): Promise<PickedCity | 'denied' | null> {
 type Props = { value: PickedCity | null; onPick: (city: PickedCity | null) => void };
 
 export function CitySearch({ value, onPick }: Props) {
+  const styles = useStyles();
+  const colors = useColors();
   const [query, setQuery] = useState(value?.label ?? '');
   const [results, setResults] = useState<GeoResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -189,7 +191,7 @@ export function CitySearch({ value, onPick }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   wrap: { gap: 8 },
   box: {
     flexDirection: 'row',
@@ -221,4 +223,4 @@ const styles = StyleSheet.create({
   locateText: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.blue },
   locateMsg: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textSecondary, paddingHorizontal: 4 },
   muted: { fontFamily: fonts.body, fontSize: 14, color: colors.textMuted, padding: 16 },
-});
+}));

@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth-context';
 import { detectPlatform, normalizeUrl, SHOWCASE } from '@/lib/onboarding-data';
 import { uploadMedia } from '@/lib/upload';
 import type { ShowcaseMedia } from '@/lib/types';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 
 const CHOICES = [
@@ -22,6 +22,8 @@ type Props = { visible: boolean; onClose: () => void; onAdd: (item: ShowcaseMedi
 
 /** Add a snippet by pasting a link (Spotify, YouTube…) or uploading a file from the phone. */
 export function MediaSheet({ visible, onClose, onAdd }: Props) {
+  const styles = useStyles();
+  const colors = useColors();
   const { user } = useAuth();
   const [tab, setTab] = useState<'link' | 'upload'>('link');
   const [url, setUrl] = useState('');
@@ -172,6 +174,7 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
 }
 
 function PickButton(props: { emoji: string; title: string; body: string; onPress: () => void }) {
+  const styles = useStyles();
   return (
     <Pressable onPress={props.onPress} style={({ pressed }) => [styles.pick, pressed && { opacity: 0.7 }]} accessibilityRole="button">
       <Text style={styles.pickEmoji}>{props.emoji}</Text>
@@ -181,7 +184,7 @@ function PickButton(props: { emoji: string; title: string; body: string; onPress
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   choose: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSecondary, marginBottom: -4 },
   tabs: { flexDirection: 'row', gap: 10 },
   tab: {
@@ -226,4 +229,4 @@ const styles = StyleSheet.create({
   uploading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 28 },
   uploadingText: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textSecondary },
   limit: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted, textAlign: 'center' },
-});
+}));

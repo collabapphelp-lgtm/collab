@@ -2,10 +2,11 @@ import { StyleSheet, View } from 'react-native';
 import { Avatar } from '@/components/Avatar';
 import type { Group } from '@/lib/connections';
 import { displayName } from '@/lib/labels';
-import { colors } from '@/lib/theme';
+import { makeStyles } from '@/lib/theme';
 
 /** Two overlapping faces for a group chat. */
 export function GroupAvatar({ group, me, size }: { group: Group; me: string; size: number }) {
+  const styles = useStyles();
   const faces = [...group.members, ...group.invited]
     .filter((u) => u !== me)
     .map((u) => group.people[u])
@@ -28,7 +29,7 @@ export function GroupAvatar({ group, me, size }: { group: Group; me: string; siz
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   back: { position: 'absolute', top: 0, right: 0 },
   front: { position: 'absolute', bottom: 0, left: 0, borderWidth: 2, borderColor: colors.white, backgroundColor: colors.white },
-});
+}));

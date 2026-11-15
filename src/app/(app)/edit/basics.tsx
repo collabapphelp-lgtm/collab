@@ -14,11 +14,12 @@ import { useAuth } from '@/lib/auth-context';
 import { db } from '@/lib/firebase';
 import { UI_PREVIEW } from '@/lib/preview';
 import { uploadProfilePhoto } from '@/lib/upload';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles } from '@/lib/theme';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 
 // Photo and name: the only profile basics collected at signup rather than in onboarding.
 export default function EditBasics() {
+  const styles = useStyles();
   const { profile } = useAuth();
   const [firstName, setFirstName] = useState(profile?.firstName ?? '');
   const [lastName, setLastName] = useState(profile?.lastName ?? '');
@@ -78,7 +79,7 @@ export default function EditBasics() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safe: { flex: 1, backgroundColor: colors.white },
   flex: { flex: 1 },
   content: { padding: 24, gap: 18 },
@@ -87,4 +88,4 @@ const styles = StyleSheet.create({
   photo: { width: 132, height: 132, borderRadius: 66 },
   change: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.blue },
   footer: { paddingHorizontal: 24, paddingBottom: 8 },
-});
+}));

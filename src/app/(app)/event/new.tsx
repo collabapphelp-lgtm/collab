@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import { Button } from '@/components/Button';
@@ -13,7 +13,7 @@ import { displayName } from '@/lib/labels';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { UI_PREVIEW } from '@/lib/preview';
 import { useEvents } from '@/lib/use-events';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 const TYPES: EventType[] = ['open-mic', 'jam', 'show', 'meetup'];
 const DAYS_AHEAD = 30;
@@ -27,6 +27,7 @@ const timeText = (mins: number) => {
 };
 
 export default function NewEvent() {
+  const styles = useStyles();
   const { user, profile } = useAuth();
   const { refresh } = useEvents();
   const [type, setType] = useState<EventType | null>(null);
@@ -180,6 +181,7 @@ export default function NewEvent() {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -189,10 +191,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Field(props: React.ComponentProps<typeof TextInput>) {
+  const styles = useStyles();
+  const colors = useColors();
   return <TextInput placeholderTextColor={colors.textMuted} {...props} style={[styles.input, props.multiline && styles.inputMulti]} />;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safe: { flex: 1, backgroundColor: '#F4F2EC' },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
@@ -225,4 +229,4 @@ const styles = StyleSheet.create({
   textOn: { color: colors.white },
   footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6, gap: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   hint: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary, textAlign: 'center' },
-});
+}));

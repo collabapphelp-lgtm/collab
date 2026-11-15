@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { useAuth } from '@/lib/auth-context';
 import { blockUser, reportUser, REPORT_REASONS } from '@/lib/safety';
 import type { UserProfile } from '@/lib/types';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 type Props = {
   them: UserProfile;
@@ -18,6 +18,8 @@ type Props = {
 
 /** "⋯" button with Report and Block. Required by Apple for apps with user profiles and messaging. */
 export function SafetyButton({ them, onBlocked, tone = 'dark' }: Props) {
+  const styles = useStyles();
+  const colors = useColors();
   const { user } = useAuth();
   const [reporting, setReporting] = useState(false);
 
@@ -87,6 +89,8 @@ export function SafetyButton({ them, onBlocked, tone = 'dark' }: Props) {
 }
 
 function ReportSheet(props: { visible: boolean; them: UserProfile; onClose: () => void; onDone: (alsoBlock: boolean) => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   const { user } = useAuth();
   const [reason, setReason] = useState<string | null>(null);
   const [details, setDetails] = useState('');
@@ -156,7 +160,7 @@ function ReportSheet(props: { visible: boolean; them: UserProfile; onClose: () =
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   btn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   btnLight: { backgroundColor: 'rgba(255,255,255,0.92)' },
   body: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.textSecondary },
@@ -181,4 +185,4 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { outlineWidth: 0 }, default: {} }),
   },
   error: { fontFamily: fonts.body, fontSize: 13, color: colors.red, textAlign: 'center' },
-});
+}));

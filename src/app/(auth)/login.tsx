@@ -9,9 +9,10 @@ import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ErrorText';
 import { TextField } from '@/components/TextField';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles } from '@/lib/theme';
 
 export default function Login() {
+  const styles = useStyles();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +96,7 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1, backgroundColor: colors.white },
   content: { flexGrow: 1, padding: 24, gap: 20 },
   header: { gap: 6, marginTop: 4 },
@@ -106,4 +107,4 @@ const styles = StyleSheet.create({
   link: { fontFamily: fonts.bodySemibold, color: colors.blue, fontSize: 15 },
   footer: { marginTop: 'auto', gap: 16, alignItems: 'center' },
   switchText: { fontFamily: fonts.body, fontSize: 15, color: colors.textSecondary },
-});
+}));

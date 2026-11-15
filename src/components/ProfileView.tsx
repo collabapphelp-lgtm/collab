@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import * as WebBrowser from 'expo-web-browser';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -10,7 +10,7 @@ import { detectPlatform, INSTRUMENT_TYPES } from '@/lib/onboarding-data';
 import { canonicalList, fullName, lookingOptionFor, optionFor, roleLine, shortLocation } from '@/lib/labels';
 import { accentFor } from '@/lib/accent';
 import type { ShowcaseItem, ShowcaseMedia, UserProfile } from '@/lib/types';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 type Props = {
   profile: UserProfile;
@@ -41,6 +41,8 @@ const PAGE = '#F7F5F0';
  * their first track is featured, prompts read big, everything else as clean chips.
  */
 export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, belowHero, isSelf, heroHeight = 460, layout = 'hero' }: Props) {
+  const styles = useStyles();
+  const colors = useColors();
   const workFirst = layout === 'work';
   const name = fullName(profile);
   const isContent = profile.creatorType === 'content';
@@ -213,6 +215,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title.toUpperCase()}</Text>
@@ -222,11 +225,12 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function ChipRow({ items, tone }: { items: string[]; tone?: 'blue' }) {
+  const styles = useStyles();
   return (
     <View style={styles.chips}>
       {items.map((t) => (
         <View key={t} style={[styles.chip, tone === 'blue' ? styles.chipBlue : styles.chipLight]}>
-          <Text style={[styles.chipText, tone === 'blue' && { color: '#1F5F7F' }]}>{t}</Text>
+          <Text style={[styles.chipText, tone === 'blue' && styles.chipBlueText]}>{t}</Text>
         </View>
       ))}
     </View>
@@ -301,6 +305,7 @@ function FeaturedTrack({ item }: { item: ShowcaseMedia }) {
 }
 
 function FeaturedLink({ item }: { item: ShowcaseMedia }) {
+  const styles = useStyles();
   const { kind, title } = mediaMeta(item);
   return (
     <Pressable
@@ -315,6 +320,7 @@ function FeaturedLink({ item }: { item: ShowcaseMedia }) {
 }
 
 function FeaturedAudio({ item }: { item: ShowcaseMedia }) {
+  const styles = useStyles();
   const { title } = mediaMeta(item);
   const a = useInlineAudio(item.url);
   return (
@@ -330,6 +336,7 @@ function FeaturedAudio({ item }: { item: ShowcaseMedia }) {
 }
 
 function FeaturedBody(props: { item: ShowcaseMedia; icon: 'play' | 'pause' | 'dots-horizontal'; progress: number; sub: string }) {
+  const styles = useStyles();
   const { title } = mediaMeta(props.item);
   const wave = bars(props.item.url);
   return (
@@ -356,6 +363,8 @@ function FeaturedBody(props: { item: ShowcaseMedia; icon: 'play' | 'pause' | 'do
 }
 
 function AudioRow({ item }: { item: ShowcaseMedia }) {
+  const styles = useStyles();
+  const colors = useColors();
   const { kind, title } = mediaMeta(item);
   const a = useInlineAudio(item.url);
   return (
@@ -382,6 +391,8 @@ function AudioRow({ item }: { item: ShowcaseMedia }) {
 }
 
 function ShowcaseCard({ item }: { item: ShowcaseItem }) {
+  const styles = useStyles();
+  const colors = useColors();
   if (item.type === 'prompt') {
     return (
       <View style={styles.prompt}>
@@ -424,7 +435,7 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
   wrap: { backgroundColor: PAGE },
   hero: { justifyContent: 'flex-end', overflow: 'hidden' },
@@ -470,6 +481,7 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
   chipLight: { backgroundColor: colors.white, borderColor: '#E6E1D8' },
   chipBlue: { backgroundColor: '#E3F0F6', borderColor: '#E3F0F6' },
+  chipBlueText: { color: '#1F5F7F' },
   chipText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text },
 
   featured: { backgroundColor: '#17151F', borderRadius: 22, padding: 16, gap: 12 },
@@ -496,4 +508,4 @@ const styles = StyleSheet.create({
   mediaCaption: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },
 
   bio: { fontFamily: fonts.body, fontSize: 16, lineHeight: 23, color: colors.text },
-});
+}));

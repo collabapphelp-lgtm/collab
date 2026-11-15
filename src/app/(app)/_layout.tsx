@@ -8,6 +8,7 @@ import { UI_PREVIEW } from '@/lib/preview';
 import { MatchesProvider } from '@/lib/use-matches';
 import { LikedYouProvider } from '@/lib/liked-you';
 import { EventsProvider } from '@/lib/use-events';
+import { useColors } from '@/lib/theme';
 
 export const unstable_settings = { anchor: '(tabs)' };
 
@@ -50,12 +51,13 @@ function usePushNotifications() {
 }
 
 export default function AppLayout() {
+  const colors = useColors();
   usePushNotifications();
   return (
     <MatchesProvider>
       <LikedYouProvider>
       <EventsProvider>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#fff' } }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="user/[id]" options={{ presentation: 'card' }} />
         <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />

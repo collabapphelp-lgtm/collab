@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { EventsMap, MAP_SUPPORTED } from '@/components/EventsMap';
 import { dayHeading, metaFor, timeLabel, ymd, type EventOccurrence } from '@/lib/events';
 import { useEvents } from '@/lib/use-events';
-import { colors, fonts, radius, shadow } from '@/lib/theme';
+import { fonts, radius, shadow, makeStyles, useColors } from '@/lib/theme';
 
 type When = 'today' | 'tomorrow' | 'week' | 'all';
 type Kind = 'all' | 'open-mic' | 'jam' | 'collab' | 'other';
@@ -45,6 +45,8 @@ function inKind(e: EventOccurrence, kind: Kind) {
 }
 
 export default function Events() {
+  const styles = useStyles();
+  const colors = useColors();
   const { events, going, error, refresh } = useEvents();
   const [when, setWhen] = useState<When>('today');
   const [kind, setKind] = useState<Kind>('all');
@@ -148,6 +150,7 @@ export default function Events() {
 }
 
 function Pill({ label, on, onPress, strong, dot }: { label: string; on: boolean; onPress: () => void; strong?: boolean; dot?: string }) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -162,11 +165,14 @@ function Pill({ label, on, onPress, strong, dot }: { label: string; on: boolean;
 }
 
 function Badges({ e }: { e: EventOccurrence }) {
+  const styles = useStyles();
   if (e.status === 'pending') return <Text style={[styles.badge, styles.badgePending]}>Pending review</Text>;
   return null;
 }
 
 function EventRow({ e, goingCount, onPress }: { e: EventOccurrence; goingCount: number; onPress: () => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   const meta = metaFor(e);
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.85 }]} accessibilityRole="button">
@@ -197,6 +203,8 @@ function EventRow({ e, goingCount, onPress }: { e: EventOccurrence; goingCount: 
 }
 
 function SelectedCard({ e, goingCount, onPress, onClose }: { e: EventOccurrence; goingCount: number; onPress: () => void; onClose: () => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   const meta = metaFor(e);
   return (
     <Pressable onPress={onPress} style={styles.selCard} accessibilityRole="button">
@@ -219,7 +227,7 @@ function SelectedCard({ e, goingCount, onPress, onClose }: { e: EventOccurrence;
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safe: { flex: 1 },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10, gap: 12 },
@@ -297,4 +305,4 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: fonts.heading, fontSize: 18, color: colors.text, textAlign: 'center' },
   emptyBody: { fontFamily: fonts.body, fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 20 },
   footnote: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, textAlign: 'center', marginTop: 8 },
-});
+}));

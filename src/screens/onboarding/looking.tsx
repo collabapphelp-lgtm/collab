@@ -9,10 +9,11 @@ import { CONTENT_INTENTS, CONTENT_LOOKING, EXPERIENCE, MUSIC_INTENTS, MUSICIAN_L
 import { TagInput } from '@/components/onboarding/TagInput';
 import { toggleIn } from '@/lib/toggle';
 import { canonicalList } from '@/lib/labels';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles } from '@/lib/theme';
 
 // Step 3: who do you want to collab with? Includes the other creator type (cross-type matching).
 export default function LookingStep() {
+  const styles = useStyles();
   const { draft, saveStep, advance } = useOnboarding();
   const isMusician = draft.creatorType !== 'content';
   const options = isMusician ? MUSICIAN_LOOKING : CONTENT_LOOKING;
@@ -148,6 +149,7 @@ function LookingRow(props: {
   locked?: boolean;
   topPick?: boolean;
 }) {
+  const styles = useStyles();
   const { option, selected, subs, locked, topPick } = props;
   const expandable = !!option.subOptions;
   const detail = locked
@@ -195,7 +197,7 @@ function LookingRow(props: {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   about: { gap: 10, marginTop: 22, padding: 14, borderRadius: 16, backgroundColor: colors.white, borderWidth: 1, borderColor: '#E3EEF4' },
   aboutTitle: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
   aboutHint: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
@@ -205,4 +207,4 @@ const styles = StyleSheet.create({
   orText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   openNote: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 8 },
   subPrompt: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSecondary },
-});
+}));

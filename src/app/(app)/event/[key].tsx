@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -16,9 +16,11 @@ import { loadBlockedIds, reportUser } from '@/lib/safety';
 import type { UserProfile } from '@/lib/types';
 import { useEvents } from '@/lib/use-events';
 import { useMatches } from '@/lib/use-matches';
-import { colors, fonts, shadow } from '@/lib/theme';
+import { fonts, shadow, makeStyles, useColors } from '@/lib/theme';
 
 export default function EventScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const { key } = useLocalSearchParams<{ key: string }>();
   const { user, profile } = useAuth();
   const me = user?.uid ?? '';
@@ -234,6 +236,8 @@ export default function EventScreen() {
 }
 
 function Detail({ icon, text }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string }) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <View style={styles.detail}>
       <Ionicons name={icon} size={17} color={colors.textSecondary} />
@@ -249,7 +253,7 @@ function shade(hex: string) {
   return `#${[(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => f(v).toString(16).padStart(2, '0')).join('')}`;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   fill: { flex: 1, backgroundColor: '#F4F2EC' },
   flex: { flex: 1 },
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, backgroundColor: '#F4F2EC' },
@@ -298,4 +302,4 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   footerHint: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary, textAlign: 'center', paddingBottom: 6 },
-});
+}));

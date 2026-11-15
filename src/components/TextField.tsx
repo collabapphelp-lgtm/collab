@@ -1,6 +1,6 @@
 import { useState, type Ref } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 type Props = TextInputProps & {
   label: string;
@@ -12,6 +12,8 @@ type Props = TextInputProps & {
 
 // React 19: `ref` is a normal prop, no forwardRef needed.
 export function TextField({ label, optional, password, style, ref, ...rest }: Props) {
+  const styles = useStyles();
+  const colors = useColors();
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
@@ -55,7 +57,7 @@ export function TextField({ label, optional, password, style, ref, ...rest }: Pr
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   group: { gap: 6 },
   label: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSecondary },
   optional: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
@@ -81,4 +83,4 @@ const styles = StyleSheet.create({
   },
   toggle: { paddingHorizontal: 14, height: '100%', justifyContent: 'center' },
   toggleText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue },
-});
+}));

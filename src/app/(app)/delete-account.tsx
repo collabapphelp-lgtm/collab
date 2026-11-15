@@ -9,7 +9,7 @@ import { TextField } from '@/components/TextField';
 import { deleteAccount } from '@/lib/account';
 import { useAuth } from '@/lib/auth-context';
 import { friendlyAuthError } from '@/lib/auth-errors';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles } from '@/lib/theme';
 
 const WHAT_GOES = [
   'Your profile, photo and showcase uploads',
@@ -19,6 +19,7 @@ const WHAT_GOES = [
 ];
 
 export default function DeleteAccount() {
+  const styles = useStyles();
   const { setDeletingAccount, signOutUser } = useAuth();
   const [password, setPassword] = useState('');
   const [working, setWorking] = useState(false);
@@ -71,7 +72,7 @@ export default function DeleteAccount() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safe: { flex: 1, backgroundColor: colors.white },
   flex: { flex: 1 },
   content: { padding: 24, gap: 16 },
@@ -80,4 +81,4 @@ const styles = StyleSheet.create({
   list: { gap: 8, padding: 16, borderRadius: radius.md, backgroundColor: 'rgba(229,75,75,0.06)' },
   item: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.text },
   footer: { paddingHorizontal: 24, paddingBottom: 8, gap: 10 },
-});
+}));

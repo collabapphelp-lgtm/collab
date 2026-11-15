@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { ChatProfileCard } from '@/components/ChatProfileCard';
 import { RecordingBar, useVoiceRecorder, VoiceBubble } from '@/components/VoiceNote';
 import { Avatar } from '@/components/Avatar';
@@ -42,7 +42,7 @@ import { roleLine, displayName } from '@/lib/labels';
 import { clockTime, dayLabel, sameDay } from '@/lib/time';
 import type { UserProfile } from '@/lib/types';
 import { useMatches } from '@/lib/use-matches';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 /** Openers based on their profile, shown in an empty chat to make the first message easy. */
 function icebreakers(p: UserProfile): string[] {
@@ -62,6 +62,8 @@ type Row =
   | { kind: 'msg'; key: string; msg: ChatMessage; mine: boolean; tail: boolean; head: boolean };
 
 export default function ChatScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, profile: myProfile } = useAuth();
   const { matches, groups } = useMatches();
@@ -397,6 +399,8 @@ export default function ChatScreen() {
 
 /** Who's in the group (tap to see a profile), who's still invited, and Leave. */
 function GroupInfo({ visible, onClose, groupId }: { visible: boolean; onClose: () => void; groupId: string }) {
+  const styles = useStyles();
+  const colors = useColors();
   const { user } = useAuth();
   const { groups } = useMatches();
   const me = user?.uid ?? '';
@@ -459,6 +463,7 @@ function GroupInfo({ visible, onClose, groupId }: { visible: boolean; onClose: (
 
 /** The little emoji pill under a bubble: each emoji once, plus a count when both of you reacted. */
 function Reactions(props: { msg: ChatMessage; mine: boolean; me: string; onPress: () => void }) {
+  const styles = useStyles();
   const all = Object.values(props.msg.reactions ?? {});
   if (all.length === 0) return null;
   const unique = [...new Set(all)];
@@ -478,7 +483,7 @@ function Reactions(props: { msg: ChatMessage; mine: boolean; me: string; onPress
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safe: { flex: 1, backgroundColor: '#F6F3EE' },
   flex: { flex: 1 },
   header: {
@@ -607,4 +612,4 @@ const styles = StyleSheet.create({
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   missingText: { fontFamily: fonts.body, fontSize: 16, color: colors.textSecondary },
   link: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.blue },
-});
+}));

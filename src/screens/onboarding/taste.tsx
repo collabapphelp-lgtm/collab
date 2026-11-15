@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { TagInput } from '@/components/onboarding/TagInput';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles } from '@/lib/theme';
 import { StepScreen } from '@/components/onboarding/StepScreen';
 import { Chip, ChipGrid } from '@/components/onboarding/Chip';
 import { OpenToAll } from '@/components/onboarding/OpenToAll';
@@ -11,6 +11,7 @@ import { toggleIn } from '@/lib/toggle';
 
 // Step 4 of 5: genres (musicians) or content niches (creators), with "Open to all".
 export default function TasteStep() {
+  const styles = useStyles();
   const { draft, saveStep, advance } = useOnboarding();
   const isMusician = draft.creatorType !== 'content';
   const options = isMusician ? GENRES : INTERESTS;
@@ -88,6 +89,6 @@ export default function TasteStep() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   addOther: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue, marginTop: 4 },
-});
+}));

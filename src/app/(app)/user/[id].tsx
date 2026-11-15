@@ -13,10 +13,12 @@ import { useLikedYou } from '@/lib/liked-you';
 import { useMatches } from '@/lib/use-matches';
 import { distanceMiles, formatDistance } from '@/lib/matching';
 import type { UserProfile } from '@/lib/types';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles, useColors } from '@/lib/theme';
 
 // Someone's full profile, opened from Connections (incl. "Liked you"), Messages or a chat.
 export default function UserProfileScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const { id, likedYou } = useLocalSearchParams<{ id: string; likedYou?: string }>();
   const { dismiss } = useLikedYou();
   const [busy, setBusy] = useState(false);
@@ -114,7 +116,7 @@ export default function UserProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   fill: { flex: 1, backgroundColor: colors.white },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, backgroundColor: colors.white },
   missing: { fontFamily: fonts.body, fontSize: 16, color: colors.textSecondary },
@@ -141,4 +143,4 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 10 },
   likedNote: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: 10 },
   bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, backgroundColor: 'rgba(255,255,255,0.96)' },
-});
+}));

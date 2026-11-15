@@ -1,12 +1,14 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { profileStrength } from '@/lib/profile-strength';
 import type { UserProfile } from '@/lib/types';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 /** "Profile strength" card with the single next thing to do. Hidden once everything's done. */
 export function ProfileStrength({ profile }: { profile: UserProfile }) {
+  const styles = useStyles();
+  const colors = useColors();
   const { percent, next } = profileStrength(profile);
   if (!next) return null;
   return (
@@ -37,7 +39,7 @@ export function ProfileStrength({ profile }: { profile: UserProfile }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   card: {
     padding: 16,
     gap: 10,
@@ -60,4 +62,4 @@ const styles = StyleSheet.create({
   nextLabel: { flex: 1, fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text },
   arrow: { fontFamily: fonts.bodySemibold, fontSize: 22, color: colors.blue, marginTop: -2 },
   hint: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary, marginTop: -4 },
-});
+}));

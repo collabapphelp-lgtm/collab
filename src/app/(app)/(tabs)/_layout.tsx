@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { StyleSheet, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles, useColors } from '@/lib/theme';
 import { useMatches } from '@/lib/use-matches';
 import { useLikedYou } from '@/lib/liked-you';
 
@@ -11,14 +11,21 @@ type IconName = React.ComponentProps<typeof Ionicons>['name'];
 // Active tab gets a filled icon on a soft tinted pill.
 const icon = (on: IconName, off: IconName) =>
   function TabIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
-    return (
+    return <TabPill on={on} off={off} color={color} focused={focused} />;
+  };
+
+function TabPill({ on, off, color, focused }: { on: IconName; off: IconName; color: ColorValue; focused: boolean }) {
+  const styles = useStyles();
+  return (
       <View style={[styles.pill, focused && styles.pillOn]}>
         <Ionicons name={focused ? on : off} size={27} color={color as string} />
       </View>
-    );
-  };
+  );
+}
 
 export default function TabsLayout() {
+  const styles = useStyles();
+  const colors = useColors();
   const { unreadCount } = useMatches();
   const { likedYou } = useLikedYou();
   const likedCount = likedYou?.length ?? 0;
@@ -52,7 +59,7 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   bar: {
     backgroundColor: colors.white,
     borderTopWidth: 0,
@@ -66,4 +73,4 @@ const styles = StyleSheet.create({
   pillOn: { backgroundColor: 'rgba(75,163,199,0.14)' },
   label: { fontFamily: fonts.bodySemibold, fontSize: 11, marginTop: 4 },
   badge: { backgroundColor: colors.red, fontFamily: fonts.bodySemibold, fontSize: 11, top: 2 },
-});
+}));

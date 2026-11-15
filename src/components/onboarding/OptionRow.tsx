@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles } from '@/lib/theme';
 import { OptionIcon } from '@/components/OptionIcon';
 
 type Props = {
@@ -21,6 +21,7 @@ type Props = {
 
 /** Full-width selectable row. Expandable rows reveal their children once selected. */
 export function OptionRow({ label, emoji, value, selected, onPress, detail, children, expandable, locked }: Props) {
+  const styles = useStyles();
   return (
     <View style={[styles.wrap, selected && styles.wrapSelected]}>
       <Pressable
@@ -44,7 +45,7 @@ export function OptionRow({ label, emoji, value, selected, onPress, detail, chil
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   wrap: { borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.white },
   wrapSelected: { borderColor: colors.blue, backgroundColor: '#F1F8FB' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
@@ -64,4 +65,4 @@ const styles = StyleSheet.create({
   checkOn: { backgroundColor: colors.blue, borderColor: colors.blue },
   checkMark: { color: colors.white, fontSize: 13, fontFamily: fonts.bodySemibold, marginTop: -1 },
   children: { paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
-});
+}));

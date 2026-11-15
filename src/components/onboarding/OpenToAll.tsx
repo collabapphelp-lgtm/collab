@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fonts, radius } from '@/lib/theme';
+import { LinearGradient } from '@/components/ThemedGradient';
+import { fonts, radius, makeStyles } from '@/lib/theme';
 
 /** The Collab logo's watercolor rainbow, left to right. */
 export const LOGO_RAINBOW = ['#E8452C', '#F28C28', '#F5C824', '#8DC63F', '#2F8FE0', '#9B5BD6', '#D94BB3'] as const;
@@ -13,6 +13,7 @@ const LOGO = require('../../../assets/logo-mark.png');
  * with a touch of the logo: the rainbow mark, and a thin rainbow outline once selected.
  */
 export function OpenToAll(props: { label: string; selected: boolean; onPress: () => void }) {
+  const styles = useStyles();
   const { selected } = props;
   const content = (
     <View style={[styles.inner, selected && styles.innerOn]}>
@@ -40,7 +41,7 @@ export function OpenToAll(props: { label: string; selected: boolean; onPress: ()
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   border: { borderRadius: radius.md, padding: 2 },
   borderOff: { backgroundColor: '#ECE7F7' },
   inner: {
@@ -55,4 +56,4 @@ const styles = StyleSheet.create({
   logo: { width: 34, height: 18 },
   label: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
   check: { fontFamily: fonts.bodySemibold, fontSize: 16, color: '#9B5BD6' },
-});
+}));

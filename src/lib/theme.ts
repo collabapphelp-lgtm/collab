@@ -7,7 +7,7 @@
 //   - everything else (brand colors, photo overlays, white text on color) stays as it is
 // To opt a color out of the automatic swap, write it as `rgb(r,g,b)` instead of hex (see `colors.ink`).
 import { useSyncExternalStore } from 'react';
-import { AppState, Appearance, StyleSheet } from 'react-native';
+import { AppState, Appearance, StyleSheet, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 
 export type Scheme = 'light' | 'dark';
 
@@ -29,6 +29,9 @@ const light = {
   white: '#FFFFFF',
   /** Dark text that stays dark in dark mode: for text on yellow/gold buttons and other bright fills. */
   ink: 'rgb(26,26,26)',
+  /** Selected-chip fill and its text: dark slate in light mode, near-white in dark mode. */
+  inverse: 'rgb(42,59,77)',
+  onInverse: 'rgb(255,255,255)',
 };
 
 export type Palette = typeof light;
@@ -44,6 +47,8 @@ const dark: Palette = {
   textMuted: '#7C818A',
   border: '#2A2E35',
   white: '#FFFFFF', // white text stays white; white *backgrounds* are swapped by the adapter below
+  inverse: 'rgb(236,237,239)',
+  onInverse: 'rgb(23,26,31)',
 };
 
 export const palettes: Record<Scheme, Palette> = { light, dark };
@@ -150,6 +155,13 @@ export function darkBg(c: string): string {
   if (!p) return c;
   // Faint dark washes (hairlines, inactive dots) flip to faint light washes.
   if (p.r + p.g + p.b < 200 && p.a <= 0.3) return `rgba(255,255,255,${Math.min(0.9, p.a * 1.2).toFixed(2)})`;
+  return darkSurface(c);
+}
+
+/** Like darkBg, but leaves dark washes alone (gradients over photos). */
+export function darkSurface(c: string): string {
+  const p = parse(c);
+  if (!p) return c;
   const { h, s, l } = toHsl(p);
   if (l < 0.8) return c;
   const nl = Math.min(0.3, 0.075 + (1 - l) * 1.5);
@@ -189,13 +201,13 @@ function adaptStyle(style: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
-type NamedStyles<T> = { [P in keyof T]: object };
+type NamedStyles<T> = { [P in keyof T]: ViewStyle | TextStyle | ImageStyle };
 
 /**
  * `const useStyles = makeStyles((colors) => ({ ... }))`, then `const styles = useStyles()` inside the component.
  * Both versions are built once, up front.
  */
-export function makeStyles<T extends NamedStyles<T>>(factory: (colors: Palette) => T): () => T {
+export function makeStyles<T extends NamedStyles<T> | NamedStyles<any>>(factory: (colors: Palette) => T & NamedStyles<any>): () => T {
   const lightStyles = StyleSheet.create(factory(light));
   const raw = factory(dark) as Record<string, Record<string, unknown>>;
   const darkStyles = StyleSheet.create(

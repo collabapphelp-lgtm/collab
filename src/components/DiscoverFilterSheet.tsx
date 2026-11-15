@@ -16,7 +16,7 @@ import {
   type Option,
 } from '@/lib/onboarding-data';
 import { toggleIn } from '@/lib/toggle';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles } from '@/lib/theme';
 
 type Group = { key: keyof DiscoverFilters; title: string; options: Option[]; icons?: boolean };
 
@@ -36,6 +36,7 @@ export function DiscoverFilterSheet(props: {
   onClose: () => void;
   onApply: (f: DiscoverFilters) => void;
 }) {
+  const styles = useStyles();
   const [draft, setDraft] = useState<DiscoverFilters>(props.value);
   const n = filterCount(draft);
 
@@ -80,10 +81,10 @@ export function DiscoverFilterSheet(props: {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   top: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   hint: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },
   clear: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue },
   group: { gap: 10, marginTop: 8 },
   groupTitle: { fontFamily: fonts.heading, fontSize: 17, color: colors.text },
-});
+}));

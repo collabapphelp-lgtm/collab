@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { SPECIFIC_MAX, SPECIFIC_MAX_CHARS } from '@/lib/onboarding-data';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 /** Type a word, tap Add (or return) → it becomes a removable tag. Used for specific instruments. */
 export function TagInput(props: { tags: string[]; onChange: (tags: string[]) => void; placeholder: string; label: string }) {
+  const styles = useStyles();
+  const colors = useColors();
   const [text, setText] = useState('');
   const [err, setErr] = useState<string | null>(null);
 
@@ -63,7 +65,7 @@ export function TagInput(props: { tags: string[]; onChange: (tags: string[]) => 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   wrap: { gap: 8 },
   row: { flexDirection: 'row', gap: 8 },
   input: {
@@ -86,4 +88,4 @@ const styles = StyleSheet.create({
   tag: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: colors.blue },
   tagText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.white },
   x: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.white, marginTop: -1 },
-});
+}));

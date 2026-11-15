@@ -5,7 +5,7 @@ import { Button } from '@/components/Button';
 import { SHOWCASE, type PromptGroups } from '@/lib/onboarding-data';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import type { ShowcasePrompt } from '@/lib/types';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 const TABS: { key: keyof PromptGroups; label: string }[] = [
   { key: 'work', label: 'About my work' },
@@ -25,6 +25,8 @@ type Props = {
 
 /** Two parts: pick a prompt, then answer it. The parent gives it a new `key` per slot so it starts fresh. */
 export function PromptSheet({ visible, prompts, usedQuestions, initial, onClose, onSave }: Props) {
+  const styles = useStyles();
+  const colors = useColors();
   const [question, setQuestion] = useState<string | null>(initial?.question ?? null);
   const [answer, setAnswer] = useState(initial?.answer ?? '');
   const [tab, setTab] = useState<keyof PromptGroups>(initial && prompts.fun.includes(initial.question) ? 'fun' : 'work');
@@ -100,7 +102,7 @@ export function PromptSheet({ visible, prompts, usedQuestions, initial, onClose,
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   blocked: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.red },
   tabs: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.55)', borderRadius: radius.full, padding: 4, gap: 4 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: radius.full },
@@ -125,4 +127,4 @@ const styles = StyleSheet.create({
   answerBox: { borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, padding: 14, minHeight: 150 },
   answer: { fontFamily: fonts.body, fontSize: 16, lineHeight: 22, color: colors.text, minHeight: 120, textAlignVertical: 'top', ...Platform.select({ web: { outlineWidth: 0 }, default: {} }) },
   count: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, textAlign: 'right', marginTop: -6 },
-});
+}));

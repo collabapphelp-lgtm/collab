@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fonts } from '@/lib/theme';
+import { LinearGradient } from '@/components/ThemedGradient';
+import { colors, fonts, makeStyles } from '@/lib/theme';
 
 const GRADIENTS: [string, string][] = [
   [colors.blue, colors.purple],
@@ -21,6 +21,7 @@ type Props = { uri?: string | null; name: string; seed: string; size?: number; r
 
 /** Profile photo, or a colored placeholder with their initial if they didn't add one. */
 export function Avatar({ uri, name, seed, size = 56, radius, style }: Props) {
+  const styles = useStyles();
   const r = radius ?? size / 2;
   if (uri) {
     return (
@@ -38,6 +39,7 @@ export function Avatar({ uri, name, seed, size = 56, radius, style }: Props) {
 
 /** Full-bleed version for profile heroes. */
 export function HeroPhoto({ uri, name, seed }: { uri?: string | null; name: string; seed: string }) {
+  const styles = useStyles();
   if (uri) return <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />;
   return (
     <LinearGradient colors={gradientFor(seed)} style={[StyleSheet.absoluteFill, styles.center]}>
@@ -48,7 +50,7 @@ export function HeroPhoto({ uri, name, seed }: { uri?: string | null; name: stri
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   center: { alignItems: 'center', justifyContent: 'center' },
   initial: { fontFamily: fonts.heading, color: colors.white },
   heroCircle: {
@@ -61,4 +63,4 @@ const styles = StyleSheet.create({
     marginBottom: 60,
   },
   heroInitial: { fontFamily: fonts.heading, fontSize: 56, color: colors.white },
-});
+}));

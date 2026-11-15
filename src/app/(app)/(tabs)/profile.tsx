@@ -9,7 +9,7 @@ import { ProfileStrength } from '@/components/ProfileStrength';
 import { useAuth } from '@/lib/auth-context';
 import { shortLocation } from '@/lib/labels';
 import { openLegal, SUPPORT_EMAIL } from '@/lib/legal';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles } from '@/lib/theme';
 
 // Which version is running: the build's own code, or an over-the-air update (and when it was published).
 function versionLine() {
@@ -21,6 +21,7 @@ function versionLine() {
 
 // Your own profile, as others see it.
 export default function MyProfile() {
+  const styles = useStyles();
   const { profile, signOutUser } = useAuth();
   const insets = useSafeAreaInsets();
   if (!profile) return null;
@@ -84,7 +85,7 @@ export default function MyProfile() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   fill: { flex: 1, backgroundColor: '#F7F5F0' },
   actions: { paddingHorizontal: 20, gap: 12 },
   note: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted, textAlign: 'center', marginBottom: 4 },
@@ -97,4 +98,4 @@ const styles = StyleSheet.create({
   heroEdit: { height: 36, paddingHorizontal: 18, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.95)', justifyContent: 'center' },
   heroEditText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue },
   topFade: { position: 'absolute', top: 0, left: 0, right: 0 },
-});
+}));

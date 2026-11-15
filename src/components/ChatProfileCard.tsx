@@ -2,19 +2,21 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { lookingOptionFor, optionFor, displayName } from '@/lib/labels';
 import { distanceMiles, formatDistance, scoreCandidate } from '@/lib/matching';
 import { detectPlatform } from '@/lib/onboarding-data';
 import type { ShowcaseMedia, ShowcasePrompt, UserProfile } from '@/lib/types';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 /**
  * Who you're talking to, pinned under the chat header: where they are, why you fit,
  * their sound, what they're after and a taste of their work. Collapses to keep room for the chat.
  */
 export function ChatProfileCard(props: { me: UserProfile | null; them: UserProfile; expanded: boolean; onToggle: () => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   const { me, them, expanded } = props;
   const isMusician = them.creatorType !== 'content';
 
@@ -106,6 +108,8 @@ const CARD_W = 236;
 const CARD_H = 84;
 
 function MediaCard({ item }: { item: ShowcaseMedia }) {
+  const styles = useStyles();
+  const colors = useColors();
   const platform = item.source === 'link' ? detectPlatform(item.url) : null;
   const icon = platform ? platform.emoji : item.mediaKind === 'audio' ? '🎵' : item.mediaKind === 'image' ? '🖼️' : '🎬';
   const kind = platform ? platform.label : item.mediaKind === 'audio' ? 'Audio' : item.mediaKind === 'image' ? 'Photo' : 'Video';
@@ -132,6 +136,7 @@ function MediaCard({ item }: { item: ShowcaseMedia }) {
 
 /** A prompt answer; tap to read the whole thing. */
 function PromptCard({ item }: { item: ShowcasePrompt }) {
+  const styles = useStyles();
   const [open, setOpen] = useState(false);
   return (
     <Pressable
@@ -150,7 +155,7 @@ function PromptCard({ item }: { item: ShowcasePrompt }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
   wrap: { marginHorizontal: 12, marginTop: 10, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -178,4 +183,4 @@ const styles = StyleSheet.create({
   promptA: { fontFamily: fonts.heading, fontSize: 14, lineHeight: 19, color: colors.text },
   more: { flexDirection: 'row', alignItems: 'center', gap: 2, alignSelf: 'flex-start' },
   moreText: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.blue },
-});
+}));

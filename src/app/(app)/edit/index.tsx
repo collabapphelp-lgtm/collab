@@ -5,7 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Avatar } from '@/components/Avatar';
 import { useAuth } from '@/lib/auth-context';
 import { fullName, lookingOptionFor, optionFor, roleLine, shortLocation } from '@/lib/labels';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles, useColors } from '@/lib/theme';
 
 const list = (values: string[] | undefined, n = 3) => {
   if (!values?.length) return undefined;
@@ -14,6 +14,8 @@ const list = (values: string[] | undefined, n = 3) => {
 };
 
 export default function EditProfile() {
+  const styles = useStyles();
+  const colors = useColors();
   const { profile } = useAuth();
   if (!profile) return null;
   const isMusician = profile.creatorType !== 'content';
@@ -73,7 +75,7 @@ export default function EditProfile() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safe: { flex: 1, backgroundColor: colors.white },
   flex: { flex: 1 },
   header: {
@@ -103,4 +105,4 @@ const styles = StyleSheet.create({
   rowTitle: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
   rowValue: { fontFamily: fonts.body, fontSize: 14, color: colors.textSecondary, marginTop: 2 },
   empty: { color: colors.blue },
-});
+}));

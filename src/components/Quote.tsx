@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles, useColors } from '@/lib/theme';
 
 /** The collaboration quotes, each used on one screen. */
 export const QUOTES = {
@@ -13,6 +13,8 @@ type Props = { quote: { text: string; author?: string }; style?: ViewStyle; tone
 
 /** Quiet, centered quote for screens with breathing room. */
 export function Quote({ quote, style, tone = 'dark' }: Props) {
+  const styles = useStyles();
+  const colors = useColors();
   const light = tone === 'light';
   return (
     <View style={[styles.wrap, style]} accessible accessibilityLabel={`${quote.text}${quote.author ? `, ${quote.author}` : ''}`}>
@@ -23,7 +25,7 @@ export function Quote({ quote, style, tone = 'dark' }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   wrap: { alignItems: 'center', paddingHorizontal: 12 },
   mark: { fontFamily: fonts.heading, fontSize: 40, lineHeight: 40, color: colors.purple, marginBottom: -8 },
   text: {
@@ -35,4 +37,4 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   author: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted, marginTop: 8 },
-});
+}));

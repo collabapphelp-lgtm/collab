@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { router } from 'expo-router';
 import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
@@ -9,7 +9,7 @@ import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/lib/auth-context';
 import { trackSkip } from '@/lib/activity';
 import { ONBOARDING_STEPS, useOnboarding, type OnboardingStep } from '@/lib/onboarding-context';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles } from '@/lib/theme';
 
 type Props = {
   step: OnboardingStep;
@@ -38,6 +38,7 @@ type Props = {
 
 /** Shared layout for every onboarding step: progress bar, back, title, scrolling body, pinned Continue. */
 export function StepScreen(props: Props) {
+  const styles = useStyles();
   const tinted = props.tinted ?? true;
   const { signOutUser, user } = useAuth();
   const { mode } = useOnboarding();
@@ -126,7 +127,7 @@ export function StepScreen(props: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safe: { flex: 1, backgroundColor: colors.white },
   safeTinted: { backgroundColor: '#F4F2EC' },
   footerTinted: { backgroundColor: 'rgba(255,255,255,0.94)' },
@@ -157,9 +158,9 @@ const styles = StyleSheet.create({
   hint: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted, textAlign: 'center' },
   hintStrongWrap: { alignSelf: 'center', backgroundColor: 'rgba(229,197,71,0.22)', borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 6 },
   hintStrong: { fontFamily: fonts.bodySemibold, fontSize: 14, color: '#7A5F00', textAlign: 'center' },
-});
+}));
 
-export const stepStyles = StyleSheet.create({
+export const useStepStyles = makeStyles((colors) => ({
   sectionLabel: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
   card: {
     borderWidth: 2,
@@ -169,4 +170,4 @@ export const stepStyles = StyleSheet.create({
     gap: 12,
     backgroundColor: colors.white,
   },
-});
+}));

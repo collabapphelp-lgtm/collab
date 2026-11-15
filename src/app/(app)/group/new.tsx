@@ -10,12 +10,14 @@ import { createGroup, GROUP_MAX_PEOPLE } from '@/lib/connections';
 import { displayName, roleLine } from '@/lib/labels';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { useMatches } from '@/lib/use-matches';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles, useColors } from '@/lib/theme';
 
 const MAX_PICKS = GROUP_MAX_PEOPLE - 1;
 
 /** Start a group chat with 2–5 of your connections. They each get an invite to join. */
 export default function NewGroup() {
+  const styles = useStyles();
+  const colors = useColors();
   const { profile } = useAuth();
   const { matches } = useMatches();
   const [name, setName] = useState('');
@@ -141,7 +143,7 @@ export default function NewGroup() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
   safe: { flex: 1, backgroundColor: colors.white },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
@@ -179,4 +181,4 @@ const styles = StyleSheet.create({
   empty: { fontFamily: fonts.body, fontSize: 14, color: colors.textMuted, textAlign: 'center', marginTop: 24 },
   footer: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8, gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   error: { fontFamily: fonts.body, fontSize: 14, color: colors.red, textAlign: 'center' },
-});
+}));

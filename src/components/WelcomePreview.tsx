@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles } from '@/lib/theme';
 
 // Example profiles for the welcome screen, so people see what a filled-in Collab looks like
 // before they sign up. Photos are bundled (stock), names and details are made up.
@@ -53,6 +53,7 @@ const HOLD_MS = 3400;
 
 /** Auto-playing stack of example profiles: photo drifts in, card fades to the next. */
 export function WelcomePreview({ compact = false }: { compact?: boolean }) {
+  const styles = useStyles();
   const [i, setI] = useState(0);
   const [fade] = useState(() => new Animated.Value(1));
   const [zoom] = useState(() => new Animated.Value(0));
@@ -151,7 +152,7 @@ export function WelcomePreview({ compact = false }: { compact?: boolean }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
   wrap: { gap: 10 },
   card: {
@@ -275,4 +276,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textMuted,
   },
-});
+}));

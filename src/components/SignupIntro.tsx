@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, makeStyles, radius } from '@/lib/theme';
 
 /** "What happens after signup" on Get Started: a 3-step timeline with step 1 marked "You're here". */
 export function SignupIntro() {
@@ -13,6 +13,7 @@ const TIMELINE = [
 ];
 
 function Timeline() {
+  const t = useT();
   return (
     <View style={t.wrap} accessibilityLabel="How it works: create your account, build your creative profile, then match and make something">
       <Text style={t.kicker}>HOW IT WORKS</Text>
@@ -41,7 +42,7 @@ function Timeline() {
   );
 }
 
-const t = StyleSheet.create({
+const useT = makeStyles((colors) => ({
   wrap: { paddingVertical: 4 },
   kicker: { fontFamily: fonts.bodySemibold, fontSize: 11, letterSpacing: 1.2, color: colors.textMuted, marginBottom: 10 },
   row: { flexDirection: 'row', gap: 12 },
@@ -77,4 +78,4 @@ const t = StyleSheet.create({
     textTransform: 'uppercase',
   },
   body: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary, marginTop: 1 },
-});
+}));

@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { iconFor } from '@/components/OptionIcon';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 type ChipProps = {
   label: string;
@@ -16,6 +16,8 @@ type ChipProps = {
 
 /** Selectable pill used for skills, genres, instruments and sub-options. */
 export function Chip({ label, value, selected, onPress, size = 'md' }: ChipProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const icon = iconFor(value);
   return (
     <Pressable
@@ -36,10 +38,11 @@ export function Chip({ label, value, selected, onPress, size = 'md' }: ChipProps
 }
 
 export function ChipGrid({ children }: { children: React.ReactNode }) {
+  const styles = useStyles();
   return <View style={styles.grid}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: {
     flexDirection: 'row',
@@ -57,4 +60,4 @@ const styles = StyleSheet.create({
   label: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.text },
   labelSm: { fontSize: 14 },
   labelSelected: { color: colors.blue, fontFamily: fonts.bodySemibold },
-});
+}));

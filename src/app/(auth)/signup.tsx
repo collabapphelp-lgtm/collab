@@ -16,10 +16,11 @@ import { ErrorText } from '@/components/ErrorText';
 import { TextField } from '@/components/TextField';
 import { SignupIntro } from '@/components/SignupIntro';
 import { openLegal } from '@/lib/legal';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles } from '@/lib/theme';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 
 export default function Signup() {
+  const styles = useStyles();
   const { setSignupInProgress } = useAuth();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
@@ -183,7 +184,7 @@ export default function Signup() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1, backgroundColor: colors.white },
   content: { flexGrow: 1, padding: 24, gap: 20 },
   header: { gap: 6, marginTop: 4 },
@@ -212,4 +213,4 @@ const styles = StyleSheet.create({
   switchLink: { fontFamily: fonts.bodySemibold, color: colors.blue },
   legal: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textMuted, textAlign: 'center' },
   legalLink: { fontFamily: fonts.bodySemibold, color: colors.textSecondary, textDecorationLine: 'underline' },
-});
+}));

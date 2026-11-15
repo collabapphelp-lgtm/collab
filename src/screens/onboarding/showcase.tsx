@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { StepScreen } from '@/components/onboarding/StepScreen';
 import { MediaSheet } from '@/components/onboarding/MediaSheet';
 import { PromptSheet } from '@/components/onboarding/PromptSheet';
@@ -13,7 +13,7 @@ import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { BIO_MAX_CHARS, CONTENT_PROMPTS, detectPlatform, MUSICIAN_PROMPTS, normalizeUrl, SHOWCASE } from '@/lib/onboarding-data';
 import { roleLine } from '@/lib/labels';
 import type { ShowcaseItem, ShowcaseMedia, ShowcasePrompt } from '@/lib/types';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 type Slot = ShowcaseItem | null;
 
@@ -60,6 +60,8 @@ const LINK_SLOT = 0; // first media slot
 const PROMPT_SLOT = 1; // first prompt slot
 
 export default function ShowcaseStep() {
+  const styles = useStyles();
+  const colors = useColors();
   const { draft, finish, advance, mode } = useOnboarding();
   const { profile } = useAuth();
   const [partner, setPartner] = useState(draft.bio ?? '');
@@ -302,6 +304,7 @@ export default function ShowcaseStep() {
 
 /** "How you'll show up": a tiny version of their Discover card, so the effort feels worth it. */
 function PreviewCard({ name, role, slots }: { name: string; role: string; slots: Slot[] }) {
+  const styles = useStyles();
   const prompt = slots.find((s): s is ShowcasePrompt => s?.type === 'prompt');
   const media = slots.find((s): s is ShowcaseMedia => s?.type === 'media');
   const p = media?.source === 'link' ? detectPlatform(media.url) : null;
@@ -330,6 +333,7 @@ function PreviewCard({ name, role, slots }: { name: string; role: string; slots:
 }
 
 function SlotCard({ index, slot, onPress }: { index: number; slot: Slot; onPress: () => void }) {
+  const styles = useStyles();
   const kind = SHOWCASE.slots[index];
   const empty = EMPTY_COPY[index];
 
@@ -381,7 +385,7 @@ function SlotCard({ index, slot, onPress }: { index: number; slot: Slot; onPress
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   list: { gap: 8 },
   box: {
     gap: 10,
@@ -507,4 +511,4 @@ const styles = StyleSheet.create({
   trailingFilled: { backgroundColor: colors.blue },
   trailingText: { fontFamily: fonts.bodySemibold, fontSize: 18, lineHeight: 20, color: colors.blue },
   trailingTextFilled: { fontSize: 14, color: colors.white },
-});
+}));

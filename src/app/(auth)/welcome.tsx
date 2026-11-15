@@ -1,13 +1,14 @@
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Button } from '@/components/Button';
 import { WelcomePreview } from '@/components/WelcomePreview';
-import { colors, fonts, gradients } from '@/lib/theme';
+import { fonts, gradients, makeStyles } from '@/lib/theme';
 
 export default function Welcome() {
+  const styles = useStyles();
   // Small phones (SE): a shorter preview so the buttons stay on screen.
   const { height } = useWindowDimensions();
   return (
@@ -36,7 +37,7 @@ export default function Welcome() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 8, paddingBottom: 16 },
   brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
@@ -64,4 +65,4 @@ const styles = StyleSheet.create({
   },
 
   actions: { gap: 12, marginTop: 'auto', paddingTop: 22 },
-});
+}));

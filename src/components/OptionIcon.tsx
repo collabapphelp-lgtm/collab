@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { colors } from '@/lib/theme';
+import { makeStyles, useColors } from '@/lib/theme';
 
 export type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -46,6 +46,8 @@ export function iconFor(value?: string): IconName | undefined {
 
 /** Round icon badge for big option rows/cards. */
 export function OptionIcon(props: { value: string; fallback?: string; size?: number; selected?: boolean }) {
+  const styles = useStyles();
+  const colors = useColors();
   const size = props.size ?? 36;
   const name = iconFor(props.value);
   return (
@@ -59,8 +61,8 @@ export function OptionIcon(props: { value: string; fallback?: string; size?: num
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   circle: { alignItems: 'center', justifyContent: 'center' },
   off: { backgroundColor: '#E6F1F7' },
   on: { backgroundColor: colors.blue },
-});
+}));

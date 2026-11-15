@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { Image } from 'expo-image';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
@@ -22,7 +22,7 @@ import { useMatches } from '@/lib/use-matches';
 import { like, loadUnseenProfiles, passOn } from '@/lib/discover';
 import { formatDistance, rankCandidates, type Candidate } from '@/lib/matching';
 import { consumeJustFinished } from '@/lib/onboarding-context';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles, useColors } from '@/lib/theme';
 
 const LOGO = require('../../../../assets/logo.png');
 const LOGO_WHITE = require('../../../../assets/logo-white.png');
@@ -34,6 +34,7 @@ const PASS = '#6B6690';
  * so the chips that matter to you come first. The full sheet (button top right) has everything.
  */
 function QuickFilters({ me, value, onChange }: { me: UserProfile; value: DiscoverFilters; onChange: (f: DiscoverFilters) => void }) {
+  const styles = useStyles();
   const chips = useMemo(() => quickChips(me), [me]);
   const n = filterCount(value);
   const toggle = (key: keyof DiscoverFilters, v: string) => onChange({ ...value, [key]: toggleIn(value[key], v) });
@@ -53,6 +54,7 @@ function QuickFilters({ me, value, onChange }: { me: UserProfile; value: Discove
 }
 
 function QuickChip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -92,6 +94,8 @@ function quickChips(me: UserProfile): QuickChipDef[] {
 }
 
 export default function Discover() {
+  const styles = useStyles();
+  const colors = useColors();
   const { profile } = useAuth();
   // Everything loaded and ranked; filters and removals apply on top, so changing a filter is instant.
   const [loaded, setLoaded] = useState<{ best: Candidate[]; more: Candidate[] } | null>(null);
@@ -271,6 +275,8 @@ export default function Discover() {
 }
 
 function ActionButton({ kind, onPress, disabled }: { kind: 'pass' | 'like'; onPress: () => void; disabled?: boolean }) {
+  const styles = useStyles();
+  const colors = useColors();
   const like = kind === 'like';
   return (
     <Pressable
@@ -296,6 +302,8 @@ function ActionButton({ kind, onPress, disabled }: { kind: 'pass' | 'like'; onPr
 }
 
 function FilteredEmpty({ onClear, onEdit }: { onClear: () => void; onEdit: () => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <ScrollView contentContainerStyle={styles.empty}>
       <Ionicons name="options-outline" size={44} color={colors.blue} />
@@ -308,6 +316,7 @@ function FilteredEmpty({ onClear, onEdit }: { onClear: () => void; onEdit: () =>
 }
 
 function ExploreMore({ count, onExplore }: { count: number; onExplore: () => void }) {
+  const styles = useStyles();
   return (
     <ScrollView contentContainerStyle={styles.empty}>
       <Text style={styles.emptyEmoji}>🧭</Text>
@@ -322,6 +331,7 @@ function ExploreMore({ count, onExplore }: { count: number; onExplore: () => voi
 }
 
 function EmptyState({ error, onRefresh, global }: { error: string | null; onRefresh: () => void; global: boolean }) {
+  const styles = useStyles();
   if (error) {
     return (
       <ScrollView contentContainerStyle={styles.empty}>
@@ -356,6 +366,7 @@ function inviteCreative() {
 }
 
 function WelcomeModal({ visible, name, onClose }: { visible: boolean; name: string; onClose: () => void }) {
+  const styles = useStyles();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
@@ -373,7 +384,7 @@ function WelcomeModal({ visible, name, onClose }: { visible: boolean; name: stri
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safe: { flex: 1, backgroundColor: '#F4F2EC' },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10 },
@@ -387,9 +398,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#E3EEF4',
   },
-  quickChipOn: { backgroundColor: '#2A3B4D', borderColor: '#2A3B4D' },
+  quickChipOn: { backgroundColor: colors.inverse, borderColor: colors.inverse },
   quickText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: '#2A3B4D' },
-  quickTextOn: { color: colors.white },
+  quickTextOn: { color: colors.onInverse },
   title: { fontFamily: fonts.heading, fontSize: 28, color: colors.text },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   filterBtn: {
@@ -478,5 +489,5 @@ const styles = StyleSheet.create({
   welcomeEmoji: { fontSize: 48 },
   welcomeTitle: { fontFamily: fonts.heading, fontSize: 26, color: colors.text, textAlign: 'center' },
   welcomeBody: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.textSecondary, textAlign: 'center', marginBottom: 8 },
-});
+}));
 

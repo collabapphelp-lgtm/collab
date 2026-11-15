@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } from '@expo-google-fonts/outfit';
@@ -7,6 +7,7 @@ import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { AppState } from 'react-native';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { trackActiveDay } from '@/lib/activity';
+import { useColors, useScheme } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -17,11 +18,22 @@ export const unstable_settings = { anchor: 'index' };
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, SpaceGrotesk_700Bold });
 
+  // Follows the phone's Light/Dark setting (app.json userInterfaceStyle: automatic).
+  const scheme = useScheme();
+  const colors = useColors();
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const navTheme = {
+    ...base,
+    colors: { ...base.colors, primary: colors.blue, background: colors.bg, card: colors.bg, text: colors.text, border: colors.border },
+  };
+
   return (
-    <AuthProvider>
-      <StatusBar style="dark" />
-      <RootNavigator fontsLoaded={fontsLoaded} />
-    </AuthProvider>
+    <ThemeProvider value={navTheme}>
+      <AuthProvider>
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+        <RootNavigator fontsLoaded={fontsLoaded} />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
@@ -36,6 +48,7 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
     return () => sub.remove();
   }, [uid]);
   const ready = fontsLoaded && !initializing;
+  const colors = useColors();
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
@@ -50,7 +63,7 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const inApp = deletingAccount || (!signedOut && !!profile?.onboardingComplete);
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#fff' } }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Screen name="index" />
       <Stack.Protected guard={signedOut}>
         <Stack.Screen name="(auth)" />

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { router, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Avatar } from '@/components/Avatar';
@@ -13,7 +13,7 @@ import { useLikedYou } from '@/lib/liked-you';
 import { listTime } from '@/lib/time';
 import type { UserProfile } from '@/lib/types';
 import { useMatches } from '@/lib/use-matches';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 // Connections and Messages in one place: who wants to collab, new connections you haven't
 // talked to yet, group invites, then every conversation (1:1 and groups), newest first.
@@ -24,6 +24,8 @@ const UNREAD = 'unread';
 const GROUPS = 'groups';
 
 export default function Collabs() {
+  const styles = useStyles();
+  const colors = useColors();
   const { user } = useAuth();
   const { matches, groups, error } = useMatches();
   const { refresh } = useLikedYou();
@@ -196,6 +198,8 @@ export default function Collabs() {
 }
 
 function DmRow({ match, me }: { match: Match; me: string }) {
+  const styles = useStyles();
+  const colors = useColors();
   const unread = isUnread(match, me);
   const mine = match.lastMessage?.senderId === me;
   const name = displayName(match.other);
@@ -233,6 +237,8 @@ function DmRow({ match, me }: { match: Match; me: string }) {
 }
 
 function GroupRow({ group, me }: { group: Group; me: string }) {
+  const styles = useStyles();
+  const colors = useColors();
   const unread = isGroupUnread(group, me);
   const last = group.lastMessage;
   const sender = last && last.senderId !== 'system' ? (last.senderId === me ? 'You' : group.people[last.senderId]?.firstName) : null;
@@ -263,6 +269,8 @@ function GroupRow({ group, me }: { group: Group; me: string }) {
 }
 
 function GroupInvite({ group }: { group: Group }) {
+  const styles = useStyles();
+  const colors = useColors();
   const { profile } = useAuth();
   const [busy, setBusy] = useState(false);
   const from = group.people[group.createdBy];
@@ -320,6 +328,7 @@ function GroupInvite({ group }: { group: Group }) {
 
 /** People who liked me and are waiting on my answer. Hidden when there's nobody. */
 function LikedYouRow() {
+  const styles = useStyles();
   const { likedYou } = useLikedYou();
   if (!likedYou?.length) return null;
   return (
@@ -339,6 +348,8 @@ function LikedYouRow() {
 }
 
 function LikedPerson({ p }: { p: UserProfile }) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/user/[id]', params: { id: p.id, likedYou: '1' } })}
@@ -361,7 +372,7 @@ function LikedPerson({ p }: { p: UserProfile }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
   safe: { flex: 1, backgroundColor: colors.white },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
@@ -392,9 +403,9 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 15, color: colors.text, paddingVertical: 0 },
   chips: { paddingHorizontal: 20, gap: 8 },
   chip: { paddingHorizontal: 13, paddingVertical: 6, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.white },
-  chipOn: { backgroundColor: '#2A3B4D', borderColor: '#2A3B4D' },
+  chipOn: { backgroundColor: colors.inverse, borderColor: colors.inverse },
   chipText: { fontFamily: fonts.bodySemibold, fontSize: 13, color: '#2A3B4D' },
-  chipTextOn: { color: colors.white },
+  chipTextOn: { color: colors.onInverse },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 10 },
   emptyEmoji: { fontSize: 48 },
   emptyTitle: { fontFamily: fonts.heading, fontSize: 22, color: colors.text },
@@ -457,4 +468,4 @@ const styles = StyleSheet.create({
   likedRingInner: { flex: 1, borderRadius: 35, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   likedName: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text, marginTop: 4 },
   likedRole: { fontFamily: fonts.body, fontSize: 11, color: colors.textSecondary },
-});
+}));

@@ -3,7 +3,7 @@ import { Platform, StyleSheet, Text, View, type StyleProp, type ViewStyle } from
 import type { AppleMaps as AppleMapsTypes } from 'expo-maps';
 import { inNyc, metaFor, type EventOccurrence } from '@/lib/events';
 import { UI_PREVIEW } from '@/lib/preview';
-import { colors, fonts } from '@/lib/theme';
+import { colors, fonts, useColors } from '@/lib/theme';
 
 // expo-maps loads its native module as soon as it's imported, which throws on web. Load it only where it exists.
 const AppleMaps: typeof import('expo-maps').AppleMaps | null = Platform.OS === 'ios' ? safeRequire() : null;
@@ -31,6 +31,7 @@ type Props = {
 };
 
 export function EventsMap({ events, selectedKey, onSelect, style }: Props) {
+  const palette = useColors();
   // The same weekly open mic shouldn't stack 3 pins on top of each other in "This week".
   const pins = useMemo(() => {
     const seen = new Map<string, EventOccurrence>();
@@ -47,7 +48,7 @@ export function EventsMap({ events, selectedKey, onSelect, style }: Props) {
           coordinates: { latitude: e.lat, longitude: e.lng },
           title: e.title,
           systemImage: meta.symbol,
-          tintColor: e.key === selectedKey ? colors.text : meta.color,
+          tintColor: e.key === selectedKey ? palette.text : meta.color,
         };
       }),
     [pins, selectedKey],

@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fonts, gradients, radius } from '@/lib/theme';
+import { LinearGradient } from '@/components/ThemedGradient';
+import { fonts, gradients, radius, makeStyles, useColors } from '@/lib/theme';
 
 type Props = {
   title: string;
@@ -12,6 +12,7 @@ type Props = {
 };
 
 export function Button({ title, onPress, variant = 'primary', loading, disabled, style }: Props) {
+  const styles = useStyles();
   const inactive = disabled || loading;
   return (
     <Pressable
@@ -27,7 +28,7 @@ export function Button({ title, onPress, variant = 'primary', loading, disabled,
     >
       {variant === 'primary' ? (
         <LinearGradient colors={gradients.primaryButton} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fill}>
-          <Label title={title} loading={loading} />
+          <Label title={title} loading={loading} ink />
         </LinearGradient>
       ) : variant === 'danger' ? (
         <View style={[styles.fill, styles.danger]}>
@@ -42,15 +43,17 @@ export function Button({ title, onPress, variant = 'primary', loading, disabled,
   );
 }
 
-function Label({ title, loading, light }: { title: string; loading?: boolean; light?: boolean }) {
+function Label({ title, loading, light, ink }: { title: string; loading?: boolean; light?: boolean; ink?: boolean }) {
+  const styles = useStyles();
+  const colors = useColors();
   return loading ? (
-    <ActivityIndicator color={light ? colors.white : colors.text} />
+    <ActivityIndicator color={light ? colors.white : ink ? colors.ink : colors.text} />
   ) : (
-    <Text style={[styles.label, light && { color: colors.white }]}>{title}</Text>
+    <Text style={[styles.label, light && { color: colors.white }, ink && { color: colors.ink }]}>{title}</Text>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   base: { borderRadius: radius.md, width: '100%' },
   fill: { height: 56, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   secondary: { backgroundColor: colors.white, borderWidth: 2, borderColor: colors.border },
@@ -63,4 +66,4 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   label: { fontFamily: fonts.bodySemibold, fontSize: 17, color: colors.text },
-});
+}));

@@ -10,7 +10,7 @@ import { useOnboarding } from '@/lib/onboarding-context';
 import { CONTENT_SKILLS, DAWS, GROUP_SIZES, INSTRUMENT_TYPES, INSTRUMENTS, MUSICIAN_SKILLS, type CreatorType, type Option } from '@/lib/onboarding-data';
 import { toggleIn } from '@/lib/toggle';
 import { canonicalList } from '@/lib/labels';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 const TYPES: { value: CreatorType; label: string; emoji: string; prompt: string; options: Option[] }[] = [
   { value: 'musician', label: 'Musician', emoji: '🎵', prompt: 'What kind of musician?', options: MUSICIAN_SKILLS },
@@ -26,6 +26,8 @@ const preview = (options: Option[]) => options.slice(0, 3).map((o) => o.label).j
 
 // Step 2: I am a... Picking a path reveals its specifics on the same screen.
 export default function TypeStep() {
+  const styles = useStyles();
+  const colors = useColors();
   const { draft, saveStep, advance } = useOnboarding();
   const [type, setType] = useState<CreatorType | undefined>(draft.creatorType);
   // Remember picks per path, so tapping the other card and back doesn't lose them.
@@ -233,7 +235,7 @@ export default function TypeStep() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
   list: { gap: 14 },
   card: { borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.white, overflow: 'hidden' },
@@ -279,4 +281,4 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { outlineWidth: 0 }, default: {} }),
   },
   sizeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-});
+}));

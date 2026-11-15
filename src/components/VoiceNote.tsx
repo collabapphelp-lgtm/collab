@@ -12,7 +12,7 @@ import {
 } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { VOICE_NOTE_MAX_MS } from '@/lib/connections';
-import { colors, fonts } from '@/lib/theme';
+import { fonts, makeStyles, useColors, useTheme } from '@/lib/theme';
 
 export function formatClock(ms: number) {
   const s = Math.max(0, Math.round(ms / 1000));
@@ -32,6 +32,8 @@ function bars(seed: string, n = 28) {
 
 /** A playable voice note inside a chat bubble. The player is only created once you tap play. */
 export function VoiceBubble(props: { id: string; url: string; durationMs: number; mine: boolean }) {
+  const styles = useStyles();
+  const colors = useColors();
   const [started, setStarted] = useState(false);
   const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
@@ -57,13 +59,14 @@ export function VoiceBubble(props: { id: string; url: string; durationMs: number
   }
 
   const fg = props.mine ? colors.white : colors.blue;
-  const dim = props.mine ? 'rgba(255,255,255,0.45)' : '#C9D6E2';
+  const theme = useTheme();
+  const dim = props.mine ? 'rgba(255,255,255,0.45)' : theme.bg('#C9D6E2');
   return (
     <View style={styles.voice}>
       <Pressable
         onPress={toggle}
         hitSlop={8}
-        style={[styles.playBtn, { backgroundColor: props.mine ? 'rgba(255,255,255,0.22)' : '#E6F1F7' }]}
+        style={[styles.playBtn, { backgroundColor: props.mine ? 'rgba(255,255,255,0.22)' : theme.bg('#E6F1F7') }]}
         accessibilityRole="button"
         accessibilityLabel={status.playing ? 'Pause voice note' : 'Play voice note'}
       >
@@ -145,6 +148,8 @@ export function useVoiceRecorder(onAutoStop: (uri: string, durationMs: number) =
 
 /** Replaces the text box while recording: red dot, timer, cancel. */
 export function RecordingBar(props: { durationMs: number; onCancel: () => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <View style={styles.recBar}>
       <Pressable onPress={props.onCancel} hitSlop={10} accessibilityRole="button" accessibilityLabel="Cancel voice note">
@@ -159,7 +164,7 @@ export function RecordingBar(props: { durationMs: number; onCancel: () => void }
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   voice: { flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 220 },
   playBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   wave: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2, height: 28 },
@@ -178,4 +183,4 @@ const styles = StyleSheet.create({
   recDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.red },
   recTime: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text, minWidth: 40 },
   recHint: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },
-});
+}));

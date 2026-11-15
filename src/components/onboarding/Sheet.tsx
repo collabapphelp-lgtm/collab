@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fonts } from '@/lib/theme';
+import { LinearGradient } from '@/components/ThemedGradient';
+import { fonts, makeStyles } from '@/lib/theme';
 
 type Props = {
   visible: boolean;
@@ -14,6 +14,7 @@ type Props = {
 
 /** iOS-style card sheet that slides up over the current screen. */
 export function Sheet({ visible, title, onClose, children, footer }: Props) {
+  const styles = useStyles();
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -37,7 +38,7 @@ export function Sheet({ visible, title, onClose, children, footer }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safe: { flex: 1, backgroundColor: '#F4F2EC' },
   flex: { flex: 1 },
   header: {
@@ -54,4 +55,4 @@ const styles = StyleSheet.create({
   close: { fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.blue },
   body: { padding: 20, gap: 14 },
   footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 8, gap: 8 },
-});
+}));

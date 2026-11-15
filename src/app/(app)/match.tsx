@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from '@/components/ThemedGradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/Button';
@@ -11,11 +11,13 @@ import { useAuth } from '@/lib/auth-context';
 import { getProfile, pairId } from '@/lib/discover';
 import { optionFor, displayName } from '@/lib/labels';
 import type { UserProfile } from '@/lib/types';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 // "Let's Collab!" — shown right after two people like each other.
 // Dark "studio at night" look; the tilted cards echo the welcome screen.
 export default function ConnectionScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile: me } = useAuth();
   const [them, setThem] = useState<UserProfile | null>(null);
@@ -78,6 +80,8 @@ export default function ConnectionScreen() {
 }
 
 function PersonCard({ person, tilt, accent }: { person: UserProfile | null | undefined; tilt: string; accent: string }) {
+  const styles = useStyles();
+  const colors = useColors();
   const role = person?.skills?.[0] ? optionFor(person.skills[0]) : null;
   return (
     <View style={[styles.cardWrap, { transform: [{ rotate: tilt }] }]}>
@@ -102,7 +106,7 @@ function PersonCard({ person, tilt, accent }: { person: UserProfile | null | und
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   fill: { flex: 1, overflow: 'hidden' },
   safe: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'space-between', gap: 28 },
   glow: { position: 'absolute', width: 320, height: 320, borderRadius: 160, opacity: 0.22 },
@@ -163,4 +167,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ghostText: { fontFamily: fonts.bodySemibold, fontSize: 17, color: colors.white },
-});
+}));

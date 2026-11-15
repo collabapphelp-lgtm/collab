@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import { StepScreen, stepStyles } from '@/components/onboarding/StepScreen';
+import { StepScreen, useStepStyles } from '@/components/onboarding/StepScreen';
 import { CitySearch, type PickedCity } from '@/components/onboarding/CitySearch';
 import { Quote, QUOTES } from '@/components/Quote';
 import { useOnboarding } from '@/lib/onboarding-context';
 import { DEFAULT_RADIUS_MILES } from '@/lib/onboarding-data';
-import { colors, fonts, radius } from '@/lib/theme';
+import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
 // Step 1: where are you based?
 export default function LocationStep() {
+  const styles = useStyles();
+  const stepStyles = useStepStyles();
+  const colors = useColors();
   const { draft, saveStep, advance } = useOnboarding();
   const [city, setCity] = useState<PickedCity | null>(
     draft.location && draft.geo ? { label: draft.location, lat: draft.geo.lat, lng: draft.geo.lng } : null,
@@ -91,7 +94,7 @@ export default function LocationStep() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   globalCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -107,4 +110,4 @@ const styles = StyleSheet.create({
   globalText: { flex: 1 },
   globalTitle: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
   globalBody: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textSecondary, marginTop: 2 },
-});
+}));
