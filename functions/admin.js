@@ -69,6 +69,13 @@ exports.deleteAccounts = onCall({ maxInstances: 1, memory: '512MiB', timeoutSeco
       const likes = await db.collection(`users/${uid}/likes`).get();
       for (const d of likes.docs) await db.doc(`users/${d.id}/likedBy/${uid}`).delete();
 
+      // Events they posted and their "I'm going"s.
+      for (const c of ['events', 'rsvps']) {
+        const field = c === 'events' ? 'hostId' : 'uid';
+        const snap = await db.collection(c).where(field, '==', uid).get();
+        for (const d of snap.docs) await d.ref.delete();
+      }
+
       // Profile and its subcollections, private docs, uploaded files, then the login.
       await db.recursiveDelete(db.doc(`users/${uid}`));
       await db.doc(`pushTokens/${uid}`).delete();
