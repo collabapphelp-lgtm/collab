@@ -5,6 +5,7 @@ import { auth, db, storage } from './firebase';
 import { UI_PREVIEW } from './preview';
 import { deletePushTokens } from './push';
 import { deleteMyEventData } from './events';
+import { leaveGroup, respondToGroup } from './connections';
 
 async function deleteAllIn(path: [string, ...string[]]) {
   const snap = await getDocs(collection(db, ...path));
@@ -50,6 +51,20 @@ export async function deleteAccount(password: string) {
     batch.update(m.ref, { closedBy: me });
     await batch.commit();
   }
+
+  // 1b. Group chats: delete what I sent, then leave (and turn down open invites).
+  const inGroups = await getDocs(query(collection(db, 'groups'), where('members', 'array-contains', me))).catch(() => null);
+  for (const g of inGroups?.docs ?? []) {
+    const mine = await getDocs(query(collection(g.ref, 'messages'), where('senderId', '==', me)));
+    for (let i = 0; i < mine.docs.length; i += 450) {
+      const batch = writeBatch(db);
+      mine.docs.slice(i, i + 450).forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+    await leaveGroup(g.id).catch(() => {});
+  }
+  const invitedTo = await getDocs(query(collection(db, 'groups'), where('invited', 'array-contains', me))).catch(() => null);
+  for (const g of invitedTo?.docs ?? []) await respondToGroup(g.id, { id: me } as never, false).catch(() => {});
 
   // 2. My likes, passes and blocks.
   await deleteAllIn(['users', me, 'likes']);

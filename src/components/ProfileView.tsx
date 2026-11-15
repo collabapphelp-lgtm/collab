@@ -1,10 +1,11 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { HeroPhoto } from '@/components/Avatar';
+import { Avatar, HeroPhoto } from '@/components/Avatar';
 import { detectPlatform, INSTRUMENT_TYPES } from '@/lib/onboarding-data';
 import { canonicalList, fullName, lookingOptionFor, optionFor, roleLine, shortLocation } from '@/lib/labels';
 import { accentFor } from '@/lib/accent';
@@ -25,6 +26,11 @@ type Props = {
   isSelf?: boolean;
   /** Photo height. Discover uses a shorter one so more of the profile shows without scrolling. */
   heroHeight?: number;
+  /**
+   * 'work' (Discover): a small photo and name up top so the work, prompts and bio lead.
+   * 'hero' (default): the big Spotlight photo.
+   */
+  layout?: 'hero' | 'work';
 };
 
 const GOLD = '#F2C14E';
@@ -34,7 +40,8 @@ const PAGE = '#F7F5F0';
  * One person's full profile, "Spotlight" style: the photo fades into a color taken from their sound,
  * their first track is featured, prompts read big, everything else as clean chips.
  */
-export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, belowHero, isSelf, heroHeight = 460 }: Props) {
+export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, belowHero, isSelf, heroHeight = 460, layout = 'hero' }: Props) {
+  const workFirst = layout === 'work';
   const name = fullName(profile);
   const isContent = profile.creatorType === 'content';
   const tastes = isContent ? profile.interests : profile.genres;
@@ -73,31 +80,71 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.hero, { height: heroHeight, backgroundColor: accent }]}>
-        <HeroPhoto uri={profile.photoURL} name={name} seed={profile.id} />
-        <LinearGradient colors={['rgba(0,0,0,0.25)', 'transparent']} style={styles.heroTop} />
-        <LinearGradient colors={['transparent', accent + 'E6', accent]} locations={[0, 0.7, 1]} style={styles.heroShade} />
-        {heroAccessory ? <View style={styles.heroAccessory}>{heroAccessory}</View> : null}
-        <View style={styles.heroText}>
-          {soundLine ? <Text style={styles.soundLine}>{soundLine}</Text> : null}
-          <Text style={styles.name} numberOfLines={2}>
-            {name}
-          </Text>
-          <Text style={styles.role}>
-            {isGroup ? `Band / group${profile.groupSize ? ` · ${profile.groupSize} members` : ''} · ` : ''}
-            {roleLine(profile, 3)}
-          </Text>
-          {where ? (
-            <View style={styles.wherePill}>
-              <MaterialCommunityIcons name="map-marker-outline" size={14} color={colors.white} />
-              <Text style={styles.whereText}>{where}</Text>
+      {workFirst ? (
+        <View style={[styles.compactHead, { backgroundColor: accent }]}>
+          <View style={styles.compactRow}>
+            <Avatar uri={profile.photoURL} name={name} seed={profile.id} size={84} radius={22} style={styles.compactPhoto} />
+            <View style={styles.flex}>
+              {soundLine ? (
+                <Text style={styles.soundLineSmall} numberOfLines={1}>
+                  {soundLine}
+                </Text>
+              ) : null}
+              <Text style={styles.compactName} numberOfLines={2}>
+                {name}
+              </Text>
+              <Text style={styles.compactRole} numberOfLines={2}>
+                {isGroup ? `Band / group${profile.groupSize ? ` · ${profile.groupSize}` : ''} · ` : ''}
+                {roleLine(profile, 3)}
+              </Text>
+              {where ? (
+                <View style={styles.compactWhere}>
+                  <MaterialCommunityIcons name="map-marker-outline" size={13} color={colors.white} />
+                  <Text style={styles.compactWhereText}>{where}</Text>
+                </View>
+              ) : null}
             </View>
-          ) : null}
+          </View>
+          {heroAccessory ? <View style={styles.compactAccessory}>{heroAccessory}</View> : null}
         </View>
-      </View>
+      ) : (
+        <View style={[styles.hero, { height: heroHeight, backgroundColor: accent }]}>
+          <HeroPhoto uri={profile.photoURL} name={name} seed={profile.id} />
+          <LinearGradient colors={['rgba(0,0,0,0.25)', 'transparent']} style={styles.heroTop} />
+          <LinearGradient colors={['transparent', accent + 'E6', accent]} locations={[0, 0.7, 1]} style={styles.heroShade} />
+          {heroAccessory ? <View style={styles.heroAccessory}>{heroAccessory}</View> : null}
+          <View style={styles.heroText}>
+            {soundLine ? <Text style={styles.soundLine}>{soundLine}</Text> : null}
+            <Text style={styles.name} numberOfLines={2}>
+              {name}
+            </Text>
+            <Text style={styles.role}>
+              {isGroup ? `Band / group${profile.groupSize ? ` · ${profile.groupSize} members` : ''} · ` : ''}
+              {roleLine(profile, 3)}
+            </Text>
+            {where ? (
+              <View style={styles.wherePill}>
+                <MaterialCommunityIcons name="map-marker-outline" size={14} color={colors.white} />
+                <Text style={styles.whereText}>{where}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      )}
 
       <View style={styles.body}>
         {belowHero}
+
+        {workFirst && featured ? <FeaturedTrack item={featured} /> : null}
+
+        {workFirst && profile.bio ? (
+          <View style={styles.prompt}>
+            <Text style={styles.promptQ}>What I’m looking for in a collab partner</Text>
+            <Text style={styles.bioBig}>{profile.bio}</Text>
+          </View>
+        ) : null}
+
+        {workFirst ? rest.map((item, i) => <ShowcaseCard key={i} item={item} />) : null}
 
         {reasons && reasons.length > 0 ? (
           <View style={styles.reasons}>
@@ -128,11 +175,13 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
           </Section>
         ) : null}
 
-        {featured ? <FeaturedTrack item={featured} /> : null}
+        {!workFirst && featured ? <FeaturedTrack item={featured} /> : null}
 
-        {rest.map((item, i) => (
-          <ShowcaseCard key={i} item={item} />
-        ))}
+        {!workFirst
+          ? rest.map((item, i) => (
+              <ShowcaseCard key={i} item={item} />
+            ))
+          : null}
 
         {instruments.length > 0 ? (
           <Section title={profile.instruments?.length ? (isSelf ? 'You play' : 'Plays') : 'Works in'}>
@@ -140,10 +189,10 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
           </Section>
         ) : null}
 
-        {lookingItems.length > 0 || profile.bio ? (
+        {lookingItems.length > 0 || (profile.bio && !workFirst) ? (
           <Section title="Looking to collab with">
             {lookingItems.length > 0 ? <ChipRow items={lookingItems} tone="blue" /> : null}
-            {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
+            {profile.bio && !workFirst ? <Text style={styles.bio}>{profile.bio}</Text> : null}
           </Section>
         ) : null}
 
@@ -200,10 +249,59 @@ function mediaMeta(item: ShowcaseMedia) {
   return { kind, title: item.title ?? (platform ? `${kind} link` : `${kind} snippet`) };
 }
 
+/** Uploaded audio files (and direct links to audio files) play right here instead of opening a browser. */
+function isPlayable(item: ShowcaseMedia) {
+  return item.mediaKind === 'audio' || /\.(mp3|m4a|wav|aac)(\?|$)/i.test(item.url);
+}
+
+// Only one track plays at a time across the screen.
+let pauseCurrent: (() => void) | null = null;
+
+function useInlineAudio(url: string) {
+  const [started, setStarted] = useState(false);
+  const player = useAudioPlayer(null);
+  const status = useAudioPlayerStatus(player);
+
+  useEffect(() => {
+    if (status.didJustFinish) {
+      player.pause();
+      player.seekTo(0).catch(() => {});
+    }
+  }, [status.didJustFinish, player]);
+
+  async function toggle() {
+    if (status.playing) return player.pause();
+    pauseCurrent?.();
+    pauseCurrent = () => player.pause();
+    await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false }).catch(() => {});
+    if (!started) {
+      player.replace({ uri: url });
+      setStarted(true);
+    }
+    player.play();
+  }
+
+  return {
+    toggle,
+    playing: status.playing,
+    loading: started && status.isBuffering && !status.playing,
+    progress: started && status.duration > 0 ? Math.min(1, status.currentTime / status.duration) : 0,
+    time: started && status.duration > 0 ? `${clock(status.currentTime)} / ${clock(status.duration)}` : null,
+  };
+}
+
+function clock(sec: number) {
+  const s = Math.max(0, Math.round(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
 /** The first track/video, big and dark, like a "now playing" card. */
 function FeaturedTrack({ item }: { item: ShowcaseMedia }) {
+  return isPlayable(item) ? <FeaturedAudio item={item} /> : <FeaturedLink item={item} />;
+}
+
+function FeaturedLink({ item }: { item: ShowcaseMedia }) {
   const { kind, title } = mediaMeta(item);
-  const wave = bars(item.url);
   return (
     <Pressable
       onPress={() => WebBrowser.openBrowserAsync(item.url).catch(() => {})}
@@ -211,22 +309,73 @@ function FeaturedTrack({ item }: { item: ShowcaseMedia }) {
       accessibilityLabel={`Featured: ${title}. Opens ${kind}.`}
       style={({ pressed }) => [styles.featured, pressed && { opacity: 0.9 }]}
     >
+      <FeaturedBody item={item} icon="play" progress={9 / 30} sub={kind} />
+    </Pressable>
+  );
+}
+
+function FeaturedAudio({ item }: { item: ShowcaseMedia }) {
+  const { title } = mediaMeta(item);
+  const a = useInlineAudio(item.url);
+  return (
+    <Pressable
+      onPress={a.toggle}
+      accessibilityRole="button"
+      accessibilityLabel={`${a.playing ? 'Pause' : 'Play'} ${title}`}
+      style={({ pressed }) => [styles.featured, pressed && { opacity: 0.95 }]}
+    >
+      <FeaturedBody item={item} icon={a.playing ? 'pause' : a.loading ? 'dots-horizontal' : 'play'} progress={a.progress} sub={a.time ?? 'Tap to play'} />
+    </Pressable>
+  );
+}
+
+function FeaturedBody(props: { item: ShowcaseMedia; icon: 'play' | 'pause' | 'dots-horizontal'; progress: number; sub: string }) {
+  const { title } = mediaMeta(props.item);
+  const wave = bars(props.item.url);
+  return (
+    <>
       <Text style={styles.featuredLabel}>FEATURED</Text>
       <View style={styles.featuredRow}>
         <View style={styles.featuredPlay}>
-          <MaterialCommunityIcons name="play" size={26} color="#17151F" />
+          <MaterialCommunityIcons name={props.icon} size={26} color="#17151F" />
         </View>
         <View style={styles.flex}>
           <Text style={styles.featuredTitle} numberOfLines={1}>
             {title}
           </Text>
-          <Text style={styles.featuredKind}>{kind}</Text>
+          <Text style={styles.featuredKind}>{props.sub}</Text>
         </View>
       </View>
       <View style={styles.wave}>
         {wave.map((v, i) => (
-          <View key={i} style={[styles.waveBar, { height: 6 + v * 26, backgroundColor: i < 9 ? GOLD : '#5B5570' }]} />
+          <View key={i} style={[styles.waveBar, { height: 6 + v * 26, backgroundColor: i / wave.length < props.progress ? GOLD : '#5B5570' }]} />
         ))}
+      </View>
+    </>
+  );
+}
+
+function AudioRow({ item }: { item: ShowcaseMedia }) {
+  const { kind, title } = mediaMeta(item);
+  const a = useInlineAudio(item.url);
+  return (
+    <Pressable
+      onPress={a.toggle}
+      accessibilityRole="button"
+      accessibilityLabel={`${a.playing ? 'Pause' : 'Play'} ${title}`}
+      style={({ pressed }) => [styles.media, pressed && { opacity: 0.85 }]}
+    >
+      <View style={styles.mediaIcon}>
+        <MaterialCommunityIcons name={a.playing ? 'pause' : a.loading ? 'dots-horizontal' : 'play'} size={22} color={colors.blue} />
+      </View>
+      <View style={styles.flex}>
+        <Text style={styles.mediaTitle} numberOfLines={1}>
+          {title}
+        </Text>
+        <Text style={styles.mediaKind}>{a.time ?? kind}</Text>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${a.progress * 100}%` }]} />
+        </View>
       </View>
     </Pressable>
   );
@@ -250,6 +399,8 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
       </View>
     );
   }
+
+  if (isPlayable(item)) return <AudioRow item={item} />;
 
   const { kind, title } = mediaMeta(item);
   return (
@@ -280,6 +431,16 @@ const styles = StyleSheet.create({
   heroTop: { position: 'absolute', left: 0, right: 0, top: 0, height: 120 },
   heroShade: { position: 'absolute', left: 0, right: 0, bottom: 0, top: '40%' },
   heroAccessory: { position: 'absolute', top: 12, right: 12 },
+  compactHead: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
+  compactRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingRight: 36 },
+  compactPhoto: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)' },
+  compactAccessory: { position: 'absolute', top: 10, right: 10 },
+  soundLineSmall: { fontFamily: fonts.bodySemibold, fontSize: 11, letterSpacing: 1.6, color: GOLD, marginBottom: 2 },
+  compactName: { fontFamily: fonts.heading, fontSize: 24, lineHeight: 27, letterSpacing: -0.5, color: colors.white },
+  compactRole: { fontFamily: fonts.bodySemibold, fontSize: 14, color: 'rgba(255,255,255,0.92)', marginTop: 2 },
+  compactWhere: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 },
+  compactWhereText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: 'rgba(255,255,255,0.9)' },
+  bioBig: { fontFamily: fonts.heading, fontSize: 19, lineHeight: 25, letterSpacing: -0.2, color: colors.text },
   heroText: { paddingHorizontal: 20, paddingBottom: 22, gap: 6 },
   soundLine: { fontFamily: fonts.bodySemibold, fontSize: 12, letterSpacing: 2, color: GOLD },
   name: { fontFamily: fonts.heading, fontSize: 40, lineHeight: 42, letterSpacing: -1, color: colors.white },
@@ -325,6 +486,8 @@ const styles = StyleSheet.create({
   promptA: { fontFamily: fonts.heading, fontSize: 21, lineHeight: 27, letterSpacing: -0.2, color: colors.text },
 
   media: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, backgroundColor: colors.white },
+  progressTrack: { height: 3, borderRadius: 2, backgroundColor: '#E3EEF4', marginTop: 6, overflow: 'hidden' },
+  progressFill: { height: 3, backgroundColor: colors.blue },
   mediaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#E3F0F6', alignItems: 'center', justifyContent: 'center' },
   mediaTitle: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
   mediaKind: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },

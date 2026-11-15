@@ -22,8 +22,9 @@ export function setOpenChat(id: string | null) {
 if (!UI_PREVIEW && Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
     handleNotification: async (n) => {
-      const data = n.request.content.data as { matchId?: string; type?: string } | undefined;
-      const inThatChat = data?.type === 'message' && !!data.matchId && data.matchId === openChatId;
+      const data = n.request.content.data as { matchId?: string; groupId?: string; type?: string } | undefined;
+      const chatId = data?.type === 'group' ? data.groupId : data?.type === 'message' ? data.matchId : undefined;
+      const inThatChat = !!chatId && chatId === openChatId;
       return { shouldShowBanner: !inThatChat, shouldShowList: !inThatChat, shouldPlaySound: !inThatChat, shouldSetBadge: false };
     },
   });

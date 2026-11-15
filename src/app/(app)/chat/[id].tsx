@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { setOpenChat } from '@/lib/push';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import {
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -19,10 +20,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChatProfileCard } from '@/components/ChatProfileCard';
 import { RecordingBar, useVoiceRecorder, VoiceBubble } from '@/components/VoiceNote';
 import { Avatar } from '@/components/Avatar';
+import { GroupAvatar } from '@/components/GroupAvatar';
+import { Sheet } from '@/components/onboarding/Sheet';
 import { SafetyButton } from '@/components/SafetyButton';
 import { useAuth } from '@/lib/auth-context';
 import * as Haptics from 'expo-haptics';
 import {
+  groupTitle,
+  isGroupId,
+  leaveGroup,
   listenToMessages,
   markRead,
   MESSAGE_MAX_CHARS,
@@ -50,15 +56,21 @@ function icebreakers(p: UserProfile): string[] {
   return out.slice(0, 3);
 }
 
-type Row = { kind: 'day'; key: string; label: string } | { kind: 'msg'; key: string; msg: ChatMessage; mine: boolean; tail: boolean };
+type Row =
+  | { kind: 'day'; key: string; label: string }
+  | { kind: 'sys'; key: string; text: string }
+  | { kind: 'msg'; key: string; msg: ChatMessage; mine: boolean; tail: boolean; head: boolean };
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, profile: myProfile } = useAuth();
-  const { matches } = useMatches();
+  const { matches, groups } = useMatches();
   const me = user?.uid ?? '';
-  const match = matches?.find((m) => m.id === id);
+  const isGroup = !!id && isGroupId(id);
+  const match = isGroup ? undefined : matches?.find((m) => m.id === id);
+  const group = isGroup ? groups?.find((g) => g.id === id && g.members.includes(me)) : undefined;
   const them = match?.other;
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
   const [draft, setDraft] = useState('');
@@ -91,9 +103,9 @@ export default function ChatScreen() {
   // Opening the chat, and every new message while it's open, counts as read.
   const lastAt = messages?.[messages.length - 1]?.at;
   useEffect(() => {
-    if (id && me && match) markRead(id, me).catch(() => {});
+    if (id && me && (match || group)) markRead(id, me).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-mark when a new message arrives
-  }, [id, me, lastAt, !!match]);
+  }, [id, me, lastAt, !!match, !!group]);
 
   // Build rows newest-first for an inverted list: day separators + bubbles grouped by sender.
   const rows = useMemo<Row[]>(() => {
@@ -103,8 +115,10 @@ export default function ChatScreen() {
       const prev = messages[i - 1];
       const next = messages[i + 1];
       if (!prev || !sameDay(prev.at, msg.at)) out.push({ kind: 'day', key: `d${msg.at}`, label: dayLabel(msg.at) });
+      if (msg.senderId === 'system') return void out.push({ kind: 'sys', key: msg.id, text: msg.text });
       const tail = !next || next.senderId !== msg.senderId || next.at - msg.at > 5 * 60_000;
-      out.push({ kind: 'msg', key: msg.id, msg, mine: msg.senderId === me, tail });
+      const head = !prev || prev.senderId !== msg.senderId || msg.at - prev.at > 5 * 60_000 || !sameDay(prev.at, msg.at);
+      out.push({ kind: 'msg', key: msg.id, msg, mine: msg.senderId === me, tail, head });
     });
     return out.reverse();
   }, [messages, me]);
@@ -173,7 +187,7 @@ export default function ChatScreen() {
     }
   }
 
-  if (matches && !match) {
+  if (isGroup ? groups && !group : matches && !match) {
     return (
       <SafeAreaView style={styles.missing}>
         <Text style={styles.missingText}>This conversation isn’t available.</Text>
@@ -193,7 +207,24 @@ export default function ChatScreen() {
         <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={26} color={colors.text} />
         </Pressable>
-        {them ? (
+        {group ? (
+          <Pressable
+            style={styles.headerWho}
+            onPress={() => setInfoOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`${groupTitle(group, me)}. Group info`}
+          >
+            <GroupAvatar group={group} me={me} size={46} />
+            <View style={styles.flex}>
+              <Text style={styles.headerName} numberOfLines={1}>
+                {groupTitle(group, me)}
+              </Text>
+              <Text style={styles.headerRole} numberOfLines={1}>
+                {group.members.length} in chat{group.invited.length ? ` · ${group.invited.length} invited` : ''} · Info
+              </Text>
+            </View>
+          </Pressable>
+        ) : them ? (
           <Pressable
             style={styles.headerWho}
             onPress={() => router.push({ pathname: '/user/[id]', params: { id: them.id } })}
@@ -249,6 +280,8 @@ export default function ChatScreen() {
             renderItem={({ item }) =>
               item.kind === 'day' ? (
                 <Text style={styles.day}>{item.label}</Text>
+              ) : item.kind === 'sys' ? (
+                <Text style={styles.sys}>{item.text}</Text>
               ) : (
                 <View style={[styles.bubbleRow, item.mine ? styles.rowMine : styles.rowTheirs, item.tail && { marginBottom: 8 }]}>
                   {picking === item.msg.id ? (
@@ -265,6 +298,9 @@ export default function ChatScreen() {
                         </Pressable>
                       ))}
                     </View>
+                  ) : null}
+                  {group && !item.mine && item.head ? (
+                    <Text style={styles.sender}>{group.people[item.msg.senderId]?.firstName ?? 'Someone'}</Text>
                   ) : null}
                   <Pressable
                     onLongPress={() => openPicker(item.msg.id)}
@@ -316,7 +352,7 @@ export default function ChatScreen() {
             <TextInput
               value={draft}
               onChangeText={setDraft}
-              placeholder={them ? `Message ${displayName(them)}…` : 'Message…'}
+              placeholder={group ? `Message ${groupTitle(group, me)}…` : them ? `Message ${displayName(them)}…` : 'Message…'}
               placeholderTextColor={colors.textMuted}
               multiline
               maxLength={MESSAGE_MAX_CHARS}
@@ -354,7 +390,70 @@ export default function ChatScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
+      {group ? <GroupInfo visible={infoOpen} onClose={() => setInfoOpen(false)} groupId={group.id} /> : null}
     </SafeAreaView>
+  );
+}
+
+/** Who's in the group (tap to see a profile), who's still invited, and Leave. */
+function GroupInfo({ visible, onClose, groupId }: { visible: boolean; onClose: () => void; groupId: string }) {
+  const { user } = useAuth();
+  const { groups } = useMatches();
+  const me = user?.uid ?? '';
+  const group = groups?.find((g) => g.id === groupId);
+  if (!group) return null;
+  const row = (uid: string, invited: boolean) => {
+    const p = group.people[uid];
+    if (!p) return null;
+    return (
+      <Pressable
+        key={uid}
+        onPress={() => {
+          if (uid === me) return;
+          onClose();
+          router.push({ pathname: '/user/[id]', params: { id: uid } });
+        }}
+        style={({ pressed }) => [styles.member, pressed && uid !== me && { opacity: 0.7 }]}
+        accessibilityRole={uid === me ? undefined : 'button'}
+      >
+        <Avatar uri={p.photoURL} name={displayName(p)} seed={p.id} size={40} />
+        <View style={styles.flex}>
+          <Text style={styles.memberName}>
+            {uid === me ? 'You' : displayName(p)}
+            {uid === group.createdBy ? <Text style={styles.memberTag}>  · Started it</Text> : null}
+          </Text>
+          <Text style={styles.memberRole} numberOfLines={1}>
+            {invited ? 'Invited · hasn’t joined yet' : roleLine(p, 2)}
+          </Text>
+        </View>
+        {uid !== me ? <Ionicons name="chevron-forward" size={18} color={colors.textMuted} /> : null}
+      </Pressable>
+    );
+  };
+  function leave() {
+    Alert.alert('Leave this group?', 'You’ll stop getting its messages. Your connections stay as they are.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: async () => {
+          onClose();
+          router.back();
+          await leaveGroup(groupId).catch((e) => console.warn('Leave failed', e));
+        },
+      },
+    ]);
+  }
+  return (
+    <Sheet visible={visible} title={groupTitle(group, me)} onClose={onClose}>
+      <View style={styles.members}>
+        {group.members.map((u) => row(u, false))}
+        {group.invited.map((u) => row(u, true))}
+      </View>
+      <Pressable onPress={leave} style={({ pressed }) => [styles.leave, pressed && { opacity: 0.7 }]} accessibilityRole="button">
+        <Text style={styles.leaveText}>Leave group</Text>
+      </Pressable>
+    </Sheet>
   );
 }
 
@@ -399,6 +498,15 @@ const styles = StyleSheet.create({
   headerRole: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary },
 
   list: { paddingHorizontal: 14, paddingVertical: 12 },
+  sys: { alignSelf: 'center', textAlign: 'center', fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textSecondary, marginVertical: 8, paddingHorizontal: 24 },
+  sender: { fontFamily: fonts.bodySemibold, fontSize: 12, color: colors.textSecondary, marginLeft: 12, marginBottom: 3 },
+  members: { gap: 4 },
+  member: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+  memberName: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
+  memberTag: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
+  memberRole: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },
+  leave: { marginTop: 18, alignSelf: 'center', paddingVertical: 10, paddingHorizontal: 20 },
+  leaveText: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.red },
   day: { alignSelf: 'center', fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textMuted, marginVertical: 12 },
   bubbleRow: { maxWidth: '80%', marginBottom: 3 },
   rowMine: { alignSelf: 'flex-end' },

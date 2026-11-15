@@ -102,6 +102,41 @@ service cloud.firestore {
       }
     }
 
+    // ---------- Group chats ----------
+    // groups/{id}: created, joined and left only through Cloud Functions (functions/groups.js),
+    // which check that everyone added is the creator's connection. Members can post and mark read.
+    match /groups/{groupId} {
+      allow read: if signedIn()
+        && (request.auth.uid in resource.data.members || request.auth.uid in resource.data.invited);
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.members
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastRead']);
+      allow create, delete: if false;
+
+      match /messages/{messageId} {
+        function inGroup() { return signedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members; }
+
+        allow read: if inGroup();
+        allow create: if inGroup()
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 1000
+          && request.resource.data.createdAt == request.time
+          && (!('audioUrl' in request.resource.data)
+              || (request.resource.data.audioUrl is string
+                  && request.resource.data.audioUrl.matches('https://firebasestorage[.]googleapis[.]com/.*')
+                  && request.resource.data.durationMs is number
+                  && request.resource.data.durationMs <= 130000));
+        allow update: if inGroup()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+          && request.resource.data.get('reactions', {}).diff(resource.data.get('reactions', {})).affectedKeys().hasOnly([request.auth.uid])
+          && (!(request.auth.uid in request.resource.data.get('reactions', {}))
+              || request.resource.data.reactions[request.auth.uid] in ['❤️', '👍', '🔥', '😂', '😮', '🙏']);
+        allow delete: if inGroup() && resource.data.senderId == request.auth.uid;
+      }
+    }
+
     // ---------- Push notification tokens ----------
     // pushTokens/{uid}: { tokens: [...] }. Private to the owner; Cloud Functions read it to send alerts.
     match /pushTokens/{uid} {

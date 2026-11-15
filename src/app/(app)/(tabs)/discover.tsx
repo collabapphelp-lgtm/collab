@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { INVITE_URL } from '@/lib/legal';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +14,11 @@ import { NO_FILTERS, filterCount, passesFilters, saveFilters, type DiscoverFilte
 import { SafetyButton } from '@/components/SafetyButton';
 import { Quote, QUOTES } from '@/components/Quote';
 import { useAuth } from '@/lib/auth-context';
+import { canonicalList, optionFor } from '@/lib/labels';
+import { CONTENT_SKILLS, INSTRUMENTS, MUSICIAN_SKILLS } from '@/lib/onboarding-data';
+import { toggleIn } from '@/lib/toggle';
+import type { UserProfile } from '@/lib/types';
+import { useMatches } from '@/lib/use-matches';
 import { like, loadUnseenProfiles, passOn } from '@/lib/discover';
 import { formatDistance, rankCandidates, type Candidate } from '@/lib/matching';
 import { consumeJustFinished } from '@/lib/onboarding-context';
@@ -21,12 +26,76 @@ import { colors, fonts } from '@/lib/theme';
 
 const LOGO = require('../../../../assets/logo.png');
 const LOGO_WHITE = require('../../../../assets/logo-white.png');
+// Slate-violet: sits with the blue→purple Collab button instead of fighting it like red did.
+const PASS = '#6B6690';
+
+/**
+ * One-tap filters under the header, built from what you said you're looking for and your own sound,
+ * so the chips that matter to you come first. The full sheet (button top right) has everything.
+ */
+function QuickFilters({ me, value, onChange }: { me: UserProfile; value: DiscoverFilters; onChange: (f: DiscoverFilters) => void }) {
+  const chips = useMemo(() => quickChips(me), [me]);
+  const n = filterCount(value);
+  const toggle = (key: keyof DiscoverFilters, v: string) => onChange({ ...value, [key]: toggleIn(value[key], v) });
+  // Anything active from the full sheet that isn't a quick chip still shows, so it can be turned off here.
+  const extra = (Object.keys(value) as (keyof DiscoverFilters)[]).flatMap((key) =>
+    value[key].filter((v) => !chips.some((c) => c.key === key && c.value === v)).map((v) => ({ key, value: v, label: optionFor(v).label })),
+  );
+  const all = [...extra, ...chips];
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickWrap} contentContainerStyle={styles.quick}>
+      <QuickChip label="Everyone" on={n === 0} onPress={() => onChange(NO_FILTERS)} />
+      {all.map((c) => (
+        <QuickChip key={`${c.key}:${c.value}`} label={c.label} on={value[c.key].includes(c.value)} onPress={() => toggle(c.key, c.value)} />
+      ))}
+    </ScrollView>
+  );
+}
+
+function QuickChip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: on }}
+      style={({ pressed }) => [styles.quickChip, on && styles.quickChipOn, pressed && { opacity: 0.8 }]}
+    >
+      <Text style={[styles.quickText, on && styles.quickTextOn]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+type QuickChipDef = { key: keyof DiscoverFilters; value: string; label: string };
+
+function quickChips(me: UserProfile): QuickChipDef[] {
+  const out: QuickChipDef[] = [];
+  const add = (key: keyof DiscoverFilters, value: string) => {
+    if (!out.some((c) => c.key === key && c.value === value)) out.push({ key, value, label: optionFor(value).label });
+  };
+  const skillValues = new Set([...MUSICIAN_SKILLS, ...CONTENT_SKILLS].map((o) => o.value));
+  const wanted = me.lookingFor ?? [];
+  const open = wanted.length === 0 || wanted.includes('anything');
+  // Roles you're looking for (and the specific ones under a group, e.g. musician → producer).
+  for (const w of wanted) {
+    for (const d of canonicalList(me.lookingForDetails?.[w])) if (skillValues.has(d)) add('roles', d);
+    if (skillValues.has(w)) add('roles', w);
+  }
+  if (open) ['producer', 'vocalist', 'instrumentalist', 'videographer', 'songwriter', 'dj'].forEach((v) => add('roles', v));
+  // Instruments, if you want players.
+  if (open || wanted.includes('instrumentalist') || wanted.includes('musician')) {
+    const picked = canonicalList(me.lookingForDetails?.instrumentalist);
+    (picked.length ? picked : INSTRUMENTS.map((o) => o.value)).forEach((v) => INSTRUMENTS.some((o) => o.value === v) && add('instruments', v));
+  }
+  // Your own sound or niche.
+  [...(me.genres ?? []), ...(me.interests ?? [])].forEach((v) => add('sounds', v));
+  return out.slice(0, 18);
+}
 
 export default function Discover() {
   const { profile } = useAuth();
-  const [queue, setQueue] = useState<Candidate[] | null>(null);
-  // Non-direct fits, held back until best fits run out and the person chooses to explore.
-  const [more, setMore] = useState<Candidate[]>([]);
+  // Everything loaded and ranked; filters and removals apply on top, so changing a filter is instant.
+  const [loaded, setLoaded] = useState<{ best: Candidate[]; more: Candidate[] } | null>(null);
+  const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [exploring, setExploring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
@@ -35,6 +104,18 @@ export default function Discover() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeFilters = filterCount(filters);
   const scrollRef = useRef<ScrollViewInstance>(null);
+
+  // Anyone you're already connected with (e.g. you accepted their request from Connections
+  // after this queue was loaded) drops out right away.
+  const { matches } = useMatches();
+  const connected = useMemo(() => new Set((matches ?? []).map((m) => m.other.id)), [matches]);
+  const visible = useCallback(
+    (list: Candidate[]) => list.filter((c) => !removed.has(c.profile.id) && !connected.has(c.profile.id) && passesFilters(c.profile, filters)),
+    [removed, connected, filters],
+  );
+  const queue = useMemo(() => (loaded ? visible(exploring ? loaded.more : loaded.best) : null), [loaded, exploring, visible]);
+  const more = useMemo(() => (loaded && !exploring ? visible(loaded.more) : []), [loaded, exploring, visible]);
+  const drop = (id: string) => setRemoved((r) => new Set(r).add(id));
 
   // Fetch and rank; callers decide how to show loading. Keyed on the user id so a profile
   // field changing (e.g. a save elsewhere) doesn't reshuffle the queue mid-browse.
@@ -56,11 +137,8 @@ export default function Discover() {
     }
   }, []);
 
-  const filtersRef = useRef(filters);
   const apply = useCallback((r: Loaded) => {
-    const f = filtersRef.current;
-    setQueue(r.best.filter((c) => passesFilters(c.profile, f)));
-    setMore(r.more.filter((c) => passesFilters(c.profile, f)));
+    setLoaded({ best: r.best, more: r.more });
     setExploring(false);
     setError(r.error);
   }, []);
@@ -77,22 +155,20 @@ export default function Discover() {
   }, [meId, fetchQueue, apply]);
 
   async function refresh() {
-    setQueue(null);
+    setLoaded(null);
     setError(null);
     apply(await fetchQueue());
   }
 
-  async function applyFilters(f: DiscoverFilters) {
+  function applyFilters(f: DiscoverFilters) {
     setFiltersOpen(false);
     setFilters(f);
-    filtersRef.current = f;
+    setExploring(false);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
     if (profile) saveFilters(profile.id, f).catch((e) => console.warn('Saving filters failed', e));
-    await refresh();
   }
 
   function exploreMore() {
-    setQueue(more);
-    setMore([]);
     setExploring(true);
   }
 
@@ -106,7 +182,7 @@ export default function Discover() {
       let matched = false;
       if (choice === 'like') matched = await like(profile, current.profile);
       else await passOn(profile.id, current.profile.id);
-      setQueue((q) => (q ? q.slice(1) : q));
+      drop(current.profile.id);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       if (matched) router.push({ pathname: '/match', params: { id: current.profile.id } });
     } catch (e) {
@@ -140,6 +216,7 @@ export default function Discover() {
           </Pressable>
         </View>
       </View>
+      {profile ? <QuickFilters me={profile} value={filters} onChange={applyFilters} /> : null}
 
       {queue === null ? (
         <View style={styles.center}>
@@ -152,12 +229,12 @@ export default function Discover() {
             <View style={styles.card}>
               <View style={styles.cardClip}>
                 <ProfileView
+                layout="work"
                 profile={current.profile}
                 distanceLabel={formatDistance(current.distanceMiles, current.profile.location)}
                 reasons={current.reasons}
-                heroHeight={340}
                 heroAccessory={
-                  <SafetyButton them={current.profile} tone="light" onBlocked={() => setQueue((q) => (q ? q.slice(1) : q))} />
+                  <SafetyButton them={current.profile} tone="light" onBlocked={() => drop(current.profile.id)} />
                 }
                 />
               </View>
@@ -212,7 +289,7 @@ function ActionButton({ kind, onPress, disabled }: { kind: 'pass' | 'like'; onPr
           <Image source={LOGO_WHITE} style={styles.likeLogo} contentFit="contain" />
         </LinearGradient>
       ) : (
-        <Ionicons name="close" size={30} color={colors.red} />
+        <Ionicons name="close" size={38} color={PASS} />
       )}
     </Pressable>
   );
@@ -299,7 +376,20 @@ function WelcomeModal({ visible, name, onClose }: { visible: boolean; name: stri
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F4F2EC' },
   flex: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 14 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10 },
+  quickWrap: { flexGrow: 0, marginBottom: 10 },
+  quick: { paddingHorizontal: 14, gap: 8 },
+  quickChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: colors.white,
+    borderWidth: 1.5,
+    borderColor: '#E3EEF4',
+  },
+  quickChipOn: { backgroundColor: '#2A3B4D', borderColor: '#2A3B4D' },
+  quickText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: '#2A3B4D' },
+  quickTextOn: { color: colors.white },
   title: { fontFamily: fonts.heading, fontSize: 28, color: colors.text },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   filterBtn: {
@@ -362,9 +452,9 @@ const styles = StyleSheet.create({
     gap: 26,
   },
   action: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

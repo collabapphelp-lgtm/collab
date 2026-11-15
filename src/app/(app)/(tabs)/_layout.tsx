@@ -38,20 +38,13 @@ export default function TabsLayout() {
       <Tabs.Screen name="discover" options={{ title: 'Discover', tabBarIcon: icon('compass', 'compass-outline') }} />
       <Tabs.Screen name="events" options={{ title: 'Events', tabBarIcon: icon('calendar', 'calendar-outline') }} />
       <Tabs.Screen
-        name="connections"
-        options={{
-          title: 'Connections',
-          tabBarIcon: icon('people', 'people-outline'),
-          tabBarBadge: likedCount > 0 ? likedCount : undefined,
-          tabBarBadgeStyle: [styles.badge, { backgroundColor: colors.purple }],
-        }}
-      />
-      <Tabs.Screen
         name="messages"
         options={{
-          title: 'Messages',
+          title: 'Collabs',
           tabBarIcon: icon('chatbubbles', 'chatbubbles-outline'),
-          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          // Unread chats + group invites, or (if none) people waiting on your answer in purple.
+          tabBarBadge: unreadCount > 0 ? unreadCount : likedCount > 0 ? likedCount : undefined,
+          tabBarBadgeStyle: [styles.badge, unreadCount === 0 && likedCount > 0 && { backgroundColor: colors.purple }],
         }}
       />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: icon('person-circle', 'person-circle-outline') }} />

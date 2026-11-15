@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -26,6 +26,11 @@ export default function ConnectionScreen() {
   }, [id]);
 
   const chatId = me && id ? pairId(me.id, id) : null;
+  // A full-screen modal sits outside the measured safe area, so pad by the device insets directly
+  // (SafeAreaView reported 0 there and the top slid under the Dynamic Island).
+  const insets = useSafeAreaInsets();
+  const top = Math.max(insets.top, Platform.OS === 'ios' ? 59 : 24);
+  const bottom = Math.max(insets.bottom, 16);
 
   return (
     <LinearGradient colors={['#141629', '#231D45', '#2B2257']} style={styles.fill}>
@@ -33,7 +38,12 @@ export default function ConnectionScreen() {
       <View style={[styles.glow, { backgroundColor: colors.blue, top: -80, left: -90 }]} />
       <View style={[styles.glow, { backgroundColor: colors.yellow, bottom: 40, right: -120, opacity: 0.18 }]} />
 
-      <SafeAreaView style={styles.safe}>
+      <ScrollView
+        style={styles.fill}
+        contentContainerStyle={[styles.safe, { paddingTop: top, paddingBottom: bottom }]}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.content}>
           <Text style={styles.eyebrow}>NEW CONNECTION</Text>
 
@@ -62,7 +72,7 @@ export default function ConnectionScreen() {
             <Text style={styles.ghostText}>Keep exploring</Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </ScrollView>
     </LinearGradient>
   );
 }
@@ -94,9 +104,9 @@ function PersonCard({ person, tilt, accent }: { person: UserProfile | null | und
 
 const styles = StyleSheet.create({
   fill: { flex: 1, overflow: 'hidden' },
-  safe: { flex: 1, paddingHorizontal: 24, justifyContent: 'space-between' },
+  safe: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'space-between', gap: 28 },
   glow: { position: 'absolute', width: 320, height: 320, borderRadius: 160, opacity: 0.22 },
-  content: { alignItems: 'center', paddingTop: 36 },
+  content: { alignItems: 'center', paddingTop: 20 },
   eyebrow: { fontFamily: fonts.bodySemibold, fontSize: 12, letterSpacing: 2.5, color: colors.yellow, marginBottom: 26 },
 
   cards: { flexDirection: 'row', alignItems: 'center', marginBottom: 58 },
