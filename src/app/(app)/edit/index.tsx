@@ -283,7 +283,7 @@ function Empty({ text }: { text: string }) {
 }
 
 const useStyles = makeStyles((colors) => ({
-  safe: { flex: 1, backgroundColor: '#F7F5F0' },
+  safe: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',

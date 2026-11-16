@@ -119,8 +119,8 @@ export default function UserProfileScreen() {
 }
 
 const useStyles = makeStyles((colors) => ({
-  fill: { flex: 1, backgroundColor: colors.white },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, backgroundColor: colors.white },
+  fill: { flex: 1, backgroundColor: colors.bg },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, backgroundColor: colors.bg },
   missing: { fontFamily: fonts.body, fontSize: 16, color: colors.textSecondary },
   topBar: {
     position: 'absolute',

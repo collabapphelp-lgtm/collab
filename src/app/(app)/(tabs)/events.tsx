@@ -82,7 +82,7 @@ export default function Events() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#E6F1F7', '#F3E9D8']} style={StyleSheet.absoluteFill} />
       <View style={styles.header}>
         <View style={styles.flex}>
           <Text style={styles.title}>Events</Text>

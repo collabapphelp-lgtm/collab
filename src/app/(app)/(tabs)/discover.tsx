@@ -221,7 +221,7 @@ export default function Discover() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#E6F1F7', '#F3E9D8']} style={StyleSheet.absoluteFill} />
       <View style={styles.header}>
         <Text style={styles.title}>Discover</Text>
         <View style={styles.headerRight}>
@@ -275,7 +275,7 @@ export default function Discover() {
             {error ? <Text style={styles.error}>{error}</Text> : null}
           </ScrollView>
 
-          <LinearGradient colors={['rgba(244,242,236,0)', 'rgba(244,242,236,0.95)']} style={styles.fade} pointerEvents="none" />
+          <LinearGradient colors={['rgba(243,233,216,0)', 'rgba(243,233,216,0.95)']} style={styles.fade} pointerEvents="none" />
           <View style={styles.actions} pointerEvents="box-none">
             <ActionButton kind="pass" onPress={() => decide('pass')} disabled={acting} />
             <ActionButton kind="like" onPress={() => decide('like')} disabled={acting} />
@@ -493,7 +493,7 @@ function WelcomeModal({ visible, name, onClose }: { visible: boolean; name: stri
 }
 
 const useStyles = makeStyles((colors) => ({
-  safe: { flex: 1, backgroundColor: '#F4F2EC' },
+  safe: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10 },
   quickWrap: { flexGrow: 0, marginBottom: 10 },

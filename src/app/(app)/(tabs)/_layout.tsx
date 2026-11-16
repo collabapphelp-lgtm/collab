@@ -61,7 +61,7 @@ export default function TabsLayout() {
 
 const useStyles = makeStyles((colors) => ({
   bar: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.bg,
     borderTopWidth: 0,
     shadowColor: '#2A3B4D',
     shadowOpacity: 0.08,

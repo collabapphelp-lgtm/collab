@@ -18,7 +18,7 @@ export function Sheet({ visible, title, onClose, children, footer }: Props) {
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.safe} edges={['bottom']}>
-        <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['#E6F1F7', '#F3E9D8']} style={StyleSheet.absoluteFill} />
         <View style={styles.header}>
           <Text style={styles.title} numberOfLines={2}>
             {title}
@@ -39,7 +39,7 @@ export function Sheet({ visible, title, onClose, children, footer }: Props) {
 }
 
 const useStyles = makeStyles((colors) => ({
-  safe: { flex: 1, backgroundColor: '#F4F2EC' },
+  safe: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',

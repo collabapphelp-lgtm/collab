@@ -88,7 +88,7 @@ export default function EditBio() {
 }
 
 const useStyles = makeStyles((colors) => ({
-  safe: { flex: 1, backgroundColor: colors.white },
+  safe: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   content: { padding: 24, gap: 12 },
   title: { fontFamily: fonts.heading, fontSize: 28, color: colors.text },

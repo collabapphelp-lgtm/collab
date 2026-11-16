@@ -54,7 +54,7 @@ export function StepScreen(props: Props) {
 
   return (
     <SafeAreaView style={[styles.safe, tinted && styles.safeTinted]} edges={['top', 'bottom']}>
-      {tinted ? <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} /> : null}
+      {tinted ? <LinearGradient colors={['#E6F1F7', '#F3E9D8']} style={StyleSheet.absoluteFill} /> : null}
       {editing ? null : (
         <View style={styles.progressTrack} accessibilityLabel={`Step ${index + 1} of ${ONBOARDING_STEPS.length}`}>
           <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
@@ -128,8 +128,8 @@ export function StepScreen(props: Props) {
 }
 
 const useStyles = makeStyles((colors) => ({
-  safe: { flex: 1, backgroundColor: colors.white },
-  safeTinted: { backgroundColor: '#F4F2EC' },
+  safe: { flex: 1, backgroundColor: colors.bg },
+  safeTinted: { backgroundColor: colors.bg },
   footerTinted: { backgroundColor: 'rgba(255,255,255,0.94)' },
   flex: { flex: 1 },
   progressTrack: { height: 4, backgroundColor: colors.border, marginHorizontal: 24, borderRadius: 2, marginTop: 4 },

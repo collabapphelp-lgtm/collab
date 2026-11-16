@@ -109,7 +109,7 @@ export default function NewEvent() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <LinearGradient colors={['#E6F1F7', '#F4F2EC']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#E6F1F7', '#F3E9D8']} style={StyleSheet.absoluteFill} />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button">
           <Text style={styles.cancel}>Cancel</Text>
@@ -197,7 +197,7 @@ function Field(props: React.ComponentProps<typeof TextInput>) {
 }
 
 const useStyles = makeStyles((colors) => ({
-  safe: { flex: 1, backgroundColor: '#F4F2EC' },
+  safe: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
   cancel: { fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.blue, width: 52 },

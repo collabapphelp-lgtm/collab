@@ -108,7 +108,7 @@ export default function MyProfile() {
 }
 
 const useStyles = makeStyles((colors) => ({
-  fill: { flex: 1, backgroundColor: '#F7F5F0' },
+  fill: { flex: 1, backgroundColor: colors.bg },
   actions: { paddingHorizontal: 20, gap: 12 },
   note: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted, textAlign: 'center', marginBottom: 4 },
   deleteLink: { alignSelf: 'center', paddingVertical: 12 },

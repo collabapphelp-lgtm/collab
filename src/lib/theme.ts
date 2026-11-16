@@ -21,8 +21,9 @@ const light = {
   orange: '#D97742',
   teal: '#4DBFBF',
 
-  bg: '#FFFFFF',
-  bgSecondary: '#F8F9FA',
+  /** The app's base (page) color: warm cream. Cards and inputs stay white on top of it. */
+  bg: '#F3E9D8',
+  bgSecondary: '#EEE3CF',
   text: '#1A1A1A',
   textSecondary: '#666666',
   textMuted: '#999999',
@@ -198,10 +199,15 @@ export function darkBg(c: string): string {
   return darkSurface(c);
 }
 
+const CREAM_DARK = '#1A1D23';
+
 /** Like darkBg, but leaves dark washes alone (gradients over photos). */
 export function darkSurface(c: string): string {
   const p = parse(c);
   if (!p) return c;
+  // The cream base (any opacity) becomes a neutral dark surface, not a brown. A step lighter than
+  // white cards' dark version, so cards still stand out on it.
+  if (p.r === 243 && p.g === 233 && p.b === 216) return p.a < 1 ? `${CREAM_DARK}${Math.round(p.a * 255).toString(16).padStart(2, '0')}` : CREAM_DARK;
   const { h, s, l } = toHsl(p);
   if (l < 0.8) return c;
   const nl = Math.min(0.3, 0.075 + (1 - l) * 1.5);

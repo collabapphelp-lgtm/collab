@@ -38,7 +38,7 @@ type Props = {
 };
 
 const GOLD = '#F2C14E';
-const PAGE = '#F7F5F0';
+const PAGE = '#F3E9D8'; // = colors.bg (light); dark mode swaps it via the adapter
 
 /**
  * One person's full profile, "Spotlight" style: the photo fades into a color taken from their sound,

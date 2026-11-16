@@ -374,7 +374,7 @@ function LikedPerson({ p }: { p: UserProfile }) {
 
 const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: colors.white },
+  safe: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
   title: { fontFamily: fonts.heading, fontSize: 28, color: colors.text },
   newGroup: {

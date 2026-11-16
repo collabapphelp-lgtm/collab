@@ -97,7 +97,7 @@ export default function Login() {
 }
 
 const useStyles = makeStyles((colors) => ({
-  flex: { flex: 1, backgroundColor: colors.white },
+  flex: { flex: 1, backgroundColor: colors.bg },
   content: { flexGrow: 1, padding: 24, gap: 20 },
   header: { gap: 6, marginTop: 4 },
   title: { fontFamily: fonts.heading, fontSize: 32, color: colors.text },

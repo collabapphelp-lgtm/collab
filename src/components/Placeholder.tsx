@@ -22,7 +22,7 @@ export function Placeholder({ emoji, title, body }: { emoji: string; title: stri
 }
 
 const useStyles = makeStyles((colors) => ({
-  container: { flex: 1, padding: 24, backgroundColor: colors.white },
+  container: { flex: 1, padding: 24, backgroundColor: colors.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   emoji: { fontSize: 56 },
   title: { fontFamily: fonts.heading, fontSize: 28, color: colors.text, textAlign: 'center' },

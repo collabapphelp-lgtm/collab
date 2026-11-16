@@ -145,7 +145,7 @@ export default function NewGroup() {
 
 const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: colors.white },
+  safe: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   cancel: { fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.blue, width: 52 },
   title: { fontFamily: fonts.heading, fontSize: 18, color: colors.text },

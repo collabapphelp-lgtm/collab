@@ -204,7 +204,7 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <LinearGradient colors={['#F7FAFC', '#F6F3EE']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#F8F1E4', '#F3E9D8']} style={StyleSheet.absoluteFill} />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={26} color={colors.text} />
@@ -484,7 +484,7 @@ function Reactions(props: { msg: ChatMessage; mine: boolean; me: string; onPress
 }
 
 const useStyles = makeStyles((colors) => ({
-  safe: { flex: 1, backgroundColor: '#F6F3EE' },
+  safe: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -553,7 +553,7 @@ const useStyles = makeStyles((colors) => ({
     borderRadius: radius.full,
     backgroundColor: colors.white,
     borderWidth: 1.5,
-    borderColor: '#F6F3EE',
+    borderColor: '#F3E9D8',
     shadowColor: '#2A3B4D',
     shadowOpacity: 0.08,
     shadowRadius: 3,
