@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { StepScreen, useStepStyles } from '@/components/onboarding/StepScreen';
 import { CitySearch, type PickedCity } from '@/components/onboarding/CitySearch';
-import { Quote, QUOTES } from '@/components/Quote';
 import { useOnboarding } from '@/lib/onboarding-context';
 import { DEFAULT_RADIUS_MILES } from '@/lib/onboarding-data';
 import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
@@ -88,7 +87,6 @@ export default function LocationStep() {
         />
       </Pressable>
 
-      <Quote quote={QUOTES.keller} style={{ marginTop: 28 }} />
     </StepScreen>
   );
 }

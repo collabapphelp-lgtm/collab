@@ -6,7 +6,6 @@ import { LinearGradient } from '@/components/ThemedGradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/Button';
-import { Quote, QUOTES } from '@/components/Quote';
 import { useAuth } from '@/lib/auth-context';
 import { getProfile, pairId } from '@/lib/discover';
 import { optionFor, displayName } from '@/lib/labels';
@@ -61,8 +60,6 @@ export default function ConnectionScreen() {
           <Text style={styles.body}>
             You and {(them ? displayName(them) : undefined) ?? 'this creative'} are now connected. Say hi and start making something.
           </Text>
-
-          <Quote quote={QUOTES.maxwell} tone="light" style={{ marginTop: 28 }} />
         </View>
 
         <View style={styles.buttons}>
@@ -110,7 +107,8 @@ const useStyles = makeStyles((colors) => ({
   fill: { flex: 1, overflow: 'hidden' },
   safe: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'space-between', gap: 28 },
   glow: { position: 'absolute', width: 320, height: 320, borderRadius: 160, opacity: 0.22 },
-  content: { alignItems: 'center', paddingTop: 20 },
+  // Without the quote the block is shorter, so center it in the space above the buttons.
+  content: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 12 },
   eyebrow: { fontFamily: fonts.bodySemibold, fontSize: 16, letterSpacing: 3, color: colors.yellow, marginBottom: 28 },
 
   cards: { flexDirection: 'row', alignItems: 'center', marginBottom: 76 },

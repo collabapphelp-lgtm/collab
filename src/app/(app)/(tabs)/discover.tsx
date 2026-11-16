@@ -12,7 +12,6 @@ import { ProfileView } from '@/components/ProfileView';
 import { DiscoverFilterSheet } from '@/components/DiscoverFilterSheet';
 import { NO_FILTERS, filterCount, passesFilters, saveFilters, type DiscoverFilters } from '@/lib/discover-filters';
 import { SafetyButton } from '@/components/SafetyButton';
-import { Quote, QUOTES } from '@/components/Quote';
 import { useAuth } from '@/lib/auth-context';
 import { canonicalList, displayName, optionFor, roleLine } from '@/lib/labels';
 import { Avatar } from '@/components/Avatar';
@@ -462,7 +461,6 @@ function EmptyState({ error, onRefresh, global }: { error: string | null; onRefr
       ) : null}
       <Button title="Invite a creative" onPress={inviteCreative} style={{ marginTop: 8, alignSelf: 'stretch' }} />
       <Button title="Refresh" variant="secondary" onPress={onRefresh} style={{ alignSelf: 'stretch' }} />
-      <Quote quote={QUOTES.ocean} style={{ marginTop: 28 }} />
     </ScrollView>
   );
 }
