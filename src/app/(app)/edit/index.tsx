@@ -160,14 +160,18 @@ export default function EditProfile() {
           ) : (
             <Empty text="Add a track, link or prompt. Profiles with work get shown first." />
           )}
+        </Card>
+        <Card icon="format-quote-open" tint="#E8A23A" title="Your partner note" href="/edit/bio">
           {profile.bio ? (
             <View style={styles.quote}>
-              <Text style={styles.quoteLabel}>What you’re looking for in a partner</Text>
-              <Text style={styles.quoteText} numberOfLines={3}>
+              <Text style={styles.quoteLabel}>What you’re looking for in a collab partner</Text>
+              <Text style={styles.quoteText} numberOfLines={4}>
                 {profile.bio}
               </Text>
             </View>
-          ) : null}
+          ) : (
+            <Empty text="Say what you want in a collab partner. It shows up big on your Discover card." />
+          )}
         </Card>
 
         <Group title="About you" />
