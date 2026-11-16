@@ -5,6 +5,7 @@ import { StepScreen } from '@/components/onboarding/StepScreen';
 import { Chip, ChipGrid } from '@/components/onboarding/Chip';
 import { OptionIcon, type IconName } from '@/components/OptionIcon';
 import { TagInput } from '@/components/onboarding/TagInput';
+import { INSTRUMENT_DB } from '@/lib/instrument-db';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { useOnboarding } from '@/lib/onboarding-context';
 import { CONTENT_SKILLS, DAWS, GROUP_SIZES, INSTRUMENT_TYPES, INSTRUMENTS, MUSICIAN_SKILLS, type CreatorType, type Option } from '@/lib/onboarding-data';
@@ -217,6 +218,7 @@ export default function TypeStep() {
                           onChange={setSpecific}
                           placeholder="e.g. Harmonica, Steel pan, Talkbox"
                           label="Instruments not listed"
+                          suggestions={INSTRUMENT_DB}
                         />
                       ) : (
                         <Pressable onPress={() => setShowSpecific(true)} hitSlop={8} accessibilityRole="button">

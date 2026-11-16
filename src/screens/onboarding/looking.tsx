@@ -7,6 +7,7 @@ import { OpenToAll } from '@/components/onboarding/OpenToAll';
 import { useOnboarding } from '@/lib/onboarding-context';
 import { CONTENT_INTENTS, CONTENT_LOOKING, EXPERIENCE, INSTRUMENT_TYPES, MUSIC_INTENTS, MUSICIAN_LOOKING, type LookingOption } from '@/lib/onboarding-data';
 import { TagInput } from '@/components/onboarding/TagInput';
+import { INSTRUMENT_DB } from '@/lib/instrument-db';
 import { toggleIn } from '@/lib/toggle';
 import { canonicalList, optionFor } from '@/lib/labels';
 import { fonts, makeStyles } from '@/lib/theme';
@@ -116,7 +117,7 @@ export default function LookingStep() {
             onToggleSub={(sub) => toggleSub(o.value, sub)}
             extra={
               o.value === 'instrumentalist' ? (
-                <TagInput tags={specific} onChange={setSpecific} placeholder="Something else? e.g. Harmonica, Talkbox" label="Specific instruments you're looking for" />
+                <TagInput tags={specific} onChange={setSpecific} placeholder="Something else? e.g. Harmonica, Talkbox" label="Specific instruments you're looking for" suggestions={INSTRUMENT_DB} />
               ) : null
             }
           />

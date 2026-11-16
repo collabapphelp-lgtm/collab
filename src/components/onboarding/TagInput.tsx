@@ -2,17 +2,29 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { SPECIFIC_MAX, SPECIFIC_MAX_CHARS } from '@/lib/onboarding-data';
+import { suggest } from '@/lib/instrument-db';
 import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
-/** Type a word, tap Add (or return) → it becomes a removable tag. Used for specific instruments. */
-export function TagInput(props: { tags: string[]; onChange: (tags: string[]) => void; placeholder: string; label: string }) {
+/**
+ * Type a word, tap Add (or return) → it becomes a removable tag. Used for specific instruments.
+ * With `suggestions`, matching names drop down as you type ("har" → Harmonica, Harp…); tap one to add it.
+ */
+export function TagInput(props: {
+  tags: string[];
+  onChange: (tags: string[]) => void;
+  placeholder: string;
+  label: string;
+  suggestions?: string[];
+}) {
   const styles = useStyles();
   const colors = useColors();
   const [text, setText] = useState('');
   const [err, setErr] = useState<string | null>(null);
 
-  function add() {
-    const t = text.trim().replace(/\s+/g, ' ');
+  const matches = props.suggestions ? suggest(props.suggestions, text, props.tags) : [];
+
+  function add(value?: string) {
+    const t = (value ?? text).trim().replace(/\s+/g, ' ');
     if (!t) return;
     if (hasBlockedLanguage(t)) return setErr(BLOCKED_LANGUAGE_MESSAGE);
     if (props.tags.length >= SPECIFIC_MAX) return setErr(`Up to ${SPECIFIC_MAX}.`);
@@ -31,7 +43,7 @@ export function TagInput(props: { tags: string[]; onChange: (tags: string[]) => 
             setText(t);
             setErr(null);
           }}
-          onSubmitEditing={add}
+          onSubmitEditing={() => add()}
           blurOnSubmit={false}
           returnKeyType="done"
           maxLength={SPECIFIC_MAX_CHARS}
@@ -40,10 +52,28 @@ export function TagInput(props: { tags: string[]; onChange: (tags: string[]) => 
           style={styles.input}
           accessibilityLabel={props.label}
         />
-        <Pressable onPress={add} style={({ pressed }) => [styles.add, pressed && { opacity: 0.7 }]} accessibilityRole="button" accessibilityLabel="Add">
+        <Pressable onPress={() => add()} style={({ pressed }) => [styles.add, pressed && { opacity: 0.7 }]} accessibilityRole="button" accessibilityLabel="Add">
           <Text style={styles.addText}>Add</Text>
         </Pressable>
       </View>
+      {matches.length ? (
+        <View style={styles.menu} accessibilityRole="menu">
+          {matches.map((m, i) => (
+            <Pressable
+              key={m}
+              onPress={() => add(m)}
+              style={({ pressed }) => [styles.option, i > 0 && styles.optionLine, pressed && { backgroundColor: colors.bgSecondary }]}
+              accessibilityRole="menuitem"
+              accessibilityLabel={`Add ${m}`}
+            >
+              <Text style={styles.optionText}>
+                <Highlight text={m} q={text.trim()} />
+              </Text>
+              <Text style={styles.optionAdd}>＋</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
       {err ? <Text style={styles.err}>{err}</Text> : null}
       {props.tags.length ? (
         <View style={styles.tags}>
@@ -65,7 +95,38 @@ export function TagInput(props: { tags: string[]; onChange: (tags: string[]) => 
   );
 }
 
+/** Bolds the part of the name that matches what was typed. */
+function Highlight({ text, q }: { text: string; q: string }) {
+  const styles = useStyles();
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (!q || i < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, i)}
+      <Text style={styles.optionMatch}>{text.slice(i, i + q.length)}</Text>
+      {text.slice(i + q.length)}
+    </>
+  );
+}
+
 const useStyles = makeStyles((colors) => ({
+  menu: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    overflow: 'hidden',
+    shadowColor: '#1F2328',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  option: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 11 },
+  optionLine: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  optionText: { flex: 1, fontFamily: fonts.body, fontSize: 15, color: colors.text },
+  optionMatch: { fontFamily: fonts.bodySemibold },
+  optionAdd: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.blue },
   wrap: { gap: 8 },
   row: { flexDirection: 'row', gap: 8 },
   input: {
