@@ -43,7 +43,6 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="discover" options={{ title: 'Discover', tabBarIcon: icon('compass', 'compass-outline') }} />
-      <Tabs.Screen name="events" options={{ title: 'Events', tabBarIcon: icon('calendar', 'calendar-outline') }} />
       <Tabs.Screen
         name="messages"
         options={{
@@ -54,6 +53,7 @@ export default function TabsLayout() {
           tabBarBadgeStyle: [styles.badge, unreadCount === 0 && likedCount > 0 && { backgroundColor: colors.purple }],
         }}
       />
+      <Tabs.Screen name="events" options={{ title: 'Events', tabBarIcon: icon('calendar', 'calendar-outline') }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: icon('person-circle', 'person-circle-outline') }} />
     </Tabs>
   );

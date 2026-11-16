@@ -62,7 +62,7 @@ export default function ConnectionScreen() {
             You and {(them ? displayName(them) : undefined) ?? 'this creative'} are now connected. Say hi and start making something.
           </Text>
 
-          <Quote quote={QUOTES.maxwell} tone="light" style={{ marginTop: 22 }} />
+          <Quote quote={QUOTES.maxwell} tone="light" style={{ marginTop: 28 }} />
         </View>
 
         <View style={styles.buttons}>
@@ -111,9 +111,9 @@ const useStyles = makeStyles((colors) => ({
   safe: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'space-between', gap: 28 },
   glow: { position: 'absolute', width: 320, height: 320, borderRadius: 160, opacity: 0.22 },
   content: { alignItems: 'center', paddingTop: 20 },
-  eyebrow: { fontFamily: fonts.bodySemibold, fontSize: 12, letterSpacing: 2.5, color: colors.yellow, marginBottom: 26 },
+  eyebrow: { fontFamily: fonts.bodySemibold, fontSize: 16, letterSpacing: 3, color: colors.yellow, marginBottom: 28 },
 
-  cards: { flexDirection: 'row', alignItems: 'center', marginBottom: 58 },
+  cards: { flexDirection: 'row', alignItems: 'center', marginBottom: 76 },
   cardWrap: {
     width: 128,
     height: 164,

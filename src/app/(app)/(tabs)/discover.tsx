@@ -14,7 +14,8 @@ import { NO_FILTERS, filterCount, passesFilters, saveFilters, type DiscoverFilte
 import { SafetyButton } from '@/components/SafetyButton';
 import { Quote, QUOTES } from '@/components/Quote';
 import { useAuth } from '@/lib/auth-context';
-import { canonicalList, optionFor } from '@/lib/labels';
+import { canonicalList, displayName, optionFor, roleLine } from '@/lib/labels';
+import { Avatar } from '@/components/Avatar';
 import { CONTENT_SKILLS, INSTRUMENTS, MUSICIAN_SKILLS } from '@/lib/onboarding-data';
 import { toggleIn } from '@/lib/toggle';
 import type { UserProfile } from '@/lib/types';
@@ -118,9 +119,29 @@ export default function Discover() {
     (list: Candidate[]) => list.filter((c) => !removed.has(c.profile.id) && !connected.has(c.profile.id) && passesFilters(c.profile, filters)),
     [removed, connected, filters],
   );
-  const queue = useMemo(() => (loaded ? visible(exploring ? loaded.more : loaded.best) : null), [loaded, exploring, visible]);
-  const more = useMemo(() => (loaded && !exploring ? visible(loaded.more) : []), [loaded, exploring, visible]);
-  const drop = (id: string) => setRemoved((r) => new Set(r).add(id));
+  // Someone picked from the list view jumps to the front of the 1-on-1 card stack.
+  const [front, setFront] = useState<string | null>(null);
+  const [listOpen, setListOpen] = useState(false);
+  const queue = useMemo(() => {
+    if (!loaded) return null;
+    const base = visible(exploring ? loaded.more : loaded.best);
+    if (!front) return base;
+    const picked = visible([...loaded.best, ...loaded.more]).find((c) => c.profile.id === front);
+    return picked ? [picked, ...base.filter((c) => c.profile.id !== front)] : base;
+  }, [loaded, exploring, visible, front]);
+  const more = useMemo(
+    () => (loaded && !exploring ? visible(loaded.more).filter((c) => c.profile.id !== front) : []),
+    [loaded, exploring, visible, front],
+  );
+  const drop = (id: string) => {
+    setRemoved((r) => new Set(r).add(id));
+    if (id === front) setFront(null);
+  };
+  function pickFromList(id: string) {
+    setListOpen(false);
+    setFront(id);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }
 
   // Fetch and rank; callers decide how to show loading. Keyed on the user id so a profile
   // field changing (e.g. a save elsewhere) doesn't reshuffle the queue mid-browse.
@@ -205,10 +226,16 @@ export default function Discover() {
         <Text style={styles.title}>Discover</Text>
         <View style={styles.headerRight}>
           {queue && queue.length > 0 ? (
-            <View style={styles.countPill}>
+            <Pressable
+              onPress={() => setListOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`${queue.length + more.length} to explore. See everyone as a list`}
+              style={({ pressed }) => [styles.countPill, pressed && { opacity: 0.8 }]}
+            >
               <View style={styles.countDot} />
               <Text style={styles.count}>{exploring ? `Exploring · ${queue.length} more` : `${queue.length} to explore`}</Text>
-            </View>
+              <Ionicons name="list" size={15} color={colors.textSecondary} />
+            </Pressable>
           ) : null}
           <Pressable
             onPress={() => setFiltersOpen(true)}
@@ -270,8 +297,88 @@ export default function Discover() {
         onClose={() => setFiltersOpen(false)}
         onApply={applyFilters}
       />
+      <ExploreList
+        visible={listOpen}
+        best={queue ?? []}
+        more={more}
+        currentId={current?.profile.id}
+        onPick={pickFromList}
+        onClose={() => setListOpen(false)}
+      />
       <WelcomeModal visible={welcome} name={profile?.firstName ?? ''} onClose={() => setWelcome(false)} />
     </SafeAreaView>
+  );
+}
+
+/**
+ * Everyone left to see, as a compact list in a sheet over Discover. Picking someone puts them on the
+ * main card, so liking and passing still happen one-on-one.
+ */
+function ExploreList(props: {
+  visible: boolean;
+  best: Candidate[];
+  more: Candidate[];
+  currentId?: string;
+  onPick: (id: string) => void;
+  onClose: () => void;
+}) {
+  const styles = useStyles();
+  const colors = useColors();
+  const sections = [
+    { title: 'Best fits', data: props.best },
+    { title: 'More to explore', data: props.more },
+  ].filter((s) => s.data.length > 0);
+  return (
+    <Modal visible={props.visible} transparent animationType="slide" onRequestClose={props.onClose}>
+      <Pressable style={styles.listBackdrop} onPress={props.onClose} accessibilityLabel="Close list" />
+      <View style={styles.listSheet}>
+        <View style={styles.listGrabber} />
+        <View style={styles.listHead}>
+          <Text style={styles.listTitle}>Everyone to explore</Text>
+          <Pressable onPress={props.onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
+            <Ionicons name="close" size={24} color={colors.textSecondary} />
+          </Pressable>
+        </View>
+        <Text style={styles.listSub}>Tap someone to see their full profile on your Discover card.</Text>
+        <ScrollView style={styles.listScroll} contentContainerStyle={styles.listBody}>
+          {sections.map((sec) => (
+            <View key={sec.title}>
+              <Text style={styles.listSection}>{sec.title}</Text>
+              {sec.data.map((c) => {
+                const on = c.profile.id === props.currentId;
+                const dist = formatDistance(c.distanceMiles, c.profile.location);
+                return (
+                  <Pressable
+                    key={c.profile.id}
+                    onPress={() => props.onPick(c.profile.id)}
+                    style={({ pressed }) => [styles.listRow, on && styles.listRowOn, pressed && { opacity: 0.75 }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${displayName(c.profile)}, ${roleLine(c.profile, 2)}`}
+                  >
+                    <Avatar uri={c.profile.photoURL} name={displayName(c.profile)} seed={c.profile.id} size={52} />
+                    <View style={styles.flex}>
+                      <Text style={styles.listName} numberOfLines={1}>
+                        {displayName(c.profile)}
+                        {dist ? <Text style={styles.listDist}>  {dist}</Text> : null}
+                      </Text>
+                      <Text style={styles.listRole} numberOfLines={1}>
+                        {roleLine(c.profile, 3)}
+                      </Text>
+                      {c.reasons[0] ? (
+                        <Text style={styles.listReason} numberOfLines={1}>
+                          {c.reasons[0]}
+                        </Text>
+                      ) : null}
+                    </View>
+                    {on ? <Text style={styles.listNow}>Showing</Text> : <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }
 
@@ -436,6 +543,47 @@ const useStyles = makeStyles((colors) => ({
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
   },
+  listBackdrop: { flex: 1, backgroundColor: 'rgba(15,18,24,0.35)' },
+  listSheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    maxHeight: '72%',
+    minHeight: '40%',
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingTop: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: -6 },
+    elevation: 12,
+  },
+  listGrabber: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: 6 },
+  listHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 6 },
+  listTitle: { fontFamily: fonts.heading, fontSize: 21, color: colors.text },
+  listSub: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary, paddingHorizontal: 20, marginTop: 2, marginBottom: 6 },
+  listScroll: { flexGrow: 0 },
+  listBody: { paddingHorizontal: 12, paddingBottom: 40 },
+  listSection: {
+    fontFamily: fonts.bodySemibold,
+    fontSize: 12,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: colors.textMuted,
+    paddingHorizontal: 8,
+    marginTop: 14,
+    marginBottom: 4,
+  },
+  listRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 8, paddingVertical: 9, borderRadius: 14 },
+  listRowOn: { backgroundColor: '#EEF5F9' },
+  listName: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
+  listDist: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
+  listRole: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary, marginTop: 1 },
+  listReason: { fontFamily: fonts.bodyMedium, fontSize: 12, color: '#2F7FA6', marginTop: 2 },
+  listNow: { fontFamily: fonts.bodySemibold, fontSize: 12, color: colors.blue },
   countDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.teal },
   count: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.textSecondary },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
