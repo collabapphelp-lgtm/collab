@@ -86,7 +86,6 @@ export default function TypeStep() {
   return (
     <StepScreen
       step="type"
-      emoji="✨"
       title={kind === 'group' ? 'We are a...' : 'I am a...'}
       subtitle="Choose your path, then pick everything that fits."
       onContinue={next}

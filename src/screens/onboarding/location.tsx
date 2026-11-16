@@ -56,7 +56,6 @@ export default function LocationStep() {
       step="location"
       onSkip={skip}
       hideBack
-      emoji="📍"
       title="Where are you based?"
       subtitle="We’ll show you creatives nearby first."
       onContinue={next}
