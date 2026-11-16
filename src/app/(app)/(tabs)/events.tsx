@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from '@/components/ThemedGradient';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { EventsMap, MAP_SUPPORTED } from '@/components/EventsMap';
+import { EventsMap, inArea, MAP_SUPPORTED, type MapArea } from '@/components/EventsMap';
 import { dayHeading, metaFor, timeLabel, ymd, type EventOccurrence } from '@/lib/events';
 import { useEvents } from '@/lib/use-events';
 import { fonts, radius, shadow, makeStyles, useColors } from '@/lib/theme';
@@ -55,10 +55,16 @@ export default function Events() {
   const { height } = useWindowDimensions();
 
   const mine = useMemo(() => (events ?? []).filter(isGoing), [events, isGoing]);
-  const shown = useMemo(
+  // What the filters pick (all pins on the map)...
+  const picked = useMemo(
     () => (when === 'going' ? mine : (events ?? []).filter((e) => inWhen(e, when))).filter((e) => inKind(e, kind)),
     [events, mine, when, kind],
   );
+  // ...and, after "Search this area", only what's inside the part of the map you were looking at.
+  const [mapArea, setMapArea] = useState<MapArea | null>(null);
+  const [area, setArea] = useState<MapArea | null>(null);
+  const moved = !!mapArea && mapArea !== area;
+  const shown = useMemo(() => (area ? picked.filter((e) => inArea(e, area)) : picked), [picked, area]);
 
   // Group the list by day ("Today", "Tomorrow", "Friday, Nov 20").
   const days = useMemo(() => {
@@ -119,7 +125,26 @@ export default function Events() {
 
       {MAP_SUPPORTED ? (
         <View style={[styles.mapCard, { height: Math.round(height * 0.32) }]}>
-          <EventsMap events={shown} selectedKey={selected?.key} onSelect={setSelected} style={StyleSheet.absoluteFill} />
+          <EventsMap
+            events={picked}
+            selectedKey={selected?.key}
+            onSelect={setSelected}
+            onAreaChange={setMapArea}
+            style={StyleSheet.absoluteFill}
+          />
+          {moved && !selected ? (
+            <Pressable
+              onPress={() => {
+                setArea(mapArea);
+                setSelected(null);
+              }}
+              style={({ pressed }) => [styles.searchArea, pressed && { opacity: 0.85 }]}
+              accessibilityRole="button"
+            >
+              <Ionicons name="refresh" size={15} color={colors.white} />
+              <Text style={styles.searchAreaText}>Search this area</Text>
+            </Pressable>
+          ) : null}
           {selected ? <SelectedCard e={selected} goingCount={(going.get(selected.key) ?? []).length} onPress={() => open(selected)} onClose={() => setSelected(null)} /> : null}
         </View>
       ) : null}
@@ -134,6 +159,26 @@ export default function Events() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={pullToRefresh} tintColor={colors.blue} />}
         >
           {error ? <Text style={styles.error}>{error}</Text> : null}
+          {area ? (
+            <View style={styles.areaBar}>
+              <Ionicons name="map-outline" size={15} color={colors.textSecondary} />
+              <Text style={styles.areaText}>
+                {shown.length} {shown.length === 1 ? 'event' : 'events'} in this map area
+              </Text>
+              <Pressable
+                onPress={() => {
+                  setArea(null);
+                  setMapArea(null);
+                }}
+                hitSlop={8}
+                style={styles.areaClear}
+                accessibilityRole="button"
+                accessibilityLabel="Show events everywhere"
+              >
+                <Text style={styles.areaClearText}>Show all</Text>
+              </Pressable>
+            </View>
+          ) : null}
           {days.length === 0 ? (
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>{when === 'going' ? '🎟️' : '🎤'}</Text>
@@ -320,6 +365,37 @@ const useStyles = makeStyles((colors) => ({
   badge: { fontFamily: fonts.bodySemibold, fontSize: 11, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full, overflow: 'hidden' },
   badgePending: { backgroundColor: '#F1F1F1', color: colors.textSecondary },
   going: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.blue },
+  searchArea: {
+    position: 'absolute',
+    top: 12,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgb(42,59,77)',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  searchAreaText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.white },
+  areaBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    backgroundColor: colors.white,
+  },
+  areaText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.text },
+  areaClear: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, backgroundColor: '#E6F1F7' },
+  areaClearText: { fontFamily: fonts.bodySemibold, fontSize: 13, color: '#2F7FA6' },
   youGoing: { fontFamily: fonts.bodySemibold, fontSize: 12, color: '#2E8B57' },
   empty: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 24, gap: 6 },
   emptyEmoji: { fontSize: 36 },

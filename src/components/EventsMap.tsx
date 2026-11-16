@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Platform, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { useEffect, useMemo, useRef } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { AppleMaps as AppleMapsTypes } from 'expo-maps';
 import { inNyc, metaFor, type EventOccurrence } from '@/lib/events';
 import { UI_PREVIEW } from '@/lib/preview';
@@ -22,15 +22,29 @@ const NYC_CENTER = { latitude: 40.7306, longitude: -73.9566 };
 export const MAP_SUPPORTED =
   Platform.OS === 'ios' ? !!AppleMaps && parseInt(String(Platform.Version), 10) >= 17 : Platform.OS === 'web' && UI_PREVIEW;
 
+/** The part of the map on screen. */
+export type MapArea = { minLat: number; maxLat: number; minLng: number; maxLng: number };
+
+export const inArea = (e: Pick<EventOccurrence, 'lat' | 'lng'>, a: MapArea) =>
+  e.lat >= a.minLat && e.lat <= a.maxLat && e.lng >= a.minLng && e.lng <= a.maxLng;
+
 type Props = {
   /** Already filtered to what the person is looking at. One pin per listing (the soonest date). */
   events: EventOccurrence[];
   selectedKey?: string | null;
   onSelect: (e: EventOccurrence | null) => void;
   style?: StyleProp<ViewStyle>;
+  /** Called when the person pans or zooms (not for the map's own first settle). */
+  onAreaChange?: (a: MapArea) => void;
 };
 
-export function EventsMap({ events, selectedKey, onSelect, style }: Props) {
+export function EventsMap({ events, selectedKey, onSelect, style, onAreaChange }: Props) {
+  // Apple Maps reports a few camera moves while it lays itself out; ignore those.
+  const settled = useRef(false);
+  useEffect(() => {
+    const t = setTimeout(() => (settled.current = true), 1500);
+    return () => clearTimeout(t);
+  }, []);
   const palette = useColors();
   // The same weekly open mic shouldn't stack 3 pins on top of each other in "This week".
   const pins = useMemo(() => {
@@ -54,7 +68,7 @@ export function EventsMap({ events, selectedKey, onSelect, style }: Props) {
     [pins, selectedKey],
   );
 
-  if (Platform.OS === 'web') return <PreviewBoard pins={pins} selectedKey={selectedKey} style={style} />;
+  if (Platform.OS === 'web') return <PreviewBoard pins={pins} selectedKey={selectedKey} style={style} onAreaChange={onAreaChange} />;
   if (!MAP_SUPPORTED || !AppleMaps) return null;
 
   return (
@@ -66,6 +80,17 @@ export function EventsMap({ events, selectedKey, onSelect, style }: Props) {
       properties={{ pointsOfInterest: { including: [] }, selectionEnabled: false }}
       onMarkerClick={(m) => onSelect(pins.find((p) => p.key === m.id) ?? null)}
       onMapClick={() => onSelect(null)}
+      onCameraMove={(c) => {
+        if (!onAreaChange || !settled.current) return;
+        const { latitude, longitude } = c.coordinates;
+        if (latitude == null || longitude == null) return;
+        onAreaChange({
+          minLat: latitude - c.latitudeDelta / 2,
+          maxLat: latitude + c.latitudeDelta / 2,
+          minLng: longitude - c.longitudeDelta / 2,
+          maxLng: longitude + c.longitudeDelta / 2,
+        });
+      }}
     />
   );
 }
@@ -74,10 +99,25 @@ export function EventsMap({ events, selectedKey, onSelect, style }: Props) {
  * Web/UI-preview stand-in so screens can be reviewed in a browser: pins placed by coordinates on a plain
  * NYC-shaped board. The real app uses Apple Maps.
  */
-function PreviewBoard({ pins, selectedKey, style }: { pins: EventOccurrence[]; selectedKey?: string | null; style?: StyleProp<ViewStyle> }) {
+function PreviewBoard({
+  pins,
+  selectedKey,
+  style,
+  onAreaChange,
+}: {
+  pins: EventOccurrence[];
+  selectedKey?: string | null;
+  style?: StyleProp<ViewStyle>;
+  onAreaChange?: (a: MapArea) => void;
+}) {
   const { minLat, maxLat, minLng, maxLng } = { minLat: 40.62, maxLat: 40.84, minLng: -74.06, maxLng: -73.86 };
   return (
-    <View style={[style, board.wrap]}>
+    // In the preview, a tap stands in for "moved the map to Brooklyn".
+    <Pressable
+      style={[style, board.wrap]}
+      onPress={() => onAreaChange?.({ minLat: 40.66, maxLat: 40.73, minLng: -73.97, maxLng: -73.9 })}
+      accessibilityLabel="Map"
+    >
       <View style={[board.water, { left: '-10%', top: 0, width: '38%', height: '100%', transform: [{ rotate: '14deg' }] }]} />
       <View style={[board.water, { left: '52%', top: '-5%', width: '9%', height: '75%', transform: [{ rotate: '18deg' }] }]} />
       <View style={[board.water, { left: '20%', top: '86%', width: '80%', height: '30%' }]} />
@@ -101,7 +141,7 @@ function PreviewBoard({ pins, selectedKey, style }: { pins: EventOccurrence[]; s
         );
       })}
       <Text style={board.note}>Map preview · Apple Maps on iPhone</Text>
-    </View>
+    </Pressable>
   );
 }
 
