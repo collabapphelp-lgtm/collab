@@ -71,3 +71,10 @@ exports.reviewEvent = onCall({ maxInstances: 2, memory: '256MiB' }, async (reque
   }
   return { ok: true };
 });
+
+/** For the app: is this person on the Collab team, and how many events are waiting for review? */
+exports.teamStatus = onCall({ maxInstances: 3, memory: '256MiB' }, async (request) => {
+  if (!request.auth || !adminUids().includes(request.auth.uid)) return { admin: false, pending: 0 };
+  const pending = await getFirestore().collection('events').where('status', '==', 'pending').count().get();
+  return { admin: true, pending: pending.data().count };
+});

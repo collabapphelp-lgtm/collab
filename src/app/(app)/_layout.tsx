@@ -13,7 +13,7 @@ import { useColors } from '@/lib/theme';
 export const unstable_settings = { anchor: '(tabs)' };
 
 type PushData = {
-  type?: 'match' | 'message' | 'like' | 'report' | 'signup' | 'nudge' | 'event' | 'group';
+  type?: 'match' | 'message' | 'like' | 'report' | 'signup' | 'nudge' | 'event' | 'eventReview' | 'group';
   matchId?: string;
   groupId?: string;
   url?: string;
@@ -22,6 +22,7 @@ type PushData = {
 function openFromNotification(data: PushData | undefined) {
   if (data?.type === 'like') return router.push('/messages');
   if (data?.type === 'event') return router.push('/events');
+  if (data?.type === 'eventReview') return router.push('/event/review');
   if (data?.type === 'nudge' && data.url?.startsWith('/edit')) return router.push(data.url as Href);
   const chatId = data?.groupId ?? data?.matchId;
   if (!chatId) return;

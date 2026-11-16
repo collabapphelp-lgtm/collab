@@ -156,8 +156,8 @@ exports.onEventSubmitted = onDocumentCreated('events/{eventId}', async (event) =
     adminUids().map((uid) =>
       notify(uid, {
         title: `📍 New event to review: ${e.title}`,
-        body: `${e.hostName} posted ${e.title} at ${e.venue}. Approve it on the dashboard.`,
-        data: { type: 'report' },
+        body: `${e.hostName} posted ${e.title} at ${e.venue}. Tap to review it.`,
+        data: { type: 'eventReview' },
       }),
     ),
   );
@@ -178,6 +178,7 @@ exports.onEventReviewed = onDocumentUpdated('events/{eventId}', async (event) =>
 exports.metrics = require('./metrics').metrics;
 exports.eventSubmissions = require('./events').eventSubmissions;
 exports.reviewEvent = require('./events').reviewEvent;
+exports.teamStatus = require('./events').teamStatus;
 exports.accounts = require('./admin').accounts;
 exports.deleteAccounts = require('./admin').deleteAccounts;
 exports.joinApi = require('./join').joinApi;

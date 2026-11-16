@@ -5,6 +5,7 @@ import { LinearGradient } from '@/components/ThemedGradient';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { EventsMap, inArea, MAP_SUPPORTED, type MapArea } from '@/components/EventsMap';
+import { useTeam } from '@/lib/team';
 import { dayHeading, metaFor, timeLabel, ymd, type EventOccurrence } from '@/lib/events';
 import { useEvents } from '@/lib/use-events';
 import { fonts, radius, shadow, makeStyles, useColors } from '@/lib/theme';
@@ -48,6 +49,7 @@ export default function Events() {
   const styles = useStyles();
   const colors = useColors();
   const { events, going, error, refresh, isGoing } = useEvents();
+  const team = useTeam();
   const [when, setWhen] = useState<When>('today');
   const [kind, setKind] = useState<Kind>('all');
   const [selected, setSelected] = useState<EventOccurrence | null>(null);
@@ -94,6 +96,17 @@ export default function Events() {
           <Text style={styles.title}>Events</Text>
           <Text style={styles.subtitle}>Open mics, jams and Collab nights in NYC</Text>
         </View>
+        {team.admin ? (
+          <Pressable
+            onPress={() => router.push('/event/review')}
+            style={[styles.review, team.pending > 0 && styles.reviewOn]}
+            accessibilityRole="button"
+            accessibilityLabel={`Review events, ${team.pending} waiting`}
+          >
+            <Ionicons name="shield-checkmark" size={16} color={team.pending > 0 ? '#17151F' : colors.textSecondary} />
+            {team.pending > 0 ? <Text style={styles.reviewText}>{team.pending}</Text> : null}
+          </Pressable>
+        ) : null}
         <Pressable onPress={() => router.push('/event/new')} style={styles.post} accessibilityRole="button" accessibilityLabel="Post an event">
           <Ionicons name="add" size={18} color={colors.white} />
           <Text style={styles.postText}>Post</Text>
@@ -365,6 +378,18 @@ const useStyles = makeStyles((colors) => ({
   badge: { fontFamily: fonts.bodySemibold, fontSize: 11, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full, overflow: 'hidden' },
   badgePending: { backgroundColor: '#F1F1F1', color: colors.textSecondary },
   going: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.blue },
+  review: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 40,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: colors.white,
+  },
+  reviewOn: { backgroundColor: '#F2C14E' },
+  reviewText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: '#17151F' },
   searchArea: {
     position: 'absolute',
     top: 12,
