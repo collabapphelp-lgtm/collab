@@ -10,7 +10,16 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import type { IconName } from '@/components/OptionIcon';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
-import { BIO_MAX_CHARS, CONTENT_PROMPTS, detectPlatform, MUSICIAN_PROMPTS, normalizeUrl, SHOWCASE } from '@/lib/onboarding-data';
+import {
+  BIO_MAX_CHARS,
+  CAPTION_MAX_CHARS,
+  cleanMediaTitle,
+  CONTENT_PROMPTS,
+  detectPlatform,
+  MUSICIAN_PROMPTS,
+  normalizeUrl,
+  SHOWCASE,
+} from '@/lib/onboarding-data';
 import { roleLine } from '@/lib/labels';
 import type { ShowcaseItem, ShowcaseMedia, ShowcasePrompt } from '@/lib/types';
 import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
@@ -107,11 +116,30 @@ export default function ShowcaseStep() {
     const kind = SHOWCASE.slots[index];
     const current = slots[index];
     if (!current) return setEditing({ index, kind });
+    const media = current.type === 'media' ? current : null;
     Alert.alert(kind === 'media' ? 'Snippet' : 'Prompt', undefined, [
+      ...(media && Platform.OS === 'ios'
+        ? [{ text: cleanMediaTitle(media.title, media.mediaKind) ? 'Edit caption' : 'Add a caption', onPress: () => editCaption(index, media) }]
+        : []),
       { text: kind === 'media' ? 'Replace' : 'Edit', onPress: () => setEditing({ index, kind }) },
-      { text: 'Remove', style: 'destructive', onPress: () => put(index, null) },
-      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive' as const, onPress: () => put(index, null) },
+      { text: 'Cancel', style: 'cancel' as const },
     ]);
+  }
+
+  /** iOS text prompt for a photo/clip caption (stored as the item's title). */
+  function editCaption(index: number, media: ShowcaseMedia) {
+    Alert.prompt(
+      'Caption',
+      'Shown under it on your profile.',
+      (text) => {
+        const caption = text.trim().slice(0, CAPTION_MAX_CHARS);
+        if (hasBlockedLanguage(caption)) return Alert.alert(BLOCKED_LANGUAGE_MESSAGE);
+        put(index, { ...media, title: caption || undefined });
+      },
+      'plain-text',
+      cleanMediaTitle(media.title, media.mediaKind) ?? '',
+    );
   }
 
   async function save(withShowcase: boolean) {
@@ -343,7 +371,7 @@ function SlotCard({ index, slot, onPress }: { index: number; slot: Slot; onPress
   if (slot?.type === 'media') {
     const p = slot.source === 'link' ? detectPlatform(slot.url) : null;
     emoji = p ? p.emoji : slot.mediaKind === 'audio' ? '🎵' : slot.mediaKind === 'video' ? '🎬' : '🖼️';
-    title = slot.title ?? (p ? `${p.label} link` : 'Uploaded file');
+    title = cleanMediaTitle(slot.title, slot.mediaKind) ?? (p ? `${p.label} link` : slot.mediaKind === 'image' ? 'Photo' : 'Uploaded file');
     body = p ? p.label : slot.mediaKind === 'audio' ? 'Audio' : slot.mediaKind === 'video' ? 'Video' : 'Photo';
   } else if (slot?.type === 'prompt') {
     emoji = '💬';

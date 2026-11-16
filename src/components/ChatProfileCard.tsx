@@ -6,7 +6,7 @@ import { LinearGradient } from '@/components/ThemedGradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { lookingOptionFor, optionFor, displayName } from '@/lib/labels';
 import { distanceMiles, formatDistance, scoreCandidate } from '@/lib/matching';
-import { detectPlatform } from '@/lib/onboarding-data';
+import { cleanMediaTitle, detectPlatform } from '@/lib/onboarding-data';
 import type { ShowcaseMedia, ShowcasePrompt, UserProfile } from '@/lib/types';
 import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
@@ -118,12 +118,12 @@ function MediaCard({ item }: { item: ShowcaseMedia }) {
       onPress={() => WebBrowser.openBrowserAsync(item.url).catch(() => {})}
       style={({ pressed }) => [styles.card, styles.media, pressed && { opacity: 0.8 }]}
       accessibilityRole="button"
-      accessibilityLabel={`Open ${item.title ?? kind}`}
+      accessibilityLabel={`Open ${cleanMediaTitle(item.title, item.mediaKind) ?? kind}`}
     >
       <Text style={styles.mediaIcon}>{icon}</Text>
       <View style={styles.flex}>
         <Text style={styles.mediaTitle} numberOfLines={2}>
-          {item.title ?? `${kind} snippet`}
+          {cleanMediaTitle(item.title, item.mediaKind) ?? `${kind} snippet`}
         </Text>
         <Text style={styles.mediaKind}>{kind}</Text>
       </View>

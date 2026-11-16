@@ -272,6 +272,21 @@ export const SHOWCASE = {
 
 export const BIO_MAX_CHARS = 500;
 export const DEFAULT_RADIUS_MILES = 50;
+export const CAPTION_MAX_CHARS = 120;
+
+/**
+ * Uploads used to get the phone's file name as their title ("IMG_2065.jpg"). Those aren't captions:
+ * hide them on photos, and show audio/video ones without the extension (or not at all if it's a camera name).
+ */
+export function cleanMediaTitle(title: string | undefined, kind?: 'audio' | 'video' | 'image'): string | undefined {
+  const t = title?.trim();
+  if (!t) return undefined;
+  const looksLikeFile = /\.(jpe?g|png|heic|heif|webp|gif|mov|mp4|m4v|mp3|m4a|wav|aac|aiff?)$/i.test(t);
+  if (!looksLikeFile) return t;
+  if (kind === 'image') return undefined;
+  const base = t.replace(/\.[a-z0-9]+$/i, '');
+  return /^(IMG|DSC|PXL|VID|MOV|image|video|audio)[-_ ]?\d+/i.test(base) ? undefined : base;
+}
 
 export const LINK_PLATFORMS: { match: RegExp; platform: string; label: string; emoji: string }[] = [
   { match: /spotify\.com/i, platform: 'spotify', label: 'Spotify', emoji: '🟢' },

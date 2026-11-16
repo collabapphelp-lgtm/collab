@@ -6,7 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Avatar, HeroPhoto } from '@/components/Avatar';
-import { detectPlatform, INSTRUMENT_TYPES } from '@/lib/onboarding-data';
+import { cleanMediaTitle, detectPlatform, INSTRUMENT_TYPES } from '@/lib/onboarding-data';
 import { canonicalList, fullName, lookingOptionFor, optionFor, roleLine, shortLocation } from '@/lib/labels';
 import { accentFor } from '@/lib/accent';
 import type { ShowcaseItem, ShowcaseMedia, UserProfile } from '@/lib/types';
@@ -262,7 +262,7 @@ function bars(seed: string, n = 30) {
 function mediaMeta(item: ShowcaseMedia) {
   const platform = item.source === 'link' ? detectPlatform(item.url) : null;
   const kind = platform ? platform.label : item.mediaKind === 'audio' ? 'Audio' : item.mediaKind === 'image' ? 'Photo' : 'Video';
-  return { kind, title: item.title ?? (platform ? `${kind} link` : `${kind} snippet`) };
+  return { kind, title: cleanMediaTitle(item.title, item.mediaKind) ?? (platform ? `${kind} link` : `${kind} snippet`) };
 }
 
 /** Uploaded audio files (and direct links to audio files) play right here instead of opening a browser. */
@@ -415,10 +415,11 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
   }
 
   if (item.source === 'upload' && item.mediaKind === 'image') {
+    const caption = cleanMediaTitle(item.title, 'image');
     return (
       <View style={styles.mediaImageWrap}>
         <Image source={{ uri: item.url }} style={styles.mediaImage} contentFit="cover" transition={200} />
-        {item.title ? <Text style={styles.mediaCaption}>{item.title}</Text> : null}
+        {caption ? <Text style={styles.mediaCaption}>{caption}</Text> : null}
       </View>
     );
   }
@@ -518,7 +519,7 @@ const useStyles = makeStyles((colors) => ({
   mediaKind: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },
   mediaImageWrap: { gap: 6 },
   mediaImage: { width: '100%', aspectRatio: 4 / 5, borderRadius: 22, backgroundColor: colors.bgSecondary },
-  mediaCaption: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },
+  mediaCaption: { fontFamily: fonts.bodyMedium, fontSize: 14, lineHeight: 19, color: colors.textSecondary, paddingHorizontal: 4 },
 
   bio: { fontFamily: fonts.body, fontSize: 16, lineHeight: 23, color: colors.text },
 }));

@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ErrorText';
 import { TextField } from '@/components/TextField';
 import { useAuth } from '@/lib/auth-context';
-import { detectPlatform, normalizeUrl, SHOWCASE } from '@/lib/onboarding-data';
+import { CAPTION_MAX_CHARS, cleanMediaTitle, detectPlatform, normalizeUrl, SHOWCASE } from '@/lib/onboarding-data';
 import { uploadMedia } from '@/lib/upload';
 import type { ShowcaseMedia } from '@/lib/types';
 import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
@@ -73,7 +73,8 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
         url: downloadUrl,
         storagePath: path,
         mediaKind: kind,
-        title: title.trim() || fileName,
+        // Never the phone's file name ("IMG_2065.jpg"): photos get no caption, audio/video a readable name if there is one.
+        title: title.trim() || cleanMediaTitle(fileName, kind),
       });
       reset();
     } catch (e) {
@@ -153,7 +154,14 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
         </>
       ) : (
         <>
-          <TextField label="Title" optional value={title} onChangeText={setTitle} placeholder="e.g. Studio session clip" />
+          <TextField
+            label="Caption"
+            optional
+            value={title}
+            onChangeText={setTitle}
+            maxLength={CAPTION_MAX_CHARS}
+            placeholder="e.g. Live at Sunny’s, Red Hook"
+          />
           {uploading ? (
             <View style={styles.uploading}>
               <ActivityIndicator color={colors.blue} />

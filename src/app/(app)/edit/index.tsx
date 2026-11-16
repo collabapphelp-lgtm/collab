@@ -9,7 +9,7 @@ import { LinearGradient } from '@/components/ThemedGradient';
 import { accentFor } from '@/lib/accent';
 import { useAuth } from '@/lib/auth-context';
 import { canonicalList, fullName, lookingOptionFor, optionFor, roleLine, shortLocation } from '@/lib/labels';
-import { detectPlatform, INSTRUMENT_TYPES } from '@/lib/onboarding-data';
+import { cleanMediaTitle, detectPlatform, INSTRUMENT_TYPES } from '@/lib/onboarding-data';
 import { profileStrength } from '@/lib/profile-strength';
 import type { ShowcaseItem, UserProfile } from '@/lib/types';
 import { fonts, makeStyles, useColors } from '@/lib/theme';
@@ -57,7 +57,7 @@ function showcaseLabel(item: ShowcaseItem): { icon: IconName; text: string } {
   if (item.type === 'prompt') return { icon: 'format-quote-open', text: item.question || 'Prompt' };
   if (item.source === 'upload') {
     const icon: IconName = item.mediaKind === 'video' ? 'video-outline' : item.mediaKind === 'image' ? 'image-outline' : 'music-note';
-    return { icon, text: item.title || 'Uploaded file' };
+    return { icon, text: cleanMediaTitle(item.title, item.mediaKind) || (item.mediaKind === 'image' ? 'Photo' : item.mediaKind === 'video' ? 'Video' : 'Audio') };
   }
   const platform = detectPlatform(item.url);
   return { icon: 'link-variant', text: item.title || platform?.label || 'Link' };
