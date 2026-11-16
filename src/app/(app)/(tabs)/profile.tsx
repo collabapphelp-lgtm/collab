@@ -10,7 +10,8 @@ import { ProfileStrength } from '@/components/ProfileStrength';
 import { useAuth } from '@/lib/auth-context';
 import { shortLocation } from '@/lib/labels';
 import { openLegal, SUPPORT_EMAIL } from '@/lib/legal';
-import { fonts, makeStyles } from '@/lib/theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { fonts, makeStyles, setThemePref, useScheme, useThemePref } from '@/lib/theme';
 
 // Which version is running: the build's own code, or an over-the-air update (and when it was published).
 function versionLine() {
@@ -25,7 +26,10 @@ export default function MyProfile() {
   const styles = useStyles();
   const { profile, signOutUser } = useAuth();
   const insets = useSafeAreaInsets();
+  const scheme = useScheme();
+  const themePref = useThemePref();
   if (!profile) return null;
+  const dark = scheme === 'dark';
 
   return (
     <View style={styles.fill}>
@@ -33,17 +37,30 @@ export default function MyProfile() {
         <ProfileView
           profile={profile}
           isSelf
-          heroHeight={470 + insets.top}
+          layout="work"
+          topInset={insets.top}
           distanceLabel={shortLocation(profile.location) ?? 'Location not set'}
           footer={<GoingTo uid={profile.id} name={profile.firstName} isSelf />}
           heroAccessory={
-            <Pressable
-              onPress={() => router.push('/edit')}
-              accessibilityRole="button"
-              style={[styles.heroEdit, { marginTop: insets.top }]}
-            >
-              <Text style={styles.heroEditText}>Edit</Text>
-            </Pressable>
+            <View style={styles.heroButtons}>
+              {/* Tap: switch light/dark. Long-press: follow the phone's setting again. */}
+              <Pressable
+                onPress={() => setThemePref(dark ? 'light' : 'dark')}
+                onLongPress={() => {
+                  setThemePref('system');
+                  Alert.alert('Matching your phone', 'Collab will follow your iPhone’s Light/Dark setting.');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+                accessibilityHint="Long-press to match your phone's setting"
+                style={styles.themeBtn}
+              >
+                <Ionicons name={dark ? 'sunny' : 'moon'} size={17} color="#17151F" />
+              </Pressable>
+              <Pressable onPress={() => router.push('/edit')} accessibilityRole="button" style={styles.heroEdit}>
+                <Text style={styles.heroEditText}>Edit</Text>
+              </Pressable>
+            </View>
           }
           belowHero={<ProfileStrength profile={profile} />}
         />
@@ -79,7 +96,10 @@ export default function MyProfile() {
               Help
             </Text>
           </View>
-          <Text style={styles.version}>{versionLine()}</Text>
+          <Text style={styles.version}>
+            {versionLine()}
+            {themePref === 'system' ? '' : ` · ${themePref} mode (hold the ${dark ? 'sun' : 'moon'} to match your phone)`}
+          </Text>
         </View>
       </ScrollView>
       <SafeAreaView edges={['top']} style={styles.topFade} pointerEvents="none" />
@@ -97,6 +117,9 @@ const useStyles = makeStyles((colors) => ({
   legalLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   legalDot: { fontSize: 13, color: colors.textMuted },
   version: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, textAlign: 'center', marginTop: 6 },
+  heroButtons: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // Plain rgb() keeps the button white in dark mode too (see lib/theme.ts).
+  themeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgb(255,255,255)', alignItems: 'center', justifyContent: 'center' },
   heroEdit: { height: 36, paddingHorizontal: 18, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.95)', justifyContent: 'center' },
   heroEditText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue },
   topFade: { position: 'absolute', top: 0, left: 0, right: 0 },

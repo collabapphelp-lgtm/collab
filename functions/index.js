@@ -181,6 +181,7 @@ exports.reviewEvent = require('./events').reviewEvent;
 exports.accounts = require('./admin').accounts;
 exports.deleteAccounts = require('./admin').deleteAccounts;
 exports.joinApi = require('./join').joinApi;
+exports.calendarFile = require('./calendar').calendarFile;
 exports.createGroup = require('./groups').createGroup;
 exports.respondToGroup = require('./groups').respondToGroup;
 exports.leaveGroup = require('./groups').leaveGroup;

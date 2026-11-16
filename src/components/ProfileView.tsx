@@ -33,6 +33,8 @@ type Props = {
   layout?: 'hero' | 'work';
   /** Shown after everything else (e.g. events they're going to). */
   footer?: ReactNode;
+  /** 'work' layout only: extra space at the top when the card sits under the status bar. */
+  topInset?: number;
 };
 
 const GOLD = '#F2C14E';
@@ -42,7 +44,7 @@ const PAGE = '#F7F5F0';
  * One person's full profile, "Spotlight" style: the photo fades into a color taken from their sound,
  * their first track is featured, prompts read big, everything else as clean chips.
  */
-export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, belowHero, isSelf, heroHeight = 460, layout = 'hero', footer }: Props) {
+export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, belowHero, isSelf, heroHeight = 460, layout = 'hero', footer, topInset = 0 }: Props) {
   const styles = useStyles();
   const colors = useColors();
   const workFirst = layout === 'work';
@@ -90,8 +92,10 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
   return (
     <View style={styles.wrap}>
       {workFirst ? (
-        <View style={[styles.compactHead, { backgroundColor: accent }]}>
-          <View style={styles.compactRow}>
+        <View style={[styles.compactHead, { backgroundColor: accent, paddingTop: (topInset ? 6 : 16) + topInset }]}>
+          {/* Under the status bar (your own Profile tab), buttons get their own row above the name. */}
+          {heroAccessory && topInset ? <View style={styles.compactTopRow}>{heroAccessory}</View> : null}
+          <View style={[styles.compactRow, !!topInset && { paddingRight: 0 }]}>
             <Avatar uri={profile.photoURL} name={name} seed={profile.id} size={84} radius={22} style={styles.compactPhoto} />
             <View style={styles.flex}>
               {soundLine ? (
@@ -114,7 +118,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
               ) : null}
             </View>
           </View>
-          {heroAccessory ? <View style={styles.compactAccessory}>{heroAccessory}</View> : null}
+          {heroAccessory && !topInset ? <View style={styles.compactAccessory}>{heroAccessory}</View> : null}
         </View>
       ) : (
         <View style={[styles.hero, { height: heroHeight, backgroundColor: accent }]}>
@@ -454,6 +458,7 @@ const useStyles = makeStyles((colors) => ({
   compactRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingRight: 36 },
   compactPhoto: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)' },
   compactAccessory: { position: 'absolute', top: 10, right: 10 },
+  compactTopRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 6 },
   soundLineSmall: { fontFamily: fonts.bodySemibold, fontSize: 11, letterSpacing: 1.6, color: GOLD, marginBottom: 2 },
   compactName: { fontFamily: fonts.heading, fontSize: 24, lineHeight: 27, letterSpacing: -0.5, color: colors.white },
   compactRole: { fontFamily: fonts.bodySemibold, fontSize: 14, color: 'rgba(255,255,255,0.92)', marginTop: 2 },

@@ -10,6 +10,7 @@ import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/lib/auth-context';
 import { deleteMyEvent, metaFor, whenLabel } from '@/lib/events';
+import { chooseCalendar } from '@/lib/calendar';
 import { displayName, roleLine } from '@/lib/labels';
 import { getProfile } from '@/lib/profiles';
 import { loadBlockedIds, reportUser } from '@/lib/safety';
@@ -68,8 +69,16 @@ export default function EventScreen() {
     if (!e) return;
     setSaving(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const wasGoing = isGoing(e);
     try {
       await toggleGoing(e);
+      if (!wasGoing) {
+        const ev = e;
+        Alert.alert('You’re going!', 'Add it to your calendar so you don’t miss it?', [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Add to calendar', onPress: () => chooseCalendar(ev) },
+        ]);
+      }
     } catch {
       Alert.alert('That didn’t save', 'Check your connection and try again.');
     } finally {
@@ -222,12 +231,24 @@ export default function EventScreen() {
 
       {e.status === 'pending' ? null : (
         <SafeAreaView edges={['bottom']} style={styles.footer}>
-          <Button
-            title={imGoing ? '✓ You’re going' : 'I’m going'}
-            variant={imGoing ? 'secondary' : 'primary'}
-            onPress={onGoing}
-            loading={saving}
-          />
+          <View style={styles.footerRow}>
+            <Button
+              title={imGoing ? '✓ You’re going' : 'I’m going'}
+              variant={imGoing ? 'secondary' : 'primary'}
+              onPress={onGoing}
+              loading={saving}
+              style={styles.flex}
+            />
+            <Pressable
+              onPress={() => chooseCalendar(e)}
+              style={({ pressed }) => [styles.calBtn, pressed && { opacity: 0.8 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Add to calendar"
+            >
+              <Ionicons name="calendar-outline" size={22} color={colors.blue} />
+              <Text style={styles.calText}>Add</Text>
+            </Pressable>
+          </View>
           <Text style={styles.footerHint}>{imGoing ? 'Tap again if your plans change.' : 'Other creatives on Collab will see you’re going.'}</Text>
         </SafeAreaView>
       )}
@@ -254,6 +275,18 @@ function shade(hex: string) {
 }
 
 const useStyles = makeStyles((colors) => ({
+  footerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  calBtn: {
+    width: 64,
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calText: { fontFamily: fonts.bodySemibold, fontSize: 11, color: colors.blue, marginTop: 1 },
   fill: { flex: 1, backgroundColor: '#F4F2EC' },
   flex: { flex: 1 },
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, backgroundColor: '#F4F2EC' },

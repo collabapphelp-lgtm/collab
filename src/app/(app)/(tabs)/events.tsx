@@ -9,7 +9,7 @@ import { dayHeading, metaFor, timeLabel, ymd, type EventOccurrence } from '@/lib
 import { useEvents } from '@/lib/use-events';
 import { fonts, radius, shadow, makeStyles, useColors } from '@/lib/theme';
 
-type When = 'today' | 'tomorrow' | 'week' | 'all';
+type When = 'going' | 'today' | 'tomorrow' | 'week' | 'all';
 type Kind = 'all' | 'open-mic' | 'jam' | 'collab' | 'other';
 
 const WHEN: { value: When; label: string }[] = [
@@ -47,14 +47,18 @@ function inKind(e: EventOccurrence, kind: Kind) {
 export default function Events() {
   const styles = useStyles();
   const colors = useColors();
-  const { events, going, error, refresh } = useEvents();
+  const { events, going, error, refresh, isGoing } = useEvents();
   const [when, setWhen] = useState<When>('today');
   const [kind, setKind] = useState<Kind>('all');
   const [selected, setSelected] = useState<EventOccurrence | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const { height } = useWindowDimensions();
 
-  const shown = useMemo(() => (events ?? []).filter((e) => inWhen(e, when) && inKind(e, kind)), [events, when, kind]);
+  const mine = useMemo(() => (events ?? []).filter(isGoing), [events, isGoing]);
+  const shown = useMemo(
+    () => (when === 'going' ? mine : (events ?? []).filter((e) => inWhen(e, when))).filter((e) => inKind(e, kind)),
+    [events, mine, when, kind],
+  );
 
   // Group the list by day ("Today", "Tomorrow", "Friday, Nov 20").
   const days = useMemo(() => {
@@ -91,6 +95,12 @@ export default function Events() {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.segRow}>
+        <Pill
+          label={mine.length ? `★ I’m going · ${mine.length}` : '★ I’m going'}
+          on={when === 'going'}
+          onPress={() => (setWhen('going'), setSelected(null))}
+          strong
+        />
         {WHEN.map((w) => (
           <Pill key={w.value} label={w.label} on={when === w.value} onPress={() => (setWhen(w.value), setSelected(null))} strong />
         ))}
@@ -126,18 +136,27 @@ export default function Events() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
           {days.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>🎤</Text>
-              <Text style={styles.emptyTitle}>Nothing listed {when === 'today' ? 'tonight' : when === 'tomorrow' ? 'tomorrow' : 'yet'}</Text>
-              <Text style={styles.emptyBody}>
-                {when === 'today' || when === 'tomorrow' ? 'Try “This week”, or ' : ''}post one: a jam at your studio, a listening session, a showcase.
-              </Text>
+              <Text style={styles.emptyEmoji}>{when === 'going' ? '🎟️' : '🎤'}</Text>
+              {when === 'going' ? (
+                <>
+                  <Text style={styles.emptyTitle}>No plans yet</Text>
+                  <Text style={styles.emptyBody}>Open any event and tap “I’m going”. Everything you’re going to shows up here.</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.emptyTitle}>Nothing listed {when === 'today' ? 'tonight' : when === 'tomorrow' ? 'tomorrow' : 'yet'}</Text>
+                  <Text style={styles.emptyBody}>
+                    {when === 'today' || when === 'tomorrow' ? 'Try “This week”, or ' : ''}post one: a jam at your studio, a listening session, a showcase.
+                  </Text>
+                </>
+              )}
             </View>
           ) : (
             days.map((d) => (
               <View key={d.title} style={styles.day}>
                 <Text style={styles.dayTitle}>{d.title}</Text>
                 {d.items.map((e) => (
-                  <EventRow key={e.key} e={e} goingCount={(going.get(e.key) ?? []).length} onPress={() => open(e)} />
+                  <EventRow key={e.key} e={e} goingCount={(going.get(e.key) ?? []).length} mine={isGoing(e)} onPress={() => open(e)} />
                 ))}
               </View>
             ))
@@ -170,7 +189,7 @@ function Badges({ e }: { e: EventOccurrence }) {
   return null;
 }
 
-function EventRow({ e, goingCount, onPress }: { e: EventOccurrence; goingCount: number; onPress: () => void }) {
+function EventRow({ e, goingCount, mine, onPress }: { e: EventOccurrence; goingCount: number; mine?: boolean; onPress: () => void }) {
   const styles = useStyles();
   const colors = useColors();
   const meta = metaFor(e);
@@ -190,9 +209,10 @@ function EventRow({ e, goingCount, onPress }: { e: EventOccurrence; goingCount: 
         </Text>
         <View style={styles.rowMeta}>
           <Badges e={e} />
-          {goingCount > 0 ? (
+          {mine ? <Text style={styles.youGoing}>✓ You’re going</Text> : null}
+          {goingCount > (mine ? 1 : 0) ? (
             <Text style={styles.going}>
-              <Ionicons name="people" size={12} color={colors.blue} /> {goingCount} going
+              <Ionicons name="people" size={12} color={colors.blue} /> {mine ? `${goingCount - 1} others` : `${goingCount}`} going
             </Text>
           ) : null}
         </View>
@@ -300,6 +320,7 @@ const useStyles = makeStyles((colors) => ({
   badge: { fontFamily: fonts.bodySemibold, fontSize: 11, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full, overflow: 'hidden' },
   badgePending: { backgroundColor: '#F1F1F1', color: colors.textSecondary },
   going: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.blue },
+  youGoing: { fontFamily: fonts.bodySemibold, fontSize: 12, color: '#2E8B57' },
   empty: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 24, gap: 6 },
   emptyEmoji: { fontSize: 36 },
   emptyTitle: { fontFamily: fonts.heading, fontSize: 18, color: colors.text, textAlign: 'center' },

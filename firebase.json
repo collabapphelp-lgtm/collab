@@ -25,6 +25,13 @@
     ],
     "rewrites": [
       {
+        "source": "/cal/**",
+        "function": {
+          "functionId": "calendarFile",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "/api/**",
         "function": {
           "functionId": "joinApi",

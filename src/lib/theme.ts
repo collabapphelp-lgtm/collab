@@ -7,6 +7,7 @@
 //   - everything else (brand colors, photo overlays, white text on color) stays as it is
 // To opt a color out of the automatic swap, write it as `rgb(r,g,b)` instead of hex (see `colors.ink`).
 import { useSyncExternalStore } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Appearance, StyleSheet, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 
 export type Scheme = 'light' | 'dark';
@@ -83,18 +84,57 @@ export const shadow = {
 // iOS briefly reports the other scheme while the app is in the background (to snapshot it for
 // the app switcher), so changes only apply while the app is active.
 
-let current: Scheme = Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
+/** 'system' follows the phone; 'light'/'dark' is the switch on the Profile tab. */
+export type ThemePref = 'system' | 'light' | 'dark';
+const PREF_KEY = 'collab.theme';
+let pref: ThemePref = 'system';
+// What the phone itself is set to (kept separately, so switching back to 'system' is instant).
+let systemScheme: Scheme = Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
+
+let current: Scheme = systemScheme;
 const listeners = new Set<() => void>();
 
 function refresh() {
   if (AppState.currentState !== 'active' && AppState.currentState != null) return;
-  const next: Scheme = Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
+  if (pref === 'system') systemScheme = Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
+  const next: Scheme = pref === 'system' ? systemScheme : pref;
   if (next === current) return;
   current = next;
   listeners.forEach((l) => l());
 }
 Appearance.addChangeListener(refresh);
 AppState.addEventListener('change', (s) => s === 'active' && refresh());
+
+function applyPref(p: ThemePref) {
+  pref = p;
+  // Also tells iOS, so keyboards, alerts and the status bar match.
+  try {
+    Appearance.setColorScheme(p === 'system' ? 'auto' : p);
+  } catch {
+    // older platforms / web: our own colors still switch
+  }
+  if (p === 'system') systemScheme = Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
+  const next: Scheme = p === 'system' ? systemScheme : p;
+  if (next !== current) {
+    current = next;
+    listeners.forEach((l) => l());
+  } else listeners.forEach((l) => l());
+}
+
+AsyncStorage.getItem(PREF_KEY)
+  .then((v) => {
+    if (v === 'light' || v === 'dark') applyPref(v);
+  })
+  .catch(() => {});
+
+export function setThemePref(p: ThemePref) {
+  applyPref(p);
+  AsyncStorage.setItem(PREF_KEY, p).catch(() => {});
+}
+
+export function useThemePref(): ThemePref {
+  return useSyncExternalStore(subscribe, () => pref, () => pref);
+}
 
 function subscribe(l: () => void) {
   listeners.add(l);
@@ -166,7 +206,9 @@ export function darkSurface(c: string): string {
   if (l < 0.8) return c;
   const nl = Math.min(0.3, 0.075 + (1 - l) * 1.5);
   // Neutrals get a hint of cool blue so they don't look flat grey.
-  return s < 0.08 ? fromHsl(222, 0.12, nl, p.a) : fromHsl(h, Math.min(s, 0.45), nl + 0.01, p.a);
+  // Off-whites and creams (tiny chroma) become neutral dark; real tints keep their hue.
+  const chroma = (Math.max(p.r, p.g, p.b) - Math.min(p.r, p.g, p.b)) / 255;
+  return chroma < 0.06 ? fromHsl(222, 0.12, nl, p.a) : fromHsl(h, Math.min(s, 0.45), nl + 0.01, p.a);
 }
 
 /** A light-mode text/icon color, as it should look in dark mode. */
