@@ -21,12 +21,15 @@ function record(uid: string | undefined, field: 'days' | 'stepsReached' | 'skipp
   });
 }
 
-let lastDay: string | null = null;
+// Remembered per person and day. (It used to remember the day even before sign-in finished loading,
+// so the real write that followed was skipped and no days were ever counted.)
+let lastLogged: string | null = null;
 export function trackActiveDay(uid: string | undefined) {
-  const d = today();
-  if (d === lastDay) return; // once per day per launch is enough
-  lastDay = d;
-  record(uid, 'days', d);
+  if (!uid) return;
+  const key = `${uid}:${today()}`;
+  if (key === lastLogged) return; // once per day per launch is enough
+  lastLogged = key;
+  record(uid, 'days', today());
 }
 
 export const trackStepReached = (uid: string | undefined, step: string) => record(uid, 'stepsReached', step);
