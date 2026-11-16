@@ -163,7 +163,7 @@ exports.metrics = onCall({ maxInstances: 2, memory: '256MiB' }, async (request) 
     generatedAt: Date.now(),
     reports,
     joinPage: joinSnap.docs
-      .map((d) => ({ source: d.id, visits: d.data().visits ?? 0, ios: d.data().ios ?? 0, android: d.data().android ?? 0, other: d.data().other ?? 0 }))
+      .map((d) => ({ source: d.id, visits: d.data().visits ?? 0, unique: d.data().unique ?? 0, ios: d.data().ios ?? 0, android: d.data().android ?? 0, other: d.data().other ?? 0 }))
       .sort((a, b) => b.visits - a.visits),
     waitlist: waitSnap.docs
       .map((d) => ({ email: d.data().email, source: d.data().source ?? 'direct', at: ms(d.data().createdAt) }))

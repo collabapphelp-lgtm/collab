@@ -63,7 +63,16 @@ input{font:inherit;width:100%;padding:14px 16px;border:1px solid var(--line);bor
   function post(path, data) {
     return fetch('/api/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
   }
-  post('visit', { s: source, platform: platform }).catch(function () {});
+  // Visitor counting: each browser counts as "new" once. Open the page once with ?me=1 on your own
+  // phones/computers and they're never counted again (team visits). Storage can be blocked: then it just counts.
+  var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  if (new URLSearchParams(location.search).get('me') === '1') store.set('collab_team', '1');
+  if (store.get('collab_team') !== '1') {
+    var first = !store.get('collab_seen');
+    store.set('collab_seen', '1');
+    post('visit', { s: source, platform: platform, first: first }).catch(function () {});
+  }
 
   document.getElementById('wl').addEventListener('submit', function (e) {
     e.preventDefault();

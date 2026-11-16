@@ -23,7 +23,13 @@ exports.joinApi = onRequest({ maxInstances: 3, memory: '256MiB', invoker: 'publi
   if (req.path.endsWith('/visit')) {
     const platform = PLATFORMS.has(body.platform) ? body.platform : 'other';
     await db.doc(`joinStats/${source}`).set(
-      { visits: FieldValue.increment(1), [platform]: FieldValue.increment(1), lastAt: FieldValue.serverTimestamp() },
+      {
+        visits: FieldValue.increment(1),
+        // People, not page loads: the page says when this browser has never been here before.
+        ...(body.first === true ? { unique: FieldValue.increment(1) } : {}),
+        [platform]: FieldValue.increment(1),
+        lastAt: FieldValue.serverTimestamp(),
+      },
       { merge: true },
     );
     return res.json({ ok: true });

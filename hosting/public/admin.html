@@ -337,10 +337,10 @@ function render(d) {
 
   <div class="grid two">
     <div class="card"><h2>Join page visits</h2>
-      ${d.joinPage.length ? `<div class="tablewrap"><table><thead><tr><th>Source</th><th class="r">Visits</th><th class="r">iPhone</th><th class="r">Android</th><th class="r">Computer</th></tr></thead>
-      <tbody>${d.joinPage.map((j) => `<tr><td>${esc(j.source)}</td><td class="r">${j.visits}</td><td class="r">${j.ios}</td><td class="r">${j.android}</td><td class="r">${j.other}</td></tr>`).join('')}</tbody></table></div>`
+      ${d.joinPage.length ? `<div class="tablewrap"><table><thead><tr><th>Source</th><th class="r">New people</th><th class="r">Visits</th><th class="r">iPhone</th><th class="r">Android</th><th class="r">Computer</th></tr></thead>
+      <tbody>${d.joinPage.map((j) => `<tr><td>${esc(j.source)}</td><td class="r">${j.unique}</td><td class="r">${j.visits}</td><td class="r">${j.ios}</td><td class="r">${j.android}</td><td class="r">${j.other}</td></tr>`).join('')}</tbody></table></div>`
       : '<p class="muted small">No visits yet.</p>'}
-      <p class="muted small">“sticker” = scans of the sticker QR code. Visits, not installs.</p></div>
+      <p class="muted small">“sticker” = scans of the sticker QR code. New people = first visit from that phone or computer (counted since Nov 16); visits = every page load. Your own devices aren’t counted after you open collab-609ac.web.app/join?me=1 once on each.</p></div>
     <div class="card"><h2>Android waitlist (${d.waitlist.length})</h2>
       ${d.waitlist.length ? `<div class="tablewrap"><table><thead><tr><th>Email</th><th>From</th><th>Joined</th></tr></thead>
       <tbody>${d.waitlist.map((w) => `<tr><td>${esc(w.email)}</td><td>${esc(w.source)}</td><td>${when(w.at)}</td></tr>`).join('')}</tbody></table></div>`
