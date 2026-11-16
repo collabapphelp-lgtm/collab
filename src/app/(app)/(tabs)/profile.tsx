@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/auth-context';
 import { shortLocation } from '@/lib/labels';
 import { openLegal, SUPPORT_EMAIL } from '@/lib/legal';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { fonts, makeStyles, setThemePref, useScheme, useThemePref } from '@/lib/theme';
+import { fonts, makeStyles, setThemePref, useScheme } from '@/lib/theme';
 
 // Which version is running: the build's own code, or an over-the-air update (and when it was published).
 function versionLine() {
@@ -27,7 +27,6 @@ export default function MyProfile() {
   const { profile, signOutUser } = useAuth();
   const insets = useSafeAreaInsets();
   const scheme = useScheme();
-  const themePref = useThemePref();
   if (!profile) return null;
   const dark = scheme === 'dark';
 
@@ -96,10 +95,7 @@ export default function MyProfile() {
               Help
             </Text>
           </View>
-          <Text style={styles.version}>
-            {versionLine()}
-            {themePref === 'system' ? '' : ` · ${themePref} mode (hold the ${dark ? 'sun' : 'moon'} to match your phone)`}
-          </Text>
+          <Text style={styles.version}>{versionLine()}</Text>
         </View>
       </ScrollView>
       <SafeAreaView edges={['top']} style={styles.topFade} pointerEvents="none" />
