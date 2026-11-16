@@ -9,6 +9,7 @@ import { LinearGradient } from '@/components/ThemedGradient';
 import { Image } from 'expo-image';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
+import { GoingTo } from '@/components/GoingTo';
 import { DiscoverFilterSheet } from '@/components/DiscoverFilterSheet';
 import { NO_FILTERS, filterCount, passesFilters, saveFilters, type DiscoverFilters } from '@/lib/discover-filters';
 import { SafetyButton } from '@/components/SafetyButton';
@@ -267,6 +268,7 @@ export default function Discover() {
                 heroAccessory={
                   <SafetyButton them={current.profile} tone="light" onBlocked={() => drop(current.profile.id)} />
                 }
+                footer={<GoingTo uid={current.profile.id} name={current.profile.firstName} />}
                 />
               </View>
             </View>

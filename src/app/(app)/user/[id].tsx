@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
+import { GoingTo } from '@/components/GoingTo';
 import { SafetyButton } from '@/components/SafetyButton';
 import { useAuth } from '@/lib/auth-context';
 import { getProfile, like, pairId, passOn } from '@/lib/discover';
@@ -59,6 +60,7 @@ export default function UserProfileScreen() {
         <ProfileView
           profile={them}
           distanceLabel={formatDistance(distanceMiles(me?.geo, them.geo), them.location)}
+          footer={<GoingTo uid={them.id} name={them.firstName} isSelf={them.id === me?.id} />}
         />
       </ScrollView>
       <SafeAreaView edges={['top']} style={styles.topBar} pointerEvents="box-none">

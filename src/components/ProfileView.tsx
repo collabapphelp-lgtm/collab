@@ -31,6 +31,8 @@ type Props = {
    * 'hero' (default): the big Spotlight photo.
    */
   layout?: 'hero' | 'work';
+  /** Shown after everything else (e.g. events they're going to). */
+  footer?: ReactNode;
 };
 
 const GOLD = '#F2C14E';
@@ -40,7 +42,7 @@ const PAGE = '#F7F5F0';
  * One person's full profile, "Spotlight" style: the photo fades into a color taken from their sound,
  * their first track is featured, prompts read big, everything else as clean chips.
  */
-export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, belowHero, isSelf, heroHeight = 460, layout = 'hero' }: Props) {
+export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, belowHero, isSelf, heroHeight = 460, layout = 'hero', footer }: Props) {
   const styles = useStyles();
   const colors = useColors();
   const workFirst = layout === 'work';
@@ -214,6 +216,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
             />
           </Section>
         ) : null}
+        {footer}
       </View>
     </View>
   );

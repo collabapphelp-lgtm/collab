@@ -5,6 +5,7 @@ import * as Updates from 'expo-updates';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { ProfileView } from '@/components/ProfileView';
+import { GoingTo } from '@/components/GoingTo';
 import { ProfileStrength } from '@/components/ProfileStrength';
 import { useAuth } from '@/lib/auth-context';
 import { shortLocation } from '@/lib/labels';
@@ -34,6 +35,7 @@ export default function MyProfile() {
           isSelf
           heroHeight={470 + insets.top}
           distanceLabel={shortLocation(profile.location) ?? 'Location not set'}
+          footer={<GoingTo uid={profile.id} name={profile.firstName} isSelf />}
           heroAccessory={
             <Pressable
               onPress={() => router.push('/edit')}
