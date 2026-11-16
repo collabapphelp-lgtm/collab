@@ -36,6 +36,7 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
   {
     id: 'p2',
     firstName: 'Andre',
+    photoURL: SHOTS ? '/shots/andre.jpg' : undefined,
     email: 'andre@example.com',
     onboardingComplete: true,
     location: 'Brooklyn, New York, USA',
@@ -77,6 +78,7 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
   {
     id: 'p4',
     firstName: 'Priya',
+    photoURL: SHOTS ? '/shots/priya.jpg' : undefined,
     email: 'priya@example.com',
     onboardingComplete: true,
     location: 'London, England, United Kingdom',

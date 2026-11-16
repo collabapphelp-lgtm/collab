@@ -477,13 +477,15 @@ if (UI_PREVIEW) {
       invited: ['preview'],
       people: { [leo.id]: leo, [dre.id]: dre },
       createdAt: at,
-      lastMessage: { text: 'Studio’s booked 2–6. Who’s bringing the mic?', senderId: dre.id, at },
+      lastMessage: { text: 'I got the camera. Shooting BTS for the reel 🎥', senderId: leo.id, at },
       lastRead: {},
     });
     preview.messages.set('g-preview-invite', [
-      { id: 's1', text: `${leo.firstName} started “Sunday session”`, senderId: 'system', at: at - 60_000 },
-      { id: 's2', text: `${dre.firstName} joined`, senderId: 'system', at: at - 30_000 },
-      { id: 's3', text: 'Studio’s booked 2–6. Who’s bringing the mic?', senderId: dre.id, at },
+      { id: 's1', text: `${leo.firstName} started “Sunday session”`, senderId: 'system', at: at - 5 * 60_000 },
+      { id: 's2', text: 'Made a group so we can lock in Sunday 🙌', senderId: leo.id, at: at - 4 * 60_000 },
+      { id: 's3', text: `${dre.firstName} joined`, senderId: 'system', at: at - 3 * 60_000 },
+      { id: 's4', text: 'Studio’s booked 2–6. Who’s bringing the mic?', senderId: dre.id, at: at - 2 * 60_000 },
+      { id: 's5', text: 'I got the camera. Shooting BTS for the reel 🎥', senderId: leo.id, at, reactions: { [dre.id]: '🔥' } },
     ]);
   }
   // App Store screenshots: a fuller Connections grid.
