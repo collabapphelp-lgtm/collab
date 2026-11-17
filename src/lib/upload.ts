@@ -43,6 +43,12 @@ export async function uploadMedia(
   return uploadFile(`media/${uid}/${Date.now()}_${safeName}`, localUri, contentType, onProgress);
 }
 
+/** Uploads an event flyer. Under the poster's folder so deleting their account removes it. */
+export async function uploadEventFlyer(uid: string, localUri: string, onProgress?: (fraction: number) => void) {
+  const { url } = await uploadFile(`event-flyers/${uid}/${Date.now()}.jpg`, localUri, 'image/jpeg', onProgress);
+  return url;
+}
+
 /** Uploads a recorded voice note (m4a) for a chat. Lives under the sender's folder so account deletion removes it. */
 export async function uploadVoiceNote(uid: string, matchId: string, localUri: string) {
   return uploadFile(`voice/${uid}/${matchId}_${Date.now()}.m4a`, localUri, 'audio/mp4');

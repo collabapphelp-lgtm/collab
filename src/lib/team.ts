@@ -22,6 +22,8 @@ export type Submission = {
   hostName: string;
   status: string;
   collabHosted: boolean;
+  flyerURL?: string | null;
+  flyerAspect?: number | null;
 };
 
 const fns = () => getFunctions(app);

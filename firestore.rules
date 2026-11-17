@@ -171,6 +171,11 @@ service cloud.firestore {
     // events/{id}: one-off events people post. Created as 'pending'; the Collab team approves or
     // rejects them from /admin (Cloud Function, which bypasses these rules). Recurring open mics
     // are built into the app (src/lib/events-data.ts), not stored here.
+    function validFlyer(d) {
+      return d.flyerURL is string && d.flyerURL.size() <= 600
+        && d.flyerURL.matches('https://firebasestorage[.]googleapis[.]com/.*')
+        && d.flyerAspect is number && d.flyerAspect > 0.2 && d.flyerAspect < 5;
+    }
     match /events/{eventId} {
       allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.hostId == request.auth.uid);
       allow create: if signedIn()
@@ -190,8 +195,14 @@ service cloud.firestore {
         && (!('cost' in request.resource.data) || request.resource.data.cost.size() <= 60)
         && (!('signUp' in request.resource.data) || request.resource.data.signUp.size() <= 120)
         && (!('capacity' in request.resource.data)
-            || (request.resource.data.capacity is int && request.resource.data.capacity >= 1 && request.resource.data.capacity <= 5000));
-      allow update: if false;
+            || (request.resource.data.capacity is int && request.resource.data.capacity >= 1 && request.resource.data.capacity <= 5000))
+        && (!('flyerURL' in request.resource.data) || validFlyer(request.resource.data));
+      // The host can add or swap the flyer, and only that. It goes back to review either way.
+      allow update: if signedIn()
+        && resource.data.hostId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['flyerURL', 'flyerAspect', 'status'])
+        && request.resource.data.status == 'pending'
+        && validFlyer(request.resource.data);
       allow delete: if signedIn() && resource.data.hostId == request.auth.uid;
     }
 

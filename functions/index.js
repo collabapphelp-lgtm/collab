@@ -163,11 +163,25 @@ exports.onEventSubmitted = onDocumentCreated('events/{eventId}', async (event) =
   );
 });
 
-// Tell the host when their event is approved.
+// Tell the host when their event is approved. And tell the team when a host adds or swaps a flyer
+// (that sends the event back to review).
 exports.onEventReviewed = onDocumentUpdated('events/{eventId}', async (event) => {
   const before = event.data?.before.data();
   const after = event.data?.after.data();
-  if (!before || !after || before.status === after.status || after.status !== 'approved') return;
+  if (!before || !after) return;
+  if (after.status === 'pending' && after.flyerURL && after.flyerURL !== before.flyerURL) {
+    await Promise.all(
+      adminUids().map((uid) =>
+        notify(uid, {
+          title: `🖼️ New flyer to review: ${after.title}`,
+          body: `${after.hostName} added a flyer. Tap to review it.`,
+          data: { type: 'eventReview' },
+        }),
+      ),
+    );
+    return;
+  }
+  if (before.status === after.status || after.status !== 'approved') return;
   await notify(after.hostId, {
     title: 'Your event is live 🎉',
     body: `${after.title} is on the Events map. Share it with your people.`,

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Modal } from 'react-native';
+import { Image } from 'expo-image';
 import { CalendarPicker } from '@/components/CalendarPicker';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -349,7 +350,11 @@ function EventRow({ e, goingCount, mine, onPress }: { e: EventOccurrence; goingC
           ) : null}
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      {e.flyerURL ? (
+        <Image source={{ uri: e.flyerURL }} style={styles.rowFlyer} contentFit="cover" transition={150} accessibilityLabel="Event flyer" />
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      )}
     </Pressable>
   );
 }
@@ -467,6 +472,7 @@ const useStyles = makeStyles((colors) => ({
     overflow: 'hidden',
     ...shadow,
   },
+  rowFlyer: { width: 54, height: 68, borderRadius: 10, backgroundColor: colors.bgSecondary },
   rowStripe: { width: 4, alignSelf: 'stretch' },
   rowTime: { width: 48, alignItems: 'center' },
   rowTimeText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text, textAlign: 'center', lineHeight: 17 },

@@ -29,6 +29,15 @@ service firebase.storage {
 
     // Chat voice notes: up to 10 MB of audio. Only the sender's app reads them through the SDK;
     // the other person plays them through the download URL stored on the (members-only) message.
+    // Event flyers (shown on posted events once the Collab team approves them).
+    match /event-flyers/{uid}/{file} {
+      allow read: if signedIn();
+      allow create, update: if isMe(uid)
+        && request.resource.size < 15 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isMe(uid);
+    }
+
     match /voice/{uid}/{file} {
       allow read: if isMe(uid);
       allow create: if isMe(uid)

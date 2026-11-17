@@ -12,7 +12,7 @@
  * An occurrence key is `${eventId}@${YYYY-MM-DD}`, so going to this Thursday's open mic
  * doesn't carry over to next Thursday's.
  */
-import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, addDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, addDoc, updateDoc, where } from 'firebase/firestore';
 import { db } from './firebase';
 import { UI_PREVIEW } from './preview';
 import { CURATED_EVENTS, CURATED_ONE_OFFS, type EventType } from './events-data';
@@ -48,6 +48,9 @@ export type EventOccurrence = {
   status?: 'pending' | 'approved' | 'rejected';
   /** Posted events can cap how many are going; later "I'm going"s join a waitlist (in order). */
   capacity?: number;
+  /** Posted events can have a flyer (any photo). Aspect is width / height, so it shows uncropped. */
+  flyerURL?: string;
+  flyerAspect?: number;
 };
 
 export type PostedEvent = {
@@ -69,6 +72,8 @@ export type PostedEvent = {
   status: 'pending' | 'approved' | 'rejected';
   collabHosted?: boolean;
   capacity?: number;
+  flyerURL?: string;
+  flyerAspect?: number;
 };
 
 export const TYPE_META: Record<EventType | 'collab', { label: string; plural: string; color: string; symbol: string }> = {
@@ -195,6 +200,8 @@ function fromPosted(id: string, e: PostedEvent): EventOccurrence {
     host: { id: e.hostId, name: e.hostName },
     status: e.status,
     capacity: typeof e.capacity === 'number' && e.capacity > 0 ? e.capacity : undefined,
+    flyerURL: typeof e.flyerURL === 'string' && e.flyerURL ? e.flyerURL : undefined,
+    flyerAspect: typeof e.flyerAspect === 'number' && e.flyerAspect > 0 ? e.flyerAspect : undefined,
   };
 }
 
@@ -217,6 +224,18 @@ export async function submitEvent(e: Omit<PostedEvent, 'status' | 'collabHosted'
   const ref = await addDoc(collection(db, 'events'), { ...e, status: 'pending', createdAt: serverTimestamp() });
   return ref.id;
 }
+
+/**
+ * Add or swap the flyer on an event you posted. A new image is checked like a new event, so the
+ * event goes back to "pending" until the Collab team approves it (they get a notification).
+ */
+export async function setEventFlyer(id: string, flyerURL: string, flyerAspect: number) {
+  if (UI_PREVIEW) return;
+  await updateDoc(doc(db, 'events', id), { flyerURL, flyerAspect, status: 'pending' });
+}
+
+/** Keeps a flyer between "tall poster" and "wide banner" so odd images don't take over the screen. */
+export const flyerShape = (aspect?: number) => Math.min(1.6, Math.max(0.62, aspect ?? 0.8));
 
 export async function deleteMyEvent(id: string) {
   if (UI_PREVIEW) return;
@@ -315,6 +334,7 @@ function PREVIEW_POSTED(): EventOccurrence[] {
     hostName: 'Collab',
     status: 'approved',
     collabHosted: true,
+    ...(process.env.EXPO_PUBLIC_SHOT_PHOTOS === '1' ? { flyerURL: '/shots/flyer.jpg', flyerAspect: 0.8 } : {}),
   };
   return [fromPosted('preview-collab', sample)];
 }

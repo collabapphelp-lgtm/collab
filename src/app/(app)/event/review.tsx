@@ -3,7 +3,8 @@ import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Switch
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { TYPE_META } from '@/lib/events';
+import { flyerShape, TYPE_META } from '@/lib/events';
+import { Image } from 'expo-image';
 import { useEvents } from '@/lib/use-events';
 import { loadSubmissions, refreshTeam, reviewEvent, useTeam, type Submission } from '@/lib/team';
 import { fonts, makeStyles, useColors } from '@/lib/theme';
@@ -89,6 +90,9 @@ export default function ReviewEvents() {
           </Text>
         ) : null}
         {e.description ? <Text style={styles.desc}>{e.description}</Text> : null}
+        {e.flyerURL ? (
+          <Image source={{ uri: e.flyerURL }} style={[styles.flyer, { aspectRatio: flyerShape(e.flyerAspect ?? undefined) }]} contentFit="contain" />
+        ) : null}
         {e.link ? <Text style={styles.link}>{e.link}</Text> : null}
         <Pressable onPress={() => router.push({ pathname: '/user/[id]', params: { id: e.hostId } })}>
           <Text style={styles.host}>Posted by {e.hostName} ›</Text>
@@ -153,6 +157,7 @@ const useStyles = makeStyles((colors) => ({
   kind: { fontFamily: fonts.bodySemibold, fontSize: 11, letterSpacing: 1 },
   title: { fontFamily: fonts.heading, fontSize: 19, color: colors.text, marginBottom: 2 },
   line: { fontFamily: fonts.body, fontSize: 14, color: colors.textSecondary },
+  flyer: { width: '100%', borderRadius: 14, marginTop: 8, backgroundColor: colors.bgSecondary },
   desc: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.text, marginTop: 6 },
   link: { fontFamily: fonts.body, fontSize: 13, color: colors.blue, marginTop: 2 },
   host: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.blue, marginTop: 6 },

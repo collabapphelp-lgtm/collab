@@ -8,10 +8,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Button } from '@/components/Button';
 import { CalendarPicker } from '@/components/CalendarPicker';
 import { searchPlaces, type Place } from '@/lib/places';
+import { Image } from 'expo-image';
+import { pickFlyer, type PickedFlyer } from '@/lib/flyer';
+import { uploadEventFlyer } from '@/lib/upload';
 import { ErrorText } from '@/components/ErrorText';
 import { Chip, ChipGrid } from '@/components/onboarding/Chip';
 import { useAuth } from '@/lib/auth-context';
-import { inNyc, submitEvent, TYPE_META, type EventType } from '@/lib/events';
+import { flyerShape, inNyc, submitEvent, TYPE_META, type EventType } from '@/lib/events';
 import { displayName } from '@/lib/labels';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
 import { UI_PREVIEW } from '@/lib/preview';
@@ -45,6 +48,8 @@ export default function NewEvent() {
   const [description, setDescription] = useState('');
   const [link, setLink] = useState('');
   const [capacity, setCapacity] = useState('');
+  const [flyer, setFlyer] = useState<PickedFlyer | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
   // Venue search: suggestions while typing; picking one fills the address and the map pin.
   const [found, setFound] = useState<{ q: string; places: Place[] }>({ q: '', places: [] });
   const [picked, setPicked] = useState<Place | null>(null);
@@ -126,6 +131,11 @@ export default function NewEvent() {
       }
       const start = new Date(day);
       start.setMinutes(time);
+      let flyerURL: string | undefined;
+      if (flyer && !UI_PREVIEW) {
+        setProgress(0);
+        flyerURL = await uploadEventFlyer(user.uid, flyer.uri, setProgress);
+      }
       await submitEvent({
         title: title.trim(),
         type,
@@ -143,6 +153,7 @@ export default function NewEvent() {
         hostId: user.uid,
         hostName: displayName(profile),
         ...(cap ? { capacity: cap } : {}),
+        ...(flyerURL && flyer ? { flyerURL, flyerAspect: Math.round(flyer.aspect * 1000) / 1000 } : {}),
       });
       await refresh();
       Alert.alert('Sent for review', 'The Collab team will check it, usually within a day. Until then only you can see it on the Events tab.', [
@@ -153,7 +164,13 @@ export default function NewEvent() {
       setError('Couldn’t post it. Check your connection and try again.');
     } finally {
       setSaving(false);
+      setProgress(null);
     }
+  }
+
+  async function chooseFlyer() {
+    const f = await pickFlyer();
+    if (f) setFlyer(f);
   }
 
   return (
@@ -196,6 +213,35 @@ export default function NewEvent() {
                 </Pressable>
               ))}
             </ScrollView>
+          </Section>
+
+          <Section title="Flyer" note="Optional, but events with a flyer or photo get a lot more attention.">
+            {flyer ? (
+              <View style={styles.flyerWrap}>
+                <Image source={{ uri: flyer.uri }} style={[styles.flyer, { aspectRatio: flyerShape(flyer.aspect) }]} contentFit="cover" />
+                <View style={styles.flyerActions}>
+                  <Pressable onPress={chooseFlyer} style={styles.flyerBtn} accessibilityRole="button">
+                    <Ionicons name="swap-horizontal" size={16} color={colors.text} />
+                    <Text style={styles.flyerBtnText}>Change</Text>
+                  </Pressable>
+                  <Pressable onPress={() => setFlyer(null)} style={styles.flyerBtn} accessibilityRole="button">
+                    <Ionicons name="trash-outline" size={16} color={colors.red} />
+                    <Text style={[styles.flyerBtnText, { color: colors.red }]}>Remove</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable onPress={chooseFlyer} style={({ pressed }) => [styles.flyerAdd, pressed && { opacity: 0.8 }]} accessibilityRole="button">
+                <View style={styles.flyerIcon}>
+                  <Ionicons name="image-outline" size={24} color={colors.blue} />
+                </View>
+                <View style={styles.flex}>
+                  <Text style={styles.flyerAddTitle}>Add a flyer or photo</Text>
+                  <Text style={styles.flyerAddSub}>Any shape works. Posters look best.</Text>
+                </View>
+                <Ionicons name="add-circle" size={26} color={colors.blue} />
+              </Pressable>
+            )}
           </Section>
 
           <Section title="Where" note="Start typing the venue and pick it, or just add an address.">
@@ -281,7 +327,12 @@ export default function NewEvent() {
 
         <View style={styles.footer}>
           <ErrorText message={error} />
-          <Button title="Submit for review" onPress={submit} loading={saving} disabled={!!missing} />
+          <Button
+            title={progress !== null ? `Uploading flyer… ${Math.round(progress * 100)}%` : 'Submit for review'}
+            onPress={submit}
+            loading={saving && progress === null}
+            disabled={!!missing || saving}
+          />
           {missing ? <Text style={styles.hint}>{missing}</Text> : null}
         </View>
       </KeyboardAvoidingView>
@@ -364,4 +415,31 @@ const useStyles = makeStyles((colors) => ({
   textOn: { color: colors.white },
   footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6, gap: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   hint: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary, textAlign: 'center' },
+  flyerAdd: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#9CCBE0',
+    backgroundColor: '#F4F9FC',
+  },
+  flyerIcon: { width: 46, height: 46, borderRadius: 14, backgroundColor: '#E3F0F6', alignItems: 'center', justifyContent: 'center' },
+  flyerAddTitle: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
+  flyerAddSub: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  flyerWrap: { gap: 10 },
+  flyer: { width: '100%', borderRadius: 18, backgroundColor: colors.bgSecondary },
+  flyerActions: { flexDirection: 'row', gap: 10 },
+  flyerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: colors.white,
+  },
+  flyerBtnText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text },
 }));

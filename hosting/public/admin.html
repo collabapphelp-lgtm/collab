@@ -161,6 +161,7 @@ const TYPE_LABEL = { 'open-mic': 'Open mic', jam: 'Jam session', show: 'Show', m
 function evRow(e, pending) {
   return `<div class="card" style="padding:12px 14px;margin-bottom:8px">
     <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
+      ${e.flyerURL ? `<a href="${esc(e.flyerURL)}" target="_blank" rel="noopener"><img src="${esc(e.flyerURL)}" alt="Flyer" style="width:110px;max-height:150px;object-fit:cover;border-radius:10px"></a>` : ''}
       <div style="flex:1;min-width:220px">
         <strong>${esc(e.title)}</strong> <span class="muted small">· ${esc(TYPE_LABEL[e.type] || e.type)}${e.collabHosted ? ' · Hosted by Collab' : ''}</span><br>
         <span class="small">${esc(evWhen(e.startsAt))} · ${esc(e.venue)}, ${esc(e.address)} (${esc(e.neighborhood)})</span><br>

@@ -31,6 +31,8 @@ function shape(d) {
     status: e.status,
     collabHosted: !!e.collabHosted,
     createdAt: e.createdAt?.toMillis?.() ?? null,
+    flyerURL: e.flyerURL ?? null,
+    flyerAspect: e.flyerAspect ?? null,
   };
 }
 

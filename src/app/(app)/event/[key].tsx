@@ -9,7 +9,11 @@ import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/lib/auth-context';
-import { deleteMyEvent, metaFor, whenLabel } from '@/lib/events';
+import { deleteMyEvent, flyerShape, metaFor, setEventFlyer, whenLabel } from '@/lib/events';
+import { Image } from 'expo-image';
+import { FlyerLightbox } from '@/components/FlyerLightbox';
+import { pickFlyer } from '@/lib/flyer';
+import { uploadEventFlyer } from '@/lib/upload';
 import { chooseCalendar } from '@/lib/calendar';
 import { displayName, roleLine } from '@/lib/labels';
 import { getProfile } from '@/lib/profiles';
@@ -30,6 +34,8 @@ export default function EventScreen() {
   const e = events?.find((x) => x.key === key);
   const [people, setPeople] = useState<UserProfile[]>([]);
   const [saving, setSaving] = useState(false);
+  const [flyerOpen, setFlyerOpen] = useState(false);
+  const [flyerBusy, setFlyerBusy] = useState<number | null>(null);
 
   // Everyone who tapped I'm going, oldest first. With a capacity, the first N have spots, the rest wait.
   const allIds = useMemo(() => (e ? (going.get(e.key) ?? []) : []), [going, e]);
@@ -97,6 +103,37 @@ export default function EventScreen() {
     }
   }
 
+  async function addFlyer() {
+    if (!e || !me) return;
+    const ev = e;
+    const go = async () => {
+      const f = await pickFlyer();
+      if (!f) return;
+      setFlyerBusy(0);
+      try {
+        const url = await uploadEventFlyer(me, f.uri, setFlyerBusy);
+        await setEventFlyer(ev.eventId, url, Math.round(f.aspect * 1000) / 1000);
+        await refresh();
+        Alert.alert('Flyer added', 'The Collab team will give it a quick look, usually within a day. Your event shows again once it’s approved.');
+      } catch (err) {
+        console.warn('Flyer upload failed', err);
+        Alert.alert('That didn’t upload', 'Check your connection and try again.');
+      } finally {
+        setFlyerBusy(null);
+      }
+    };
+    if (ev.status === 'approved') {
+      Alert.alert(
+        ev.flyerURL ? 'Change the flyer?' : 'Add a flyer?',
+        'New images are reviewed first, so your event will be hidden from others until the Collab team approves it (usually within a day).',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Choose image', onPress: go },
+        ],
+      );
+    } else go();
+  }
+
   function directions() {
     if (!e) return;
     const q = encodeURIComponent(`${e.venue}, ${e.address}`);
@@ -132,6 +169,15 @@ export default function EventScreen() {
           },
         },
       ]);
+    if (mine && ev.source === 'posted') {
+      const options = ['Delete event', ev.flyerURL ? 'Change flyer' : 'Add a flyer', 'Cancel'];
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions({ options, destructiveButtonIndex: 0, cancelButtonIndex: 2 }, (i) =>
+          i === 0 ? remove() : i === 1 ? addFlyer() : null,
+        );
+      } else remove();
+      return;
+    }
     const options = mine ? ['Delete event', 'Cancel'] : ['Report listing', 'Cancel'];
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions({ options, destructiveButtonIndex: 0, cancelButtonIndex: 1 }, (i) => i === 0 && (mine ? remove() : report()));
@@ -158,10 +204,30 @@ export default function EventScreen() {
               <Text style={styles.heroWhen}>{whenLabel(e)}</Text>
               {e.repeats ? <Text style={styles.heroRepeats}>↻ {e.repeats}</Text> : null}
             </View>
+            {e.flyerURL ? (
+              <Pressable onPress={() => setFlyerOpen(true)} style={styles.flyerWrap} accessibilityRole="imagebutton" accessibilityLabel="View the flyer">
+                <Image source={{ uri: e.flyerURL }} style={[styles.flyer, { aspectRatio: flyerShape(e.flyerAspect) }]} contentFit="cover" transition={200} />
+                <View style={styles.flyerHint}>
+                  <Ionicons name="expand" size={13} color="rgb(255,255,255)" />
+                  <Text style={styles.flyerHintText}>Tap to view</Text>
+                </View>
+              </Pressable>
+            ) : null}
           </SafeAreaView>
         </LinearGradient>
 
+        {e.flyerURL ? <FlyerLightbox uri={e.flyerURL} open={flyerOpen} onClose={() => setFlyerOpen(false)} /> : null}
         <View style={styles.body}>
+          {mine && e.source === 'posted' && !e.flyerURL ? (
+            <Pressable onPress={addFlyer} disabled={flyerBusy !== null} style={styles.addFlyer} accessibilityRole="button">
+              <Ionicons name="image-outline" size={22} color={colors.blue} />
+              <View style={styles.flex}>
+                <Text style={styles.addFlyerTitle}>{flyerBusy !== null ? `Uploading… ${Math.round(flyerBusy * 100)}%` : 'Add a flyer'}</Text>
+                <Text style={styles.addFlyerSub}>Events with a flyer or photo stand out on the Events tab.</Text>
+              </View>
+              <Ionicons name="add-circle" size={24} color={colors.blue} />
+            </Pressable>
+          ) : null}
           {e.status === 'pending' ? (
             <View style={styles.notice}>
               <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
@@ -326,6 +392,34 @@ const useStyles = makeStyles((colors) => ({
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 4 },
   backWrap: { backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 20 },
   moreBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.85)', alignItems: 'center', justifyContent: 'center' },
+  flyerWrap: { marginHorizontal: 22, marginTop: 20 },
+  flyer: { width: '100%', borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.15)' },
+  flyerHint: {
+    position: 'absolute',
+    right: 10,
+    bottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  flyerHintText: { fontFamily: fonts.bodySemibold, fontSize: 12, color: 'rgb(255,255,255)' },
+  addFlyer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#9CCBE0',
+    backgroundColor: '#F4F9FC',
+  },
+  addFlyerTitle: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
+  addFlyerSub: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary, marginTop: 2 },
   heroBody: { paddingHorizontal: 22, paddingTop: 18 },
   heroType: { fontFamily: fonts.bodySemibold, fontSize: 12, letterSpacing: 1.2, color: 'rgba(255,255,255,0.9)' },
   heroTitle: { fontFamily: fonts.heading, fontSize: 30, lineHeight: 34, color: colors.white, marginTop: 6 },
