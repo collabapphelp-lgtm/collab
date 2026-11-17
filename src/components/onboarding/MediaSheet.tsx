@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Sheet } from './Sheet';
@@ -29,6 +29,7 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const normalized = normalizeUrl(url);
@@ -59,14 +60,23 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
     if (!user) return;
     if (hasBlockedLanguage(title)) return setError(BLOCKED_LANGUAGE_MESSAGE);
     if (size && size > SHOWCASE.maxUploadMB * 1024 * 1024) {
-      return setError(`That file is over ${SHOWCASE.maxUploadMB} MB. Try a shorter clip.`);
+      const mb = Math.round(size / 1024 / 1024);
+      // Videos: offer iOS's trimmer (and a smaller 720p export) instead of a dead end.
+      if (kind === 'video' && Platform.OS === 'ios') {
+        return Alert.alert(`That clip is ${mb} MB`, `The limit is ${SHOWCASE.maxUploadMB} MB. Trim it to the best part and we’ll shrink it to fit.`, [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Trim clip', onPress: () => pickAndTrimVideo() },
+        ]);
+      }
+      return setError(`That file is ${mb} MB. The limit is ${SHOWCASE.maxUploadMB} MB, so try a shorter clip.`);
     }
     setUploading(true);
+    setProgress(0);
     setError(null);
     try {
       // Storage rules only accept image/video/audio types, so never upload without one.
       const contentType = mimeType || { image: 'image/jpeg', video: 'video/mp4', audio: 'audio/mpeg' }[kind];
-      const { url: downloadUrl, path } = await uploadMedia(user.uid, localUri, fileName, contentType);
+      const { url: downloadUrl, path } = await uploadMedia(user.uid, localUri, fileName, contentType, setProgress);
       onAdd({
         type: 'media',
         source: 'upload',
@@ -87,13 +97,27 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
   async function pickPhotoOrVideo() {
     const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'],
-      videoMaxDuration: 120,
       quality: 0.8,
+      // iPhone videos are often 4K; 1080p looks the same on a profile and is a fraction of the size.
+      videoExportPreset: ImagePicker.VideoExportPreset.H264_1920x1080,
     });
     if (res.canceled) return;
     const a = res.assets[0];
     const kind = a.type === 'video' ? 'video' : 'image';
-    await upload(a.uri, a.fileName ?? `${kind}-${Date.now()}`, a.mimeType, a.fileSize, kind);
+    await upload(a.uri, a.fileName ?? `${kind}-upload`, a.mimeType, a.fileSize, kind);
+  }
+
+  /** iOS: pick the video again in the system trimmer (drag the ends), exported at 720p. */
+  async function pickAndTrimVideo() {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      allowsEditing: true,
+      videoMaxDuration: 180,
+      videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
+    });
+    if (res.canceled) return;
+    const a = res.assets[0];
+    await upload(a.uri, a.fileName ?? `video-upload`, a.mimeType, a.fileSize, 'video');
   }
 
   async function pickAudio() {
@@ -165,7 +189,9 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
           {uploading ? (
             <View style={styles.uploading}>
               <ActivityIndicator color={colors.blue} />
-              <Text style={styles.uploadingText}>Uploading… keep the app open</Text>
+              <Text style={styles.uploadingText}>
+                Uploading{progress > 0 ? ` ${Math.round(progress * 100)}%` : '…'} keep the app open
+              </Text>
             </View>
           ) : (
             <View style={styles.pickers}>
@@ -173,7 +199,9 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
               <PickButton emoji="🎵" title="Audio file" body="MP3, WAV, M4A from Files" onPress={pickAudio} />
             </View>
           )}
-          <Text style={styles.limit}>Up to {SHOWCASE.maxUploadMB} MB. Short clips work best.</Text>
+          <Text style={styles.limit}>
+            Up to {SHOWCASE.maxUploadMB} MB. Longer videos? You’ll be able to trim them to fit.
+          </Text>
           <ErrorText message={error} />
         </>
       )}

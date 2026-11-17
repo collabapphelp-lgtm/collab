@@ -266,7 +266,7 @@ export const SHOWCASE = {
   /** Kam's rule: at least one item to continue, up to six. */
   minItems: 1,
   slots: ['media', 'prompt', 'media', 'prompt', 'media', 'prompt'] as const,
-  maxUploadMB: 30,
+  maxUploadMB: 100,
   promptMaxChars: 250,
 };
 

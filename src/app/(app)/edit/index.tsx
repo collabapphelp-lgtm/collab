@@ -86,7 +86,7 @@ export default function EditProfile() {
         </Pressable>
         <Text style={styles.title}>Edit profile</Text>
         <Pressable
-          onPress={() => router.push({ pathname: '/user/[id]', params: { id: profile.id } })}
+          onPress={() => router.push('/edit/preview')}
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel="Preview your profile"

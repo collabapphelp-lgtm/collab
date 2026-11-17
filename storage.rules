@@ -18,11 +18,11 @@ service firebase.storage {
       allow delete: if isMe(uid);
     }
 
-    // Showcase uploads: images, video or audio up to 30 MB.
+    // Showcase uploads: images, video or audio up to 100 MB.
     match /media/{uid}/{file} {
       allow read: if signedIn();
       allow create, update: if isMe(uid)
-        && request.resource.size < 30 * 1024 * 1024
+        && request.resource.size < 100 * 1024 * 1024
         && request.resource.contentType.matches('(image|video|audio)/.*');
       allow delete: if isMe(uid);
     }

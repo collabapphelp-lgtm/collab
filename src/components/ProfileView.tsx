@@ -331,7 +331,7 @@ function FeaturedLink({ item }: { item: ShowcaseMedia }) {
   );
 }
 
-function FeaturedAudio({ item }: { item: ShowcaseMedia }) {
+function FeaturedAudio({ item, label = 'FEATURED' }: { item: ShowcaseMedia; label?: string }) {
   const styles = useStyles();
   const { title } = mediaMeta(item);
   const a = useInlineAudio(item.url);
@@ -342,18 +342,30 @@ function FeaturedAudio({ item }: { item: ShowcaseMedia }) {
       accessibilityLabel={`${a.playing ? 'Pause' : 'Play'} ${title}`}
       style={({ pressed }) => [styles.featured, pressed && { opacity: 0.95 }]}
     >
-      <FeaturedBody item={item} icon={a.playing ? 'pause' : a.loading ? 'dots-horizontal' : 'play'} progress={a.progress} sub={a.time ?? 'Tap to play'} />
+      <FeaturedBody
+        item={item}
+        label={label}
+        icon={a.playing ? 'pause' : a.loading ? 'dots-horizontal' : 'play'}
+        progress={a.progress}
+        sub={a.time ?? 'Tap to play'}
+      />
     </Pressable>
   );
 }
 
-function FeaturedBody(props: { item: ShowcaseMedia; icon: 'play' | 'pause' | 'dots-horizontal'; progress: number; sub: string }) {
+function FeaturedBody(props: {
+  item: ShowcaseMedia;
+  icon: 'play' | 'pause' | 'dots-horizontal';
+  progress: number;
+  sub: string;
+  label?: string;
+}) {
   const styles = useStyles();
   const { title } = mediaMeta(props.item);
   const wave = bars(props.item.url);
   return (
     <>
-      <Text style={styles.featuredLabel}>FEATURED</Text>
+      <Text style={styles.featuredLabel}>{props.label ?? 'FEATURED'}</Text>
       <View style={styles.featuredRow}>
         <View style={styles.featuredPlay}>
           <MaterialCommunityIcons name={props.icon} size={26} color="#17151F" />
@@ -374,33 +386,6 @@ function FeaturedBody(props: { item: ShowcaseMedia; icon: 'play' | 'pause' | 'do
   );
 }
 
-function AudioRow({ item }: { item: ShowcaseMedia }) {
-  const styles = useStyles();
-  const colors = useColors();
-  const { kind, title } = mediaMeta(item);
-  const a = useInlineAudio(item.url);
-  return (
-    <Pressable
-      onPress={a.toggle}
-      accessibilityRole="button"
-      accessibilityLabel={`${a.playing ? 'Pause' : 'Play'} ${title}`}
-      style={({ pressed }) => [styles.media, pressed && { opacity: 0.85 }]}
-    >
-      <View style={styles.mediaIcon}>
-        <MaterialCommunityIcons name={a.playing ? 'pause' : a.loading ? 'dots-horizontal' : 'play'} size={22} color={colors.blue} />
-      </View>
-      <View style={styles.flex}>
-        <Text style={styles.mediaTitle} numberOfLines={1}>
-          {title}
-        </Text>
-        <Text style={styles.mediaKind}>{a.time ?? kind}</Text>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${a.progress * 100}%` }]} />
-        </View>
-      </View>
-    </Pressable>
-  );
-}
 
 function ShowcaseCard({ item }: { item: ShowcaseItem }) {
   const styles = useStyles();
@@ -424,7 +409,7 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
     );
   }
 
-  if (isPlayable(item)) return <AudioRow item={item} />;
+  if (isPlayable(item)) return <FeaturedAudio item={item} label="TRACK" />;
 
   const { kind, title } = mediaMeta(item);
   return (
@@ -512,8 +497,6 @@ const useStyles = makeStyles((colors) => ({
   promptA: { fontFamily: fonts.heading, fontSize: 21, lineHeight: 27, letterSpacing: -0.2, color: colors.text },
 
   media: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, backgroundColor: colors.white },
-  progressTrack: { height: 3, borderRadius: 2, backgroundColor: '#E3EEF4', marginTop: 6, overflow: 'hidden' },
-  progressFill: { height: 3, backgroundColor: colors.blue },
   mediaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#E3F0F6', alignItems: 'center', justifyContent: 'center' },
   mediaTitle: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
   mediaKind: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary },

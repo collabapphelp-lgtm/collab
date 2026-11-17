@@ -1,4 +1,4 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from './firebase';
 
 // React Native's fetch().blob() is unreliable with Firebase Storage; XHR is the known-good path.
@@ -13,10 +13,14 @@ function uriToBlob(uri: string): Promise<Blob> {
   });
 }
 
-async function uploadFile(path: string, localUri: string, contentType?: string) {
+async function uploadFile(path: string, localUri: string, contentType?: string, onProgress?: (fraction: number) => void) {
   const blob = await uriToBlob(localUri);
   const fileRef = ref(storage, path);
-  await uploadBytes(fileRef, blob, contentType ? { contentType } : undefined);
+  // Resumable so big videos report progress (and survive brief network blips).
+  const task = uploadBytesResumable(fileRef, blob, contentType ? { contentType } : undefined);
+  await new Promise<void>((resolve, reject) =>
+    task.on('state_changed', (s) => onProgress?.(s.totalBytes ? s.bytesTransferred / s.totalBytes : 0), reject, () => resolve()),
+  );
   (blob as Blob & { close?: () => void }).close?.();
   return { url: await getDownloadURL(fileRef), path };
 }
@@ -28,9 +32,15 @@ export async function uploadProfilePhoto(uid: string, localUri: string): Promise
 }
 
 /** Uploads a showcase snippet (audio, video or image). Same folder as the web prototype. */
-export async function uploadMedia(uid: string, localUri: string, fileName: string, contentType?: string) {
+export async function uploadMedia(
+  uid: string,
+  localUri: string,
+  fileName: string,
+  contentType?: string,
+  onProgress?: (fraction: number) => void,
+) {
   const safeName = fileName.replace(/[^\w.-]+/g, '_').slice(-80);
-  return uploadFile(`media/${uid}/${Date.now()}_${safeName}`, localUri, contentType);
+  return uploadFile(`media/${uid}/${Date.now()}_${safeName}`, localUri, contentType, onProgress);
 }
 
 /** Uploads a recorded voice note (m4a) for a chat. Lives under the sender's folder so account deletion removes it. */
