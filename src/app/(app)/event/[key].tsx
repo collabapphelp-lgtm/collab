@@ -31,7 +31,11 @@ export default function EventScreen() {
   const [people, setPeople] = useState<UserProfile[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const goingIds = useMemo(() => (e ? (going.get(e.key) ?? []) : []), [going, e]);
+  // Everyone who tapped I'm going, oldest first. With a capacity, the first N have spots, the rest wait.
+  const allIds = useMemo(() => (e ? (going.get(e.key) ?? []) : []), [going, e]);
+  const cap = e?.capacity;
+  const goingIds = useMemo(() => (cap ? allIds.slice(0, cap) : allIds), [allIds, cap]);
+  const waitCount = cap ? Math.max(0, allIds.length - cap) : 0;
   const connected = useMemo(() => new Set((matches ?? []).map((m) => m.other.id)), [matches]);
 
   // Load who's going (minus anyone you've blocked), connections first.
@@ -62,7 +66,11 @@ export default function EventScreen() {
 
   const meta = metaFor(e);
   const mine = e.host?.id === me;
-  const imGoing = isGoing(e);
+  const myIndex = me ? allIds.indexOf(me) : -1;
+  const onWaitlist = !!cap && myIndex >= cap;
+  const imGoing = isGoing(e) && !onWaitlist;
+  const full = !!cap && !isGoing(e) && allIds.length >= cap;
+  const spotsLeft = cap ? Math.max(0, cap - allIds.length) : null;
   const friendsGoing = people.filter((p) => connected.has(p.id)).length;
 
   async function onGoing() {
@@ -70,9 +78,12 @@ export default function EventScreen() {
     setSaving(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     const wasGoing = isGoing(e);
+    const joiningWaitlist = full;
     try {
       await toggleGoing(e);
-      if (!wasGoing) {
+      if (!wasGoing && joiningWaitlist) {
+        Alert.alert('You’re on the waitlist', 'It’s full right now. If a spot opens up, you’ll get a notification.');
+      } else if (!wasGoing) {
         const ev = e;
         Alert.alert('You’re going!', 'Add it to your calendar so you don’t miss it?', [
           { text: 'Not now', style: 'cancel' },
@@ -193,7 +204,11 @@ export default function EventScreen() {
           <View style={styles.goingHead}>
             <Text style={styles.sectionTitle}>Who’s going</Text>
             <Text style={styles.goingCount}>
-              {goingIds.length ? `${goingIds.length}${friendsGoing ? ` · ${friendsGoing} you’re connected with` : ''}` : ''}
+              {cap
+                ? `${goingIds.length}/${cap} going${waitCount ? ` · ${waitCount} waiting` : ''}`
+                : goingIds.length
+                  ? `${goingIds.length}${friendsGoing ? ` · ${friendsGoing} you’re connected with` : ''}`
+                  : ''}
             </Text>
           </View>
           {people.length === 0 && !imGoing ? (
@@ -233,8 +248,16 @@ export default function EventScreen() {
         <SafeAreaView edges={['bottom']} style={styles.footer}>
           <View style={styles.footerRow}>
             <Button
-              title={imGoing ? '✓ You’re going' : 'I’m going'}
-              variant={imGoing ? 'secondary' : 'primary'}
+              title={
+                imGoing
+                  ? '✓ You’re going'
+                  : onWaitlist
+                    ? `✓ Waitlist · #${myIndex - (cap ?? 0) + 1}`
+                    : full
+                      ? 'Join the waitlist'
+                      : 'I’m going'
+              }
+              variant={imGoing || onWaitlist ? 'secondary' : 'primary'}
               onPress={onGoing}
               loading={saving}
               style={styles.flex}
@@ -249,7 +272,15 @@ export default function EventScreen() {
               <Text style={styles.calText}>Add</Text>
             </Pressable>
           </View>
-          <Text style={styles.footerHint}>{imGoing ? 'Tap again if your plans change.' : 'Other creatives on Collab will see you’re going.'}</Text>
+          <Text style={styles.footerHint}>
+            {imGoing || onWaitlist
+              ? 'Tap again if your plans change.'
+              : full
+                ? 'It’s full. Join the waitlist and we’ll let you know if a spot opens.'
+                : spotsLeft !== null
+                  ? `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left.`
+                  : 'Other creatives on Collab will see you’re going.'}
+          </Text>
         </SafeAreaView>
       )}
     </View>

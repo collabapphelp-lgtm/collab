@@ -188,7 +188,9 @@ service cloud.firestore {
         && request.resource.data.lng is number && request.resource.data.lng > -74.3 && request.resource.data.lng < -73.65
         && (!('link' in request.resource.data) || (request.resource.data.link is string && request.resource.data.link.size() <= 300))
         && (!('cost' in request.resource.data) || request.resource.data.cost.size() <= 60)
-        && (!('signUp' in request.resource.data) || request.resource.data.signUp.size() <= 120);
+        && (!('signUp' in request.resource.data) || request.resource.data.signUp.size() <= 120)
+        && (!('capacity' in request.resource.data)
+            || (request.resource.data.capacity is int && request.resource.data.capacity >= 1 && request.resource.data.capacity <= 5000));
       allow update: if false;
       allow delete: if signedIn() && resource.data.hostId == request.auth.uid;
     }

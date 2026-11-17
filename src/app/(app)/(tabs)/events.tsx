@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { Modal } from 'react-native';
+import { CalendarPicker } from '@/components/CalendarPicker';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from '@/components/ThemedGradient';
@@ -6,18 +8,17 @@ import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { EventsMap, inArea, MAP_SUPPORTED, type MapArea } from '@/components/EventsMap';
 import { useTeam } from '@/lib/team';
-import { dayHeading, metaFor, timeLabel, ymd, type EventOccurrence } from '@/lib/events';
+import { dayHeading, metaFor, timeLabel, WINDOW_DAYS, ymd, type EventOccurrence } from '@/lib/events';
 import { useEvents } from '@/lib/use-events';
 import { fonts, radius, shadow, makeStyles, useColors } from '@/lib/theme';
 
-type When = 'going' | 'today' | 'tomorrow' | 'week' | 'all';
+type When = 'going' | 'today' | 'tomorrow' | 'week' | 'dates' | 'all';
 type Kind = 'all' | 'open-mic' | 'jam' | 'collab' | 'other';
 
 const WHEN: { value: When; label: string }[] = [
   { value: 'today', label: 'Today' },
   { value: 'tomorrow', label: 'Tomorrow' },
   { value: 'week', label: 'This week' },
-  { value: 'all', label: '2 weeks' },
 ];
 
 const KINDS: { value: Kind; label: string }[] = [
@@ -27,6 +28,17 @@ const KINDS: { value: Kind; label: string }[] = [
   { value: 'collab', label: 'Collab events' },
   { value: 'other', label: 'Shows & meetups' },
 ];
+
+type Range = { start: Date; end: Date | null };
+const rangeLabel = (r: Range) => {
+  const f = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return r.end && r.end.getTime() !== r.start.getTime() ? `${f(r.start)} – ${f(r.end)}` : f(r.start);
+};
+function inRange(e: EventOccurrence, r: Range) {
+  const from = new Date(r.start).setHours(0, 0, 0, 0);
+  const to = new Date(r.end ?? r.start).setHours(23, 59, 59, 999);
+  return e.start >= from && e.start <= to;
+}
 
 function inWhen(e: EventOccurrence, when: When) {
   const today = new Date();
@@ -52,6 +64,16 @@ export default function Events() {
   const team = useTeam();
   const [when, setWhen] = useState<When>('today');
   const [kind, setKind] = useState<Kind>('all');
+  const [range, setRange] = useState<Range | null>(null);
+  const [draft, setDraft] = useState<Range | null>(null);
+  const [calOpen, setCalOpen] = useState(false);
+  const [minDay, maxDay] = useMemo(() => {
+    const a = new Date();
+    a.setHours(0, 0, 0, 0);
+    const b = new Date(a);
+    b.setDate(a.getDate() + WINDOW_DAYS - 1);
+    return [a, b];
+  }, []);
   const [selected, setSelected] = useState<EventOccurrence | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const { height } = useWindowDimensions();
@@ -59,8 +81,14 @@ export default function Events() {
   const mine = useMemo(() => (events ?? []).filter(isGoing), [events, isGoing]);
   // What the filters pick (all pins on the map)...
   const picked = useMemo(
-    () => (when === 'going' ? mine : (events ?? []).filter((e) => inWhen(e, when))).filter((e) => inKind(e, kind)),
-    [events, mine, when, kind],
+    () =>
+      (when === 'going'
+        ? mine
+        : when === 'dates' && range
+          ? (events ?? []).filter((e) => inRange(e, range))
+          : (events ?? []).filter((e) => inWhen(e, when))
+      ).filter((e) => inKind(e, kind)),
+    [events, mine, when, kind, range],
   );
   // ...and, after "Search this area", only what's inside the part of the map you were looking at.
   const [mapArea, setMapArea] = useState<MapArea | null>(null);
@@ -107,23 +135,69 @@ export default function Events() {
             {team.pending > 0 ? <Text style={styles.reviewText}>{team.pending}</Text> : null}
           </Pressable>
         ) : null}
-        <Pressable onPress={() => router.push('/event/new')} style={styles.post} accessibilityRole="button" accessibilityLabel="Post an event">
+        <Pressable
+          onPress={() => (setWhen(when === 'going' ? 'today' : 'going'), setSelected(null))}
+          style={[styles.plans, when === 'going' && styles.plansOn]}
+          accessibilityRole="button"
+          accessibilityLabel={`Events you're going to, ${mine.length}`}
+          accessibilityState={{ selected: when === 'going' }}
+        >
+          <Ionicons name={when === 'going' ? 'ticket' : 'ticket-outline'} size={18} color={when === 'going' ? colors.white : colors.blue} />
+          <Text style={[styles.plansText, when === 'going' && { color: colors.white }]}>{mine.length ? `Going · ${mine.length}` : 'Going'}</Text>
+        </Pressable>
+        <Pressable onPress={() => router.push('/event/new')} style={styles.post} accessibilityRole="button" accessibilityLabel="Create an event">
           <Ionicons name="add" size={18} color={colors.white} />
-          <Text style={styles.postText}>Post</Text>
+          <Text style={styles.postText}>Create event</Text>
         </Pressable>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.segRow}>
-        <Pill
-          label={mine.length ? `★ I’m going · ${mine.length}` : '★ I’m going'}
-          on={when === 'going'}
-          onPress={() => (setWhen('going'), setSelected(null))}
-          strong
-        />
+        {when === 'going' ? (
+          <Pill label="✓ Your plans" on onPress={() => (setWhen('today'), setSelected(null))} strong />
+        ) : null}
         {WHEN.map((w) => (
           <Pill key={w.value} label={w.label} on={when === w.value} onPress={() => (setWhen(w.value), setSelected(null))} strong />
         ))}
+        <Pill
+          label={when === 'dates' && range ? `📅 ${rangeLabel(range)}` : '📅 Pick dates'}
+          on={when === 'dates'}
+          onPress={() => {
+            setDraft(range);
+            setCalOpen(true);
+          }}
+          strong
+        />
+        <Pill label="All dates" on={when === 'all'} onPress={() => (setWhen('all'), setSelected(null))} strong />
       </ScrollView>
+      <Modal visible={calOpen} transparent animationType="slide" onRequestClose={() => setCalOpen(false)}>
+        <Pressable style={styles.calBackdrop} onPress={() => setCalOpen(false)} accessibilityLabel="Close" />
+        <View style={styles.calSheet}>
+          <Text style={styles.calTitle}>Pick dates</Text>
+          <Text style={styles.calSub}>Tap a day, or tap two days for a range.</Text>
+          <CalendarPicker
+            mode="range"
+            min={minDay}
+            max={maxDay}
+            start={draft?.start ?? null}
+            end={draft?.end ?? null}
+            onChange={(start, end) => setDraft({ start, end })}
+          />
+          <Pressable
+            disabled={!draft}
+            onPress={() => {
+              if (!draft) return;
+              setRange(draft);
+              setWhen('dates');
+              setSelected(null);
+              setCalOpen(false);
+            }}
+            style={[styles.calApply, !draft && { opacity: 0.4 }]}
+            accessibilityRole="button"
+          >
+            <Text style={styles.calApplyText}>{draft ? `Show ${rangeLabel(draft)}` : 'Pick a day'}</Text>
+          </Pressable>
+        </View>
+      </Modal>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.kindRow}>
         {KINDS.map((k) => (
           <Pill
@@ -311,6 +385,31 @@ const useStyles = makeStyles((colors) => ({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10, gap: 12 },
   title: { fontFamily: fonts.heading, fontSize: 30, color: colors.text },
   subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  plans: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 38,
+    paddingHorizontal: 11,
+    borderRadius: 19,
+    marginRight: 8,
+    backgroundColor: colors.white,
+  },
+  plansOn: { backgroundColor: colors.blue },
+  plansText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue },
+  calBackdrop: { flex: 1, backgroundColor: 'rgba(15,18,24,0.35)' },
+  calSheet: {
+    backgroundColor: colors.bg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 16,
+    paddingBottom: 34,
+    gap: 10,
+  },
+  calTitle: { fontFamily: fonts.heading, fontSize: 20, color: colors.text, paddingHorizontal: 4 },
+  calSub: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary, paddingHorizontal: 4, marginTop: -6 },
+  calApply: { height: 50, borderRadius: 16, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
+  calApplyText: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.white },
   post: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.blue, paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.full },
   postText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.white },
   hScroll: { flexGrow: 0, flexShrink: 0 },

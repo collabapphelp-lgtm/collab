@@ -46,6 +46,8 @@ export type EventOccurrence = {
   host?: { id: string; name: string };
   /** Only set on your own posted events. */
   status?: 'pending' | 'approved' | 'rejected';
+  /** Posted events can cap how many are going; later "I'm going"s join a waitlist (in order). */
+  capacity?: number;
 };
 
 export type PostedEvent = {
@@ -66,6 +68,7 @@ export type PostedEvent = {
   hostName: string;
   status: 'pending' | 'approved' | 'rejected';
   collabHosted?: boolean;
+  capacity?: number;
 };
 
 export const TYPE_META: Record<EventType | 'collab', { label: string; plural: string; color: string; symbol: string }> = {
@@ -81,7 +84,8 @@ export const metaFor = (e: Pick<EventOccurrence, 'type' | 'collabHosted'>) => TY
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export const WINDOW_DAYS = 14;
+/** How far ahead listings are shown (and the date picker reaches). */
+export const WINDOW_DAYS = 60;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 export const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -190,6 +194,7 @@ function fromPosted(id: string, e: PostedEvent): EventOccurrence {
     verified: true,
     host: { id: e.hostId, name: e.hostName },
     status: e.status,
+    capacity: typeof e.capacity === 'number' && e.capacity > 0 ? e.capacity : undefined,
   };
 }
 
@@ -220,7 +225,7 @@ export async function deleteMyEvent(id: string) {
 
 // ---------- I'm going ----------
 
-export type Rsvp = { key: string; date: string; uid: string };
+export type Rsvp = { key: string; date: string; uid: string; at?: { toMillis?: () => number } };
 
 const previewRsvps: Rsvp[] = [];
 
@@ -234,6 +239,8 @@ export async function loadRsvps(): Promise<Map<string, string[]>> {
     const snap = await getDocs(query(collection(db, 'rsvps'), where('date', '>=', today)));
     list = snap.docs.map((d) => d.data() as Rsvp);
   }
+  // Oldest first: with a capacity, the first N are going and the rest are the waitlist, in order.
+  list.sort((a, b) => (a.at?.toMillis?.() ?? Infinity) - (b.at?.toMillis?.() ?? Infinity));
   const map = new Map<string, string[]>();
   for (const r of list) map.set(r.key, [...(map.get(r.key) ?? []), r.uid]);
   return map;

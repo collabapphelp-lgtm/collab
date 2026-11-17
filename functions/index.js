@@ -187,3 +187,27 @@ exports.createGroup = require('./groups').createGroup;
 exports.respondToGroup = require('./groups').respondToGroup;
 exports.leaveGroup = require('./groups').leaveGroup;
 exports.onGroupMessage = require('./groups').onGroupMessage;
+
+// Waitlists: when someone drops out of a full event, tell the person who just moved into a spot.
+exports.onRsvpDeleted = onDocumentDeleted('rsvps/{rsvpId}', async (event) => {
+  const gone = event.data?.data();
+  if (!gone?.key) return;
+  const eventId = String(gone.key).split('@')[0];
+  const ev = await db.doc(`events/${eventId}`).get();
+  const capacity = ev.exists ? ev.get('capacity') : null;
+  if (!capacity) return;
+  const snap = await db.collection('rsvps').where('key', '==', gone.key).get();
+  const list = snap.docs
+    .map((d) => d.data())
+    .sort((a, b) => (a.at?.toMillis?.() ?? Infinity) - (b.at?.toMillis?.() ?? Infinity));
+  // Only if the person who left had a spot (not the waitlist) and someone is waiting.
+  const goneAt = gone.at?.toMillis?.() ?? Infinity;
+  const hadSpot = list.filter((r) => (r.at?.toMillis?.() ?? Infinity) < goneAt).length < capacity;
+  const promoted = list[capacity - 1];
+  if (!hadSpot || !promoted || list.length < capacity) return;
+  await notify(promoted.uid, {
+    title: 'You’re in! 🎉',
+    body: `A spot opened up at ${ev.get('title')}. You’re off the waitlist.`,
+    data: { type: 'event' },
+  });
+});

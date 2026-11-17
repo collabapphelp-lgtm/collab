@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from '@/components/ThemedGradient';
 import * as WebBrowser from 'expo-web-browser';
@@ -76,6 +76,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
     .join(' · ')
     .toUpperCase();
   const where = distanceLabel ?? shortLocation(profile.location);
+  const [photoOpen, setPhotoOpen] = useState(false);
   const lookingItems = looking
     .flatMap((v) => {
       // Picked specifics? Show just those ("Piano", "Videographers"), not "Instrument Players: Piano".
@@ -91,12 +92,27 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
 
   return (
     <View style={styles.wrap}>
+      {profile.photoURL ? (
+        <Modal visible={photoOpen} transparent animationType="fade" onRequestClose={() => setPhotoOpen(false)}>
+          <Pressable style={styles.lightbox} onPress={() => setPhotoOpen(false)} accessibilityLabel="Close photo">
+            <Image source={{ uri: profile.photoURL }} style={styles.lightboxImage} contentFit="cover" transition={150} />
+            <Text style={styles.lightboxName}>{name}</Text>
+          </Pressable>
+        </Modal>
+      ) : null}
       {workFirst ? (
         <View style={[styles.compactHead, { backgroundColor: accent, paddingTop: (topInset ? 6 : 16) + topInset }]}>
           {/* Under the status bar (your own Profile tab), buttons get their own row above the name. */}
           {heroAccessory && topInset ? <View style={styles.compactTopRow}>{heroAccessory}</View> : null}
           <View style={[styles.compactRow, !!topInset && { paddingRight: 0 }]}>
-            <Avatar uri={profile.photoURL} name={name} seed={profile.id} size={84} radius={22} style={styles.compactPhoto} />
+            <Pressable
+              onPress={() => profile.photoURL && setPhotoOpen(true)}
+              disabled={!profile.photoURL}
+              accessibilityRole="imagebutton"
+              accessibilityLabel={`Enlarge ${name}'s photo`}
+            >
+              <Avatar uri={profile.photoURL} name={name} seed={profile.id} size={84} radius={22} style={styles.compactPhoto} />
+            </Pressable>
             <View style={styles.flex}>
               {soundLine ? (
                 <Text style={styles.soundLineSmall} numberOfLines={1}>
@@ -204,7 +220,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
 
         {lookingItems.length > 0 || (profile.bio && !workFirst) ? (
           <Section title="Looking to collab with">
-            {lookingItems.length > 0 ? <ChipRow items={lookingItems} tone="blue" /> : null}
+            {lookingItems.length > 0 ? <ChipRow items={lookingItems} /> : null}
             {profile.bio && !workFirst ? <Text style={styles.bio}>{profile.bio}</Text> : null}
           </Section>
         ) : null}
@@ -442,6 +458,9 @@ const useStyles = makeStyles((colors) => ({
   heroAccessory: { position: 'absolute', top: 12, right: 12 },
   compactHead: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
   compactRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingRight: 36 },
+  lightbox: { flex: 1, backgroundColor: 'rgba(10,12,16,0.92)', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 32 },
+  lightboxImage: { width: '100%', maxWidth: 340, aspectRatio: 1, borderRadius: 28 },
+  lightboxName: { fontFamily: fonts.heading, fontSize: 20, color: 'rgb(255,255,255)' },
   compactPhoto: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)' },
   compactAccessory: { position: 'absolute', top: 10, right: 10 },
   compactTopRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 6 },

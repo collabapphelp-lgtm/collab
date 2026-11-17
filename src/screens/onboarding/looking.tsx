@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { StepScreen } from '@/components/onboarding/StepScreen';
 import { Chip, ChipGrid } from '@/components/onboarding/Chip';
@@ -188,33 +188,29 @@ function LookingRow(props: {
       {expandable ? (
         <>
           <Text style={styles.subPrompt}>{option.subPrompt}</Text>
+          {/* Exact instruments ("Which strings?" → Cello, Violin…) open right under the family's chip. Optional. */}
           <ChipGrid>
-            {option.subOptions!.map((s) => (
-              <Chip
-                key={s.value}
-                size="sm"
-                label={s.label}
-                value={s.value}
-                selected={subs.includes(s.value)}
-                onPress={() => props.onToggleSub(s.value)}
-              />
-            ))}
+            {option.subOptions!.map((s) => {
+              const on = subs.includes(s.value);
+              return (
+                <Fragment key={s.value}>
+                  <Chip size="sm" label={s.label} value={s.value} selected={on} onPress={() => props.onToggleSub(s.value)} />
+                  {on && INSTRUMENT_TYPES[s.value]?.length ? (
+                    <View style={styles.types}>
+                      <Text style={styles.typesTitle}>
+                        Which {optionFor(s.value).label.toLowerCase()}? <Text style={styles.typesHint}>optional</Text>
+                      </Text>
+                      <ChipGrid>
+                        {INSTRUMENT_TYPES[s.value].map((t) => (
+                          <Chip key={t.value} size="sm" label={t.label} selected={subs.includes(t.value)} onPress={() => props.onToggleSub(t.value)} />
+                        ))}
+                      </ChipGrid>
+                    </View>
+                  ) : null}
+                </Fragment>
+              );
+            })}
           </ChipGrid>
-          {/* Exact instruments under each picked family ("Which strings?" → Cello, Violin…). Optional. */}
-          {subs
-            .filter((fam) => INSTRUMENT_TYPES[fam]?.length)
-            .map((fam) => (
-              <View key={fam} style={styles.types}>
-                <Text style={styles.typesTitle}>
-                  Which {optionFor(fam).label.toLowerCase()}? <Text style={styles.typesHint}>optional</Text>
-                </Text>
-                <ChipGrid>
-                  {INSTRUMENT_TYPES[fam].map((t) => (
-                    <Chip key={t.value} size="sm" label={t.label} selected={subs.includes(t.value)} onPress={() => props.onToggleSub(t.value)} />
-                  ))}
-                </ChipGrid>
-              </View>
-            ))}
           {props.extra}
         </>
       ) : null}
@@ -231,7 +227,7 @@ const useStyles = makeStyles((colors) => ({
   orLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   orText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   openNote: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 8 },
-  types: { gap: 8, padding: 12, borderRadius: 12, backgroundColor: '#F4F8FB' },
+  types: { width: '100%', gap: 8, padding: 12, borderRadius: 12, backgroundColor: '#F4F8FB' },
   typesTitle: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text },
   typesHint: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
   subPrompt: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textSecondary },

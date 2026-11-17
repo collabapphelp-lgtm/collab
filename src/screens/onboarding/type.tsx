@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { StepScreen } from '@/components/onboarding/StepScreen';
@@ -188,29 +188,28 @@ export default function TypeStep() {
                     <View style={styles.instruments}>
                       <Text style={styles.subPrompt}>What do you play?</Text>
                       <ChipGrid>
-                        {INSTRUMENTS.map((i) => (
-                          <Chip
-                            key={i.value}
-                            size="sm"
-                            label={i.label}
-                            value={i.value}
-                            selected={instruments.includes(i.value)}
-                            onPress={() => setInstruments((list) => toggleIn(list, i.value))}
-                          />
-                        ))}
+                        {/* An instrument's exact types open right under its chip, not at the end of the list. */}
+                        {INSTRUMENTS.map((i) => {
+                          const on = instruments.includes(i.value);
+                          return (
+                            <Fragment key={i.value}>
+                              <Chip size="sm" label={i.label} value={i.value} selected={on} onPress={() => setInstruments((list) => toggleIn(list, i.value))} />
+                              {on && INSTRUMENT_TYPES[i.value] ? (
+                                <View style={styles.typeBox}>
+                                  <Text style={styles.typePrompt}>
+                                    Which {i.label.toLowerCase()}? <Text style={styles.subHint}>Optional</Text>
+                                  </Text>
+                                  <ChipGrid>
+                                    {INSTRUMENT_TYPES[i.value].map((o) => (
+                                      <Chip key={o.value} size="sm" label={o.label} selected={types.includes(o.value)} onPress={() => setTypes((l) => toggleIn(l, o.value))} />
+                                    ))}
+                                  </ChipGrid>
+                                </View>
+                              ) : null}
+                            </Fragment>
+                          );
+                        })}
                       </ChipGrid>
-                      {INSTRUMENTS.filter((i) => instruments.includes(i.value) && INSTRUMENT_TYPES[i.value]).map((i) => (
-                        <View key={i.value} style={styles.typeBox}>
-                          <Text style={styles.typePrompt}>
-                            Which {i.label.toLowerCase()}? <Text style={styles.subHint}>Optional</Text>
-                          </Text>
-                          <ChipGrid>
-                            {INSTRUMENT_TYPES[i.value].map((o) => (
-                              <Chip key={o.value} size="sm" label={o.label} selected={types.includes(o.value)} onPress={() => setTypes((l) => toggleIn(l, o.value))} />
-                            ))}
-                          </ChipGrid>
-                        </View>
-                      ))}
                       {showSpecific ? (
                         <TagInput
                           tags={specific}
@@ -251,7 +250,7 @@ const useStyles = makeStyles((colors) => ({
   subPrompt: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
   subHint: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
   instruments: { gap: 10, marginTop: 4 },
-  typeBox: { gap: 8, padding: 12, borderRadius: 12, backgroundColor: '#F4F8FB' },
+  typeBox: { width: '100%', gap: 8, padding: 12, borderRadius: 12, backgroundColor: '#F4F8FB' },
   typePrompt: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.text },
   addSpecific: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.blue },
   kindRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
