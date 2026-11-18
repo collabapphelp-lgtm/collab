@@ -205,6 +205,23 @@ function fromPosted(id: string, e: PostedEvent): EventOccurrence {
   };
 }
 
+/**
+ * Built-in listings the Collab team took down from the app: a whole series, or single dates.
+ * Lives in Firestore (`hiddenEvents/{eventId}`) so it applies to everyone without an update.
+ */
+export async function loadHiddenCurated(): Promise<(e: EventOccurrence) => boolean> {
+  if (UI_PREVIEW) return () => false;
+  const snap = await getDocs(collection(db, 'hiddenEvents'));
+  const series = new Set<string>();
+  const dates = new Set<string>();
+  snap.docs.forEach((d) => {
+    const h = d.data() as { all?: boolean; dates?: string[] };
+    if (h.all) series.add(d.id);
+    (h.dates ?? []).forEach((date) => dates.add(`${d.id}@${date}`));
+  });
+  return (e) => e.source === 'curated' && (series.has(e.eventId) || dates.has(e.key));
+}
+
 /** Approved posted events, plus your own pending/rejected ones (so you can see they're in review). */
 export async function loadPostedEvents(me: string): Promise<EventOccurrence[]> {
   if (UI_PREVIEW) return PREVIEW_POSTED();

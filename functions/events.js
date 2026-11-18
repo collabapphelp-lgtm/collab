@@ -74,6 +74,43 @@ exports.reviewEvent = onCall({ maxInstances: 2, memory: '256MiB' }, async (reque
   return { ok: true };
 });
 
+/**
+ * Collab team: delete any event from the app.
+ * { eventId, source: 'posted' | 'curated', date?: 'YYYY-MM-DD' }
+ *   posted  → the event is deleted for everyone.
+ *   curated → built-in listings can't be deleted from code here, so they're hidden: just `date`
+ *             if given, otherwise every date of the series.
+ * Clears the matching "I'm going"s too.
+ */
+exports.adminDeleteEvent = onCall({ maxInstances: 2, memory: '256MiB' }, async (request) => {
+  requireAdmin(request);
+  const { eventId, source, date } = request.data ?? {};
+  if (typeof eventId !== 'string' || !eventId || eventId.includes('/') || !['posted', 'curated'].includes(source)) {
+    throw new HttpsError('invalid-argument', 'Pick an event.');
+  }
+  if (date != null && !(typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date))) {
+    throw new HttpsError('invalid-argument', 'Bad date.');
+  }
+  const db = getFirestore();
+  if (source === 'posted') {
+    await db.doc(`events/${eventId}`).delete();
+  } else {
+    await db.doc(`hiddenEvents/${eventId}`).set(
+      date
+        ? { dates: FieldValue.arrayUnion(date), by: request.auth.uid, at: FieldValue.serverTimestamp() }
+        : { all: true, by: request.auth.uid, at: FieldValue.serverTimestamp() },
+      { merge: true },
+    );
+  }
+  // RSVP keys are `${eventId}@${date}`.
+  const prefix = date && source === 'curated' ? `${eventId}@${date}` : `${eventId}@`;
+  const rsvps = await db.collection('rsvps').where('key', '>=', prefix).where('key', '<=', `${prefix}\uf8ff`).get();
+  const batch = db.batch();
+  rsvps.docs.slice(0, 450).forEach((d) => batch.delete(d.ref));
+  await batch.commit();
+  return { ok: true };
+});
+
 /** For the app: is this person on the Collab team, and how many events are waiting for review? */
 exports.teamStatus = onCall({ maxInstances: 3, memory: '256MiB' }, async (request) => {
   if (!request.auth || !adminUids().includes(request.auth.uid)) return { admin: false, pending: 0 };

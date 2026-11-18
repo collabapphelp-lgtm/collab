@@ -207,6 +207,12 @@ service cloud.firestore {
     }
 
     // rsvps/{occurrenceKey}__{uid}: "I'm going". Visible to every signed-in member (that's the point).
+    // Built-in listings the Collab team took down (written only by the adminDeleteEvent function).
+    match /hiddenEvents/{eventId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
     match /rsvps/{rsvpId} {
       allow read: if signedIn();
       allow create: if signedIn()

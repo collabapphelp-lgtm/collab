@@ -21,6 +21,7 @@ import { loadBlockedIds, reportUser } from '@/lib/safety';
 import type { UserProfile } from '@/lib/types';
 import { useEvents } from '@/lib/use-events';
 import { useMatches } from '@/lib/use-matches';
+import { adminDeleteEvent, refreshTeam, useTeam } from '@/lib/team';
 import { fonts, shadow, makeStyles, useColors } from '@/lib/theme';
 
 export default function EventScreen() {
@@ -35,6 +36,7 @@ export default function EventScreen() {
   const [people, setPeople] = useState<UserProfile[]>([]);
   const [saving, setSaving] = useState(false);
   const [flyerOpen, setFlyerOpen] = useState(false);
+  const team = useTeam();
   const [flyerBusy, setFlyerBusy] = useState<number | null>(null);
 
   // Everyone who tapped I'm going, oldest first. With a capacity, the first N have spots, the rest wait.
@@ -169,6 +171,39 @@ export default function EventScreen() {
           },
         },
       ]);
+    // Collab team: delete anyone's event (built-in listings are hidden instead).
+    const teamDelete = () => {
+      const run = async (date?: string) => {
+        try {
+          await adminDeleteEvent(ev.eventId, ev.source, date);
+          await refresh();
+          refreshTeam();
+          router.back();
+        } catch (err) {
+          console.warn('Admin delete failed', err);
+          Alert.alert('Couldn’t delete', 'Check your connection and try again.');
+        }
+      };
+      if (ev.source === 'curated' && ev.repeats) {
+        Alert.alert('Delete this listing?', `“${ev.title}” repeats (${ev.repeats}). Remove just this date, or every date?`, [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Just this date', style: 'destructive', onPress: () => run(ev.date) },
+          { text: 'Every date', style: 'destructive', onPress: () => run() },
+        ]);
+      } else {
+        Alert.alert('Delete this event?', 'It’s removed for everyone, along with everyone’s “I’m going”.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: () => run(ev.source === 'curated' ? ev.date : undefined) },
+        ]);
+      }
+    };
+    if (team.admin && !mine) {
+      const options = ['Delete event (Collab team)', 'Cancel'];
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions({ options, destructiveButtonIndex: 0, cancelButtonIndex: 1 }, (i) => i === 0 && teamDelete());
+      } else teamDelete();
+      return;
+    }
     if (mine && ev.source === 'posted') {
       const options = ['Delete event', ev.flyerURL ? 'Change flyer' : 'Add a flyer', 'Cancel'];
       if (Platform.OS === 'ios') {

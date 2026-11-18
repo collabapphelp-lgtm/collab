@@ -121,10 +121,10 @@ export default function Events() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <LinearGradient colors={['#E6F1F7', '#F3E9D8']} style={StyleSheet.absoluteFill} />
       <View style={styles.header}>
-        <View style={styles.flex}>
-          <Text style={styles.title}>Events</Text>
-          <Text style={styles.subtitle}>Open mics, jams and Collab nights in NYC</Text>
-        </View>
+        <Text style={styles.title} numberOfLines={1}>
+          Events
+        </Text>
+        <View style={styles.flex} />
         {team.admin ? (
           <Pressable
             onPress={() => router.push('/event/review')}
@@ -136,31 +136,21 @@ export default function Events() {
             {team.pending > 0 ? <Text style={styles.reviewText}>{team.pending}</Text> : null}
           </Pressable>
         ) : null}
-        <Pressable
-          onPress={() => (setWhen(when === 'going' ? 'today' : 'going'), setSelected(null))}
-          style={[styles.plans, when === 'going' && styles.plansOn]}
-          accessibilityRole="button"
-          accessibilityLabel={`Events you're going to, ${mine.length}`}
-          accessibilityState={{ selected: when === 'going' }}
-        >
-          <Ionicons name={when === 'going' ? 'ticket' : 'ticket-outline'} size={18} color={when === 'going' ? colors.white : colors.blue} />
-          <Text style={[styles.plansText, when === 'going' && { color: colors.white }]}>{mine.length ? `Going · ${mine.length}` : 'Going'}</Text>
-        </Pressable>
         <Pressable onPress={() => router.push('/event/new')} style={styles.post} accessibilityRole="button" accessibilityLabel="Create an event">
           <Ionicons name="add" size={18} color={colors.white} />
           <Text style={styles.postText}>Create event</Text>
         </Pressable>
       </View>
+      <Text style={styles.subtitle}>Open mics, jams and Collab nights in NYC</Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.segRow}>
-        {when === 'going' ? (
-          <Pill label="✓ Your plans" on onPress={() => (setWhen('today'), setSelected(null))} strong />
-        ) : null}
         {WHEN.map((w) => (
           <Pill key={w.value} label={w.label} on={when === w.value} onPress={() => (setWhen(w.value), setSelected(null))} strong />
         ))}
+        <Pill label="All" on={when === 'all'} onPress={() => (setWhen('all'), setSelected(null))} strong />
         <Pill
-          label={when === 'dates' && range ? `📅 ${rangeLabel(range)}` : '📅 Pick dates'}
+          label={when === 'dates' && range ? rangeLabel(range) : 'Dates'}
+          icon="calendar-outline"
           on={when === 'dates'}
           onPress={() => {
             setDraft(range);
@@ -168,7 +158,6 @@ export default function Events() {
           }}
           strong
         />
-        <Pill label="All dates" on={when === 'all'} onPress={() => (setWhen('all'), setSelected(null))} strong />
       </ScrollView>
       <Modal visible={calOpen} transparent animationType="slide" onRequestClose={() => setCalOpen(false)}>
         <Pressable style={styles.calBackdrop} onPress={() => setCalOpen(false)} accessibilityLabel="Close" />
@@ -247,6 +236,33 @@ export default function Events() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={pullToRefresh} tintColor={colors.blue} />}
         >
           {error ? <Text style={styles.error}>{error}</Text> : null}
+          {when === 'going' ? (
+            <View style={styles.areaBar}>
+              <Ionicons name="ticket-outline" size={15} color={colors.blue} />
+              <Text style={styles.areaText}>Your plans</Text>
+              <Pressable
+                onPress={() => (setWhen('today'), setSelected(null))}
+                hitSlop={8}
+                style={styles.areaClear}
+                accessibilityRole="button"
+                accessibilityLabel="Show all events"
+              >
+                <Text style={styles.areaClearText}>Show all</Text>
+              </Pressable>
+            </View>
+          ) : mine.length ? (
+            <Pressable
+              onPress={() => (setWhen('going'), setSelected(null))}
+              style={({ pressed }) => [styles.areaBar, pressed && { opacity: 0.8 }]}
+              accessibilityRole="button"
+            >
+              <Ionicons name="ticket-outline" size={15} color={colors.blue} />
+              <Text style={styles.areaText}>
+                You’re going to {mine.length} {mine.length === 1 ? 'event' : 'events'}
+              </Text>
+              <Text style={styles.areaClearText}>See plans ›</Text>
+            </Pressable>
+          ) : null}
           {area ? (
             <View style={styles.areaBar}>
               <Ionicons name="map-outline" size={15} color={colors.textSecondary} />
@@ -301,8 +317,23 @@ export default function Events() {
   );
 }
 
-function Pill({ label, on, onPress, strong, dot }: { label: string; on: boolean; onPress: () => void; strong?: boolean; dot?: string }) {
+function Pill({
+  label,
+  on,
+  onPress,
+  strong,
+  dot,
+  icon,
+}: {
+  label: string;
+  on: boolean;
+  onPress: () => void;
+  strong?: boolean;
+  dot?: string;
+  icon?: 'calendar-outline';
+}) {
   const styles = useStyles();
+  const colors = useColors();
   return (
     <Pressable
       onPress={onPress}
@@ -311,6 +342,7 @@ function Pill({ label, on, onPress, strong, dot }: { label: string; on: boolean;
       style={[styles.pill, strong ? styles.pillStrong : null, on && (strong ? styles.pillStrongOn : styles.pillOn)]}
     >
       {dot ? <View style={[styles.dot, { backgroundColor: dot }]} /> : null}
+      {icon ? <Ionicons name={icon} size={15} color={on ? (strong ? colors.white : colors.blue) : colors.textSecondary} /> : null}
       <Text style={[styles.pillText, on && (strong ? styles.pillStrongTextOn : styles.pillTextOn)]}>{label}</Text>
     </Pressable>
   );
@@ -330,7 +362,7 @@ function EventRow({ e, goingCount, mine, onPress }: { e: EventOccurrence; goingC
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.85 }]} accessibilityRole="button">
       <View style={[styles.rowStripe, { backgroundColor: meta.color }]} />
       <View style={styles.rowTime}>
-        <Text style={styles.rowTimeText}>{timeLabel(e.start).replace(' ', '\n')}</Text>
+        <Text style={styles.rowTimeText}>{timeLabel(e.start).replace(/\s/, '\n')}</Text>
       </View>
       <View style={styles.flex}>
         <Text style={[styles.rowType, { color: meta.color }]}>{meta.label.toUpperCase()}</Text>
@@ -387,21 +419,9 @@ function SelectedCard({ e, goingCount, onPress, onClose }: { e: EventOccurrence;
 const useStyles = makeStyles((colors) => ({
   safe: { flex: 1 },
   flex: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10, gap: 12 },
-  title: { fontFamily: fonts.heading, fontSize: 30, color: colors.text },
-  subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary, marginTop: 2 },
-  plans: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    height: 38,
-    paddingHorizontal: 11,
-    borderRadius: 19,
-    marginRight: 8,
-    backgroundColor: colors.white,
-  },
-  plansOn: { backgroundColor: colors.blue },
-  plansText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.blue },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, gap: 8 },
+  title: { fontFamily: fonts.heading, fontSize: 30, color: colors.text, flexShrink: 0 },
+  subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary, paddingHorizontal: 20, marginTop: 2, marginBottom: 12 },
   calBackdrop: { flex: 1, backgroundColor: 'rgba(15,18,24,0.35)' },
   calSheet: {
     backgroundColor: colors.bg,

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useAuth } from './auth-context';
-import { curatedOccurrences, loadPostedEvents, loadRsvps, setGoing, type EventOccurrence } from './events';
+import { curatedOccurrences, loadHiddenCurated, loadPostedEvents, loadRsvps, setGoing, type EventOccurrence } from './events';
 
 type State = {
   /** Every listing from today through the next two weeks, soonest first. null while loading. */
@@ -28,17 +28,18 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     if (!me) return null;
     let error: string | null = null;
     // Curated listings are built in, so show them even if the network is down.
-    const [posted, rsvps] = await Promise.all([
+    const [posted, rsvps, hidden] = await Promise.all([
       loadPostedEvents(me).catch((e) => {
         console.warn('Loading posted events failed', e);
         error = 'Couldn’t load the latest events. Showing the regular listings.';
         return [] as EventOccurrence[];
       }),
       loadRsvps().catch(() => new Map<string, string[]>()),
+      loadHiddenCurated().catch(() => () => false),
     ]);
     const now = Date.now();
     // Keep tonight's listings visible until they've had a few hours to wrap up.
-    const live = [...curatedOccurrences(), ...posted].filter((e) => (e.end ?? e.start + 3 * 3600000) > now);
+    const live = [...curatedOccurrences().filter((e) => !hidden(e)), ...posted].filter((e) => (e.end ?? e.start + 3 * 3600000) > now);
     return { events: live.sort((a, b) => a.start - b.start), rsvps, error };
   }, [me]);
 

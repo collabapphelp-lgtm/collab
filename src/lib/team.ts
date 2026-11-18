@@ -89,6 +89,12 @@ export async function loadSubmissions(): Promise<{ pending: Submission[]; approv
   return data;
 }
 
+/** Collab team: delete a posted event, or hide a built-in one (one date, or the whole series). */
+export async function adminDeleteEvent(eventId: string, source: 'posted' | 'curated', date?: string) {
+  if (UI_PREVIEW) return;
+  await httpsCallable(fns(), 'adminDeleteEvent')({ eventId, source, ...(date ? { date } : {}) });
+}
+
 export async function reviewEvent(id: string, decision: 'approve' | 'reject' | 'remove', collabHosted = false) {
   if (UI_PREVIEW) return;
   await httpsCallable(fns(), 'reviewEvent')({ id, decision, collabHosted });
