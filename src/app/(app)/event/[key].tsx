@@ -302,6 +302,35 @@ export default function EventScreen() {
             </Pressable>
           ) : null}
 
+          {cap ? (
+            <View style={styles.spotsCard}>
+              <View style={styles.spotsTop}>
+                <Text style={styles.spotsTitle}>
+                  {goingIds.length >= cap ? 'Full' : `${goingIds.length} of ${cap} spots filled`}
+                </Text>
+                <Text style={[styles.spotsRight, goingIds.length >= cap && styles.spotsRightFull]}>
+                  {goingIds.length >= cap
+                    ? waitCount
+                      ? `${waitCount} on the waitlist`
+                      : 'Waitlist open'
+                    : `${cap - goingIds.length} left`}
+                </Text>
+              </View>
+              <View style={styles.spotsTrack}>
+                <View
+                  style={[
+                    styles.spotsFill,
+                    { width: `${Math.min(100, (goingIds.length / cap) * 100)}%` },
+                    goingIds.length >= cap && styles.spotsFillFull,
+                  ]}
+                />
+              </View>
+              {goingIds.length >= cap ? (
+                <Text style={styles.spotsNote}>Join the waitlist and you’ll get a notification if a spot opens up.</Text>
+              ) : null}
+            </View>
+          ) : null}
+
           <View style={styles.goingHead}>
             <Text style={styles.sectionTitle}>Who’s going</Text>
             <Text style={styles.goingCount}>
@@ -473,6 +502,15 @@ const useStyles = makeStyles((colors) => ({
   detailText: { flex: 1, fontFamily: fonts.body, fontSize: 15, color: colors.text },
   description: { fontFamily: fonts.body, fontSize: 16, lineHeight: 23, color: colors.text, paddingHorizontal: 4 },
   extLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 4 },
+  spotsCard: { backgroundColor: colors.white, borderRadius: 16, padding: 14, gap: 8, marginTop: 4 },
+  spotsTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  spotsTitle: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
+  spotsRight: { fontFamily: fonts.bodySemibold, fontSize: 13, color: '#2F7FA6' },
+  spotsRightFull: { color: '#B3412F' },
+  spotsTrack: { height: 8, borderRadius: 4, backgroundColor: '#E8E4DC', overflow: 'hidden' },
+  spotsFill: { height: 8, borderRadius: 4, backgroundColor: colors.blue },
+  spotsFillFull: { backgroundColor: '#D9604C' },
+  spotsNote: { fontFamily: fonts.body, fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
   goingHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 8, paddingHorizontal: 4 },
   sectionTitle: { fontFamily: fonts.heading, fontSize: 19, color: colors.text },
   goingCount: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.blue },

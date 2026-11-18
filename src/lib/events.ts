@@ -42,6 +42,8 @@ export type EventOccurrence = {
   /** e.g. "Every Thursday", for curated weekly listings. */
   repeats?: string;
   collabHosted: boolean;
+  /** Picked by the Collab team to show under Featured (Collab-hosted events are always featured). */
+  featured?: boolean;
   verified: boolean;
   host?: { id: string; name: string };
   /** Only set on your own posted events. */
@@ -71,6 +73,7 @@ export type PostedEvent = {
   hostName: string;
   status: 'pending' | 'approved' | 'rejected';
   collabHosted?: boolean;
+  featured?: boolean;
   capacity?: number;
   flyerURL?: string;
   flyerAspect?: number;
@@ -196,6 +199,7 @@ function fromPosted(id: string, e: PostedEvent): EventOccurrence {
     description: e.description,
     link: e.link,
     collabHosted: !!e.collabHosted,
+    featured: !!e.featured,
     verified: true,
     host: { id: e.hostId, name: e.hostName },
     status: e.status,
@@ -351,9 +355,30 @@ function PREVIEW_POSTED(): EventOccurrence[] {
     hostName: 'Collab',
     status: 'approved',
     collabHosted: true,
+    capacity: 8,
     ...(process.env.EXPO_PUBLIC_SHOT_PHOTOS === '1' ? { flyerURL: '/shots/flyer.jpg', flyerAspect: 0.8 } : {}),
   };
-  return [fromPosted('preview-collab', sample)];
+  const d2 = new Date();
+  d2.setDate(d2.getDate() + 1);
+  d2.setHours(20, 0, 0, 0);
+  const full: PostedEvent = {
+    title: 'Bushwick Beat Night',
+    type: 'jam',
+    venue: 'The Loft',
+    address: '123 Wyckoff Ave, Brooklyn, NY',
+    neighborhood: 'Bushwick',
+    lat: 40.7046,
+    lng: -73.9218,
+    startsAt: d2.getTime(),
+    endsAt: d2.getTime() + 3 * 3600000,
+    cost: 'Free',
+    description: 'Sample for previews only. Producers bring 3 beats, vocalists hop on. Small room, so spots are limited.',
+    hostId: 'p2',
+    hostName: 'Blaze',
+    status: 'approved',
+    capacity: 4,
+  };
+  return [fromPosted('preview-collab', sample), fromPosted('preview-full', full)];
 }
 
 function PREVIEW_RSVPS(): Rsvp[] {
@@ -365,6 +390,8 @@ function PREVIEW_RSVPS(): Rsvp[] {
   add(pick('smalls-late-jam'), ['p2']);
   add(pick('ottos-open-mic-jam'), ['p3', 'p4']);
   const collab = PREVIEW_POSTED()[0];
-  out.push(...['p1', 'p2', 'p4'].map((uid) => ({ key: collab.key, date: collab.date, uid })));
+  out.push(...['p1', 'p2', 'p4', 'p5', 'p6'].map((uid) => ({ key: collab.key, date: collab.date, uid })));
+  const fullOcc = PREVIEW_POSTED()[1];
+  out.push(...['p1', 'p3', 'p4', 'p5', 'p6', 'p2'].map((uid) => ({ key: fullOcc.key, date: fullOcc.date, uid })));
   return out;
 }

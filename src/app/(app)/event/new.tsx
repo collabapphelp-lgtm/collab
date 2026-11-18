@@ -48,6 +48,7 @@ export default function NewEvent() {
   const [description, setDescription] = useState('');
   const [link, setLink] = useState('');
   const [capacity, setCapacity] = useState('');
+  const [limited, setLimited] = useState(false);
   const [flyer, setFlyer] = useState<PickedFlyer | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   // Venue search: suggestions while typing; picking one fills the address and the map pin.
@@ -88,7 +89,7 @@ export default function NewEvent() {
     return [today, last];
   }, []);
 
-  const cap = capacity.trim() ? Number(capacity.trim()) : null;
+  const cap = limited && capacity.trim() ? Number(capacity.trim()) : null;
   const missing = !type
     ? 'Pick what kind of event it is'
     : !title.trim()
@@ -101,8 +102,10 @@ export default function NewEvent() {
             ? 'Add the venue or the address'
             : description.trim().length < 10
               ? 'Add a short description'
-              : cap !== null && (!Number.isInteger(cap) || cap < 1 || cap > 5000)
-                ? 'Capacity should be a whole number, like 25'
+              : limited && !capacity.trim()
+                ? 'Add how many spots, or pick No limit'
+                : cap !== null && (!Number.isInteger(cap) || cap < 1 || cap > 5000)
+                  ? 'Spots should be a whole number, like 25'
                 : null;
 
   async function locate(): Promise<{ lat: number; lng: number; neighborhood: string } | null> {
@@ -293,6 +296,31 @@ export default function NewEvent() {
             <Field value={description} onChangeText={setDescription} placeholder="What should people expect? Who should come? Bring anything?" maxLength={1000} multiline />
           </Section>
 
+          <Section title="How many people can come?">
+            <ChipGrid>
+              <Chip label="No limit" selected={!limited} onPress={() => setLimited(false)} />
+              <Chip label="Set a limit" selected={limited} onPress={() => setLimited(true)} />
+            </ChipGrid>
+            {limited ? (
+              <View style={styles.limitRow}>
+                <TextInput
+                  value={capacity}
+                  onChangeText={(t) => setCapacity(t.replace(/[^0-9]/g, ''))}
+                  placeholder="30"
+                  maxLength={4}
+                  keyboardType="number-pad"
+                  style={[styles.input, styles.limitInput]}
+                />
+                <Text style={styles.limitText}>spots</Text>
+              </View>
+            ) : null}
+            <Text style={styles.sectionNote}>
+              {limited
+                ? 'People see how many spots are filled. Once it’s full they can join a waitlist and get notified if a spot opens.'
+                : 'Anyone can say they’re going.'}
+            </Text>
+          </Section>
+
           <View style={styles.optionalBox}>
             <View style={styles.optionalHead}>
               <Text style={styles.optionalTitle}>Extras</Text>
@@ -312,15 +340,6 @@ export default function NewEvent() {
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="url"
-            />
-            <OptionalField
-              label="Capacity"
-              hint="Once it’s full, people can join a waitlist and get notified if a spot opens."
-              value={capacity}
-              onChangeText={(t) => setCapacity(t.replace(/[^0-9]/g, ''))}
-              placeholder="e.g. 30"
-              maxLength={4}
-              keyboardType="number-pad"
             />
           </View>
         </ScrollView>
@@ -379,6 +398,9 @@ const useStyles = makeStyles((colors) => ({
   section: { gap: 8 },
   sectionTitle: { fontFamily: fonts.bodySemibold, fontSize: 15, color: colors.text },
   sectionNote: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary, marginTop: -2 },
+  limitRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  limitInput: { width: 96, textAlign: 'center', fontFamily: fonts.bodySemibold, fontSize: 18 },
+  limitText: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.textSecondary },
   suggest: { backgroundColor: colors.white, borderRadius: 14, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', marginTop: -2 },
   suggestRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 10 },
   suggestLine: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
