@@ -1,4 +1,6 @@
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Animated, Easing, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
@@ -21,12 +23,46 @@ function versionLine() {
   return `Collab ${v} · updated ${when} (${(Updates.updateId ?? '').slice(0, 6)})`;
 }
 
+const THEME_TIP_KEY = 'collab.themeTip.seen';
+
+/** First visit to the Profile tab: the sun/moon glows and a bubble says what it does. */
+function useThemeTip() {
+  const [show, setShow] = useState(false);
+  const [glow] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    let live = true;
+    AsyncStorage.getItem(THEME_TIP_KEY)
+      .then((v) => live && !v && setShow(true))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!show) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glow, { toValue: 1, duration: 900, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(glow, { toValue: 0, duration: 900, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [show, glow]);
+  const dismiss = () => {
+    setShow(false);
+    AsyncStorage.setItem(THEME_TIP_KEY, '1').catch(() => {});
+  };
+  return { show, glow, dismiss };
+}
+
 // Your own profile, as others see it.
 export default function MyProfile() {
   const styles = useStyles();
   const { profile, signOutUser } = useAuth();
   const insets = useSafeAreaInsets();
   const scheme = useScheme();
+  const tip = useThemeTip();
   if (!profile) return null;
   const dark = scheme === 'dark';
 
@@ -43,8 +79,23 @@ export default function MyProfile() {
           heroAccessory={
             <View style={styles.heroButtons}>
               {/* Tap: switch light/dark. Long-press: follow the phone's setting again. */}
+              {tip.show ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.themeGlow,
+                    {
+                      opacity: tip.glow.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.9] }),
+                      transform: [{ scale: tip.glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.35] }) }],
+                    },
+                  ]}
+                />
+              ) : null}
               <Pressable
-                onPress={() => setThemePref(dark ? 'light' : 'dark')}
+                onPress={() => {
+                  tip.dismiss();
+                  setThemePref(dark ? 'light' : 'dark');
+                }}
                 onLongPress={() => {
                   setThemePref('system');
                   Alert.alert('Matching your phone', 'Collab will follow your iPhone’s Light/Dark setting.');
@@ -63,6 +114,14 @@ export default function MyProfile() {
           }
           belowHero={<ProfileStrength profile={profile} />}
         />
+          {tip.show ? (
+            <Pressable onPress={tip.dismiss} style={[styles.tip, { top: insets.top + 62 }]} accessibilityRole="button" accessibilityLabel="Tip: tap the sun or moon to switch between dark and light mode. Dismiss.">
+              <View style={styles.tipArrow} />
+              <Text style={styles.tipTitle}>{dark ? '☀️ Prefer light mode?' : '🌙 Prefer dark mode?'}</Text>
+              <Text style={styles.tipBody}>Tap the {dark ? 'sun' : 'moon'} anytime to switch between dark and light.</Text>
+              <Text style={styles.tipOk}>Got it</Text>
+            </Pressable>
+          ) : null}
         <View style={styles.actions}>
           <Text style={styles.note}>This is how other creatives see your profile.</Text>
           <Button
@@ -113,7 +172,46 @@ const useStyles = makeStyles((colors) => ({
   legalLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textMuted },
   legalDot: { fontSize: 13, color: colors.textMuted },
   version: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, textAlign: 'center', marginTop: 6 },
-  heroButtons: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heroButtons: { flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 5 },
+  themeGlow: {
+    position: 'absolute',
+    left: -6,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgb(242,193,78)',
+    shadowColor: 'rgb(242,193,78)',
+    shadowOpacity: 1,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  tip: {
+    position: 'absolute',
+    right: 16,
+    width: 236,
+    zIndex: 20,
+    padding: 14,
+    borderRadius: 16,
+    gap: 4,
+    backgroundColor: 'rgb(255,255,255)',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
+  },
+  tipArrow: {
+    position: 'absolute',
+    top: -6,
+    right: 78,
+    width: 14,
+    height: 14,
+    backgroundColor: 'rgb(255,255,255)',
+    transform: [{ rotate: '45deg' }],
+  },
+  tipTitle: { fontFamily: fonts.bodySemibold, fontSize: 15, color: 'rgb(23,21,31)' },
+  tipBody: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: 'rgb(90,90,100)' },
+  tipOk: { fontFamily: fonts.bodySemibold, fontSize: 13, color: 'rgb(75,163,199)', marginTop: 4, alignSelf: 'flex-end' },
   // Plain rgb() keeps the button white in dark mode too (see lib/theme.ts).
   themeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgb(255,255,255)', alignItems: 'center', justifyContent: 'center' },
   heroEdit: { height: 36, paddingHorizontal: 18, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.95)', justifyContent: 'center' },

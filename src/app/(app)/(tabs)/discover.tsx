@@ -350,6 +350,7 @@ export default function Discover() {
       <DiscoverFilterSheet
         key={filtersOpen ? 'open' : 'closed'}
         visible={filtersOpen}
+        me={profile}
         value={filters}
         onClose={() => setFiltersOpen(false)}
         onApply={applyFilters}

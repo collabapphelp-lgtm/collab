@@ -12,6 +12,8 @@ import { optionFor, displayName } from '@/lib/labels';
 import type { UserProfile } from '@/lib/types';
 import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
+const LOGO_WHITE = require('../../../assets/logo-white.png');
+
 // "Let's Collab!" — shown right after two people like each other.
 // Dark "studio at night" look; the tilted cards echo the welcome screen.
 export default function ConnectionScreen() {
@@ -50,9 +52,9 @@ export default function ConnectionScreen() {
 
           <View style={styles.cards}>
             <PersonCard person={me} tilt="-7deg" accent={colors.blue} />
-            <View style={styles.connector}>
-              <Text style={styles.connectorIcon}>🤝</Text>
-            </View>
+            <LinearGradient colors={[colors.blue, colors.purple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.connector}>
+              <Image source={LOGO_WHITE} style={styles.connectorLogo} contentFit="contain" accessibilityLabel="Collab" />
+            </LinearGradient>
             <PersonCard person={them} tilt="7deg" accent={colors.purple} />
           </View>
 
@@ -135,15 +137,16 @@ const useStyles = makeStyles((colors) => ({
     borderRadius: 25,
     marginHorizontal: -12,
     zIndex: 2,
-    backgroundColor: colors.yellow,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.yellow,
+    borderWidth: 2,
+    borderColor: 'rgb(255,255,255)',
+    shadowColor: colors.purple,
     shadowOpacity: 0.6,
     shadowRadius: 14,
     elevation: 10,
   },
-  connectorIcon: { fontSize: 22 },
+  connectorLogo: { width: 30, height: 30 },
 
   title: { fontFamily: fonts.heading, fontSize: 40, color: colors.white, textAlign: 'center', letterSpacing: -0.5 },
   body: {

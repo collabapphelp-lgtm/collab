@@ -85,14 +85,15 @@ export const shadow = {
 // iOS briefly reports the other scheme while the app is in the background (to snapshot it for
 // the app switcher), so changes only apply while the app is active.
 
-/** 'system' follows the phone; 'light'/'dark' is the switch on the Profile tab. */
+/** 'system' follows the phone; 'light'/'dark' is the switch on the Profile tab. Dark until they choose. */
 export type ThemePref = 'system' | 'light' | 'dark';
 const PREF_KEY = 'collab.theme';
-let pref: ThemePref = 'system';
+const DEFAULT_PREF = 'dark' as ThemePref;
+let pref: ThemePref = DEFAULT_PREF;
 // What the phone itself is set to (kept separately, so switching back to 'system' is instant).
 let systemScheme: Scheme = Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
 
-let current: Scheme = systemScheme;
+let current: Scheme = DEFAULT_PREF === 'system' ? systemScheme : DEFAULT_PREF;
 const listeners = new Set<() => void>();
 
 function refresh() {
@@ -122,9 +123,10 @@ function applyPref(p: ThemePref) {
   } else listeners.forEach((l) => l());
 }
 
+applyPref(DEFAULT_PREF);
 AsyncStorage.getItem(PREF_KEY)
   .then((v) => {
-    if (v === 'light' || v === 'dark') applyPref(v);
+    if (v === 'light' || v === 'dark' || v === 'system') applyPref(v);
   })
   .catch(() => {});
 
