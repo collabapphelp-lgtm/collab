@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
@@ -5,6 +6,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { cleanMediaTitle, detectPlatform } from '@/lib/onboarding-data';
 import { linkSubtitle, spotifyKind, useLinkPreview } from '@/lib/link-preview';
 import type { ShowcaseMedia } from '@/lib/types';
+import { EmbedPlayer } from '@/components/EmbedPlayer';
+import { embedFor } from '@/lib/embed';
 import { fonts, makeStyles, useColors } from '@/lib/theme';
 
 const GOLD = '#F2C14E';
@@ -37,6 +40,12 @@ export function LinkCard({ item, featured, label = 'FEATURED' }: { item: Showcas
   const sub = linkSubtitle(item.url, platform.label, p);
   const wide = platform.platform === 'youtube';
   const round = spotifyKind(item.url) === 'artist';
+  const embed = embedFor(item.url);
+  const [playing, setPlaying] = useState(false);
+  const kind = spotifyKind(item.url);
+  const playVerb = kind === 'artist' ? 'Play top songs' : kind && kind !== 'track' && kind !== 'episode' ? 'Play' : platform.platform === 'youtube' ? 'Watch' : 'Play';
+  // Playable links play right here; the rest open the platform's app.
+  const onPress = embed ? () => setPlaying((v) => !v) : () => openLink(item.url);
 
   const art = p?.image ? (
     <Image
@@ -51,43 +60,61 @@ export function LinkCard({ item, featured, label = 'FEATURED' }: { item: Showcas
     </View>
   );
 
+  const a11y = `${title}, ${sub}. ${embed ? (playing ? 'Hide player' : playVerb) : brand.verb}.`;
   return (
-    <Pressable
-      onPress={() => openLink(item.url)}
-      accessibilityRole="link"
-      accessibilityLabel={`${title}, ${sub}. ${brand.verb}.`}
-      style={({ pressed }) => [featured ? styles.featured : styles.row, pressed && { opacity: 0.88 }]}
-    >
-      {featured ? <Text style={styles.label}>{label}</Text> : null}
-      <View style={styles.line}>
-        {art}
-        <View style={styles.flex}>
-          <Text style={featured ? styles.titleBig : styles.title} numberOfLines={2}>
-            {title}
-          </Text>
-          <View style={styles.subRow}>
-            <MaterialCommunityIcons name={brand.icon} size={14} color={brand.color} />
-            <Text style={featured ? styles.subBig : styles.sub} numberOfLines={1}>
-              {sub}
+    // The player sits outside the tappable parts so its own controls get the touches.
+    <View style={featured ? styles.featured : styles.row}>
+      <Pressable onPress={onPress} accessibilityRole={embed ? 'button' : 'link'} accessibilityLabel={a11y} style={({ pressed }) => [styles.head, pressed && { opacity: 0.85 }]}>
+        {featured ? <Text style={styles.label}>{label}</Text> : null}
+        <View style={styles.line}>
+          {art}
+          <View style={styles.flex}>
+            <Text style={featured ? styles.titleBig : styles.title} numberOfLines={2}>
+              {title}
             </Text>
+            <View style={styles.subRow}>
+              <MaterialCommunityIcons name={brand.icon} size={14} color={brand.color} />
+              <Text style={featured ? styles.subBig : styles.sub} numberOfLines={1}>
+                {sub}
+              </Text>
+            </View>
           </View>
+          {embed ? (
+            <View style={[styles.playDot, { backgroundColor: brand.color }, featured && !playing && { display: 'none' }]}>
+              <MaterialCommunityIcons name={playing ? 'chevron-up' : 'play'} size={20} color="rgb(255,255,255)" />
+            </View>
+          ) : featured ? null : (
+            <MaterialCommunityIcons name="open-in-new" size={18} color={colors.textMuted} />
+          )}
         </View>
-        {featured ? null : <MaterialCommunityIcons name="open-in-new" size={18} color={colors.textMuted} />}
-      </View>
-      {featured ? (
-        <View style={[styles.cta, { backgroundColor: brand.color }]}>
-          <MaterialCommunityIcons name={brand.icon} size={18} color="rgb(255,255,255)" />
-          <Text style={styles.ctaText}>{brand.verb}</Text>
-        </View>
+      </Pressable>
+      {playing && embed ? (
+        <>
+          <EmbedPlayer embed={embed} />
+          <Pressable onPress={() => openLink(item.url)} hitSlop={8} style={styles.openRow} accessibilityRole="link">
+            <MaterialCommunityIcons name={brand.icon} size={14} color={brand.color} />
+            <Text style={featured ? styles.openTextDark : styles.openText}>{brand.verb}</Text>
+          </Pressable>
+        </>
+      ) : featured ? (
+        <Pressable onPress={onPress} accessibilityElementsHidden importantForAccessibility="no" style={({ pressed }) => [styles.cta, { backgroundColor: brand.color }, pressed && { opacity: 0.85 }]}>
+          <MaterialCommunityIcons name={embed && platform.platform === 'youtube' ? 'play' : brand.icon} size={18} color="rgb(255,255,255)" />
+          <Text style={styles.ctaText}>{embed ? playVerb : brand.verb}</Text>
+        </Pressable>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
 const useStyles = makeStyles((colors) => ({
   flex: { flex: 1, gap: 4 },
   featured: { backgroundColor: '#17151F', borderRadius: 22, padding: 16, gap: 14 },
-  row: { padding: 12, borderRadius: 18, backgroundColor: colors.white },
+  row: { padding: 12, borderRadius: 18, backgroundColor: colors.white, gap: 12 },
+  playDot: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  openRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: -4 },
+  openText: { fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.textSecondary },
+  openTextDark: { fontFamily: fonts.bodySemibold, fontSize: 13, color: '#B9B3C9' },
+  head: { gap: 14 },
   label: { fontFamily: fonts.bodySemibold, fontSize: 11, letterSpacing: 1.8, color: GOLD },
   line: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   art: { width: 56, height: 56, borderRadius: 12, backgroundColor: colors.bgSecondary },
