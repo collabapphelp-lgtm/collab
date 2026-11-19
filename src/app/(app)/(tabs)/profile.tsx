@@ -40,12 +40,8 @@ function useThemeTip() {
   }, []);
   useEffect(() => {
     if (!show) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glow, { toValue: 1, duration: 900, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(glow, { toValue: 0, duration: 900, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-      ]),
-    );
+    // A ripple: grows and fades, then starts again.
+    const loop = Animated.loop(Animated.timing(glow, { toValue: 1, duration: 1500, easing: Easing.out(Easing.quad), useNativeDriver: true }));
     loop.start();
     return () => loop.stop();
   }, [show, glow]);
@@ -85,8 +81,8 @@ export default function MyProfile() {
                   style={[
                     styles.themeGlow,
                     {
-                      opacity: tip.glow.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.9] }),
-                      transform: [{ scale: tip.glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.35] }) }],
+                      opacity: tip.glow.interpolate({ inputRange: [0, 1], outputRange: [0.7, 0] }),
+                      transform: [{ scale: tip.glow.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.4] }) }],
                     },
                   ]}
                 />
@@ -115,11 +111,10 @@ export default function MyProfile() {
           belowHero={<ProfileStrength profile={profile} />}
         />
           {tip.show ? (
-            <Pressable onPress={tip.dismiss} style={[styles.tip, { top: insets.top + 62 }]} accessibilityRole="button" accessibilityLabel="Tip: tap the sun or moon to switch between dark and light mode. Dismiss.">
+            <Pressable onPress={tip.dismiss} style={[styles.tip, { top: insets.top + 58 }]} accessibilityRole="button" accessibilityLabel="Tip: tap the sun or moon to switch between light and dark mode. Dismiss.">
               <View style={styles.tipArrow} />
-              <Text style={styles.tipTitle}>{dark ? '☀️ Prefer light mode?' : '🌙 Prefer dark mode?'}</Text>
-              <Text style={styles.tipBody}>Tap the {dark ? 'sun' : 'moon'} anytime to switch between dark and light.</Text>
-              <Text style={styles.tipOk}>Got it</Text>
+              <Text style={styles.tipText}>Switch light / dark</Text>
+              <Ionicons name="close" size={13} color="rgba(255,255,255,0.6)" />
             </Pressable>
           ) : null}
         <View style={styles.actions}>
@@ -173,45 +168,39 @@ const useStyles = makeStyles((colors) => ({
   legalDot: { fontSize: 13, color: colors.textMuted },
   version: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted, textAlign: 'center', marginTop: 6 },
   heroButtons: { flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 5 },
+  // A thin pulsing ring around the sun/moon on the first visit.
   themeGlow: {
     position: 'absolute',
-    left: -6,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgb(242,193,78)',
-    shadowColor: 'rgb(242,193,78)',
-    shadowOpacity: 1,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 0 },
+    left: -4,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: 'rgb(255,255,255)',
   },
   tip: {
     position: 'absolute',
-    right: 16,
-    width: 236,
+    right: 80,
     zIndex: 20,
-    padding: 14,
-    borderRadius: 16,
-    gap: 4,
-    backgroundColor: 'rgb(255,255,255)',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingLeft: 12,
+    paddingRight: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: 'rgba(15,16,20,0.88)',
   },
   tipArrow: {
     position: 'absolute',
-    top: -6,
-    right: 78,
-    width: 14,
-    height: 14,
-    backgroundColor: 'rgb(255,255,255)',
+    top: -4,
+    right: 14,
+    width: 9,
+    height: 9,
+    backgroundColor: 'rgba(15,16,20,0.88)',
     transform: [{ rotate: '45deg' }],
   },
-  tipTitle: { fontFamily: fonts.bodySemibold, fontSize: 15, color: 'rgb(23,21,31)' },
-  tipBody: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: 'rgb(90,90,100)' },
-  tipOk: { fontFamily: fonts.bodySemibold, fontSize: 13, color: 'rgb(75,163,199)', marginTop: 4, alignSelf: 'flex-end' },
+  tipText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: 'rgb(255,255,255)' },
   // Plain rgb() keeps the button white in dark mode too (see lib/theme.ts).
   themeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgb(255,255,255)', alignItems: 'center', justifyContent: 'center' },
   heroEdit: { height: 36, paddingHorizontal: 18, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.95)', justifyContent: 'center' },

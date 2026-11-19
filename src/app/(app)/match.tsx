@@ -12,7 +12,7 @@ import { optionFor, displayName } from '@/lib/labels';
 import type { UserProfile } from '@/lib/types';
 import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
-const LOGO_WHITE = require('../../../assets/logo-white.png');
+const LOGO = require('../../../assets/logo.png');
 
 // "Let's Collab!" — shown right after two people like each other.
 // Dark "studio at night" look; the tilted cards echo the welcome screen.
@@ -52,9 +52,9 @@ export default function ConnectionScreen() {
 
           <View style={styles.cards}>
             <PersonCard person={me} tilt="-7deg" accent={colors.blue} />
-            <LinearGradient colors={[colors.blue, colors.purple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.connector}>
-              <Image source={LOGO_WHITE} style={styles.connectorLogo} contentFit="contain" accessibilityLabel="Collab" />
-            </LinearGradient>
+            <View style={styles.connector}>
+              <Image source={LOGO} style={styles.connectorLogo} contentFit="contain" accessibilityLabel="Collab" />
+            </View>
             <PersonCard person={them} tilt="7deg" accent={colors.purple} />
           </View>
 
@@ -131,22 +131,9 @@ const useStyles = makeStyles((colors) => ({
   badge: { backgroundColor: colors.white, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.full, maxWidth: '100%' },
   badgeText: { fontFamily: fonts.bodySemibold, fontSize: 12, color: colors.text },
   name: { fontFamily: fonts.bodyMedium, fontSize: 13, color: 'rgba(255,255,255,0.85)' },
-  connector: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginHorizontal: -12,
-    zIndex: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgb(255,255,255)',
-    shadowColor: colors.purple,
-    shadowOpacity: 0.6,
-    shadowRadius: 14,
-    elevation: 10,
-  },
-  connectorLogo: { width: 30, height: 30 },
+  // The rainbow Collab mark, same as the app icon, sitting where the two cards meet.
+  connector: { marginHorizontal: -22, zIndex: 2 },
+  connectorLogo: { width: 76, height: 44 },
 
   title: { fontFamily: fonts.heading, fontSize: 40, color: colors.white, textAlign: 'center', letterSpacing: -0.5 },
   body: {
