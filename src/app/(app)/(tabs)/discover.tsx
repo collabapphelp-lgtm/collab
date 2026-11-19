@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { ActivityIndicator, Animated, Modal, PanResponder, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { INVITE_URL } from '@/lib/legal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -200,6 +200,27 @@ export default function Discover() {
 
   const current = queue?.[0];
 
+  // Swipe the card: right = Collab, left = pass. The buttons still work and fly the card off too.
+  const { width } = useWindowDimensions();
+  const [pan] = useState(() => new Animated.Value(0));
+  const decideRef = useRef<(c: 'like' | 'pass') => void>(() => {});
+  // The ref is only read inside gesture callbacks, never during render.
+  // eslint-disable-next-line react-hooks/refs
+  const [swipe] = useState(() =>
+    PanResponder.create({
+      // Only take over clearly sideways drags, so scrolling the profile still works.
+      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+      onPanResponderMove: (_, g) => pan.setValue(g.dx),
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, g) => {
+        if (g.dx > 110 || g.vx > 0.9) decideRef.current('like');
+        else if (g.dx < -110 || g.vx < -0.9) decideRef.current('pass');
+        else Animated.spring(pan, { toValue: 0, useNativeDriver: true, friction: 6 }).start();
+      },
+      onPanResponderTerminate: () => Animated.spring(pan, { toValue: 0, useNativeDriver: true }).start(),
+    }),
+  );
+
   async function decide(choice: 'like' | 'pass') {
     if (!profile || !current || acting) return;
     setActing(true);
@@ -218,6 +239,16 @@ export default function Discover() {
       setActing(false);
     }
   }
+
+  function flyOut(choice: 'like' | 'pass') {
+    if (acting) return;
+    Animated.timing(pan, { toValue: (choice === 'like' ? 1 : -1) * width * 1.3, duration: 220, useNativeDriver: true }).start(() =>
+      decide(choice).finally(() => pan.setValue(0)),
+    );
+  }
+  useEffect(() => {
+    decideRef.current = flyOut;
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -257,6 +288,18 @@ export default function Discover() {
         </View>
       ) : current ? (
         <View style={styles.flex}>
+          <Animated.View
+            {...swipe.panHandlers}
+            style={[
+              styles.flex,
+              {
+                transform: [
+                  { translateX: pan },
+                  { rotate: pan.interpolate({ inputRange: [-width, 0, width], outputRange: ['-9deg', '0deg', '9deg'] }) },
+                ],
+              },
+            ]}
+          >
           <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <View style={styles.card}>
               <View style={styles.cardClip}>
@@ -274,11 +317,24 @@ export default function Discover() {
             </View>
             {error ? <Text style={styles.error}>{error}</Text> : null}
           </ScrollView>
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.stamp, styles.stampLike, { opacity: pan.interpolate({ inputRange: [20, 110], outputRange: [0, 1], extrapolate: 'clamp' }) }]}
+            >
+              <Text style={[styles.stampText, { color: colors.blue }]}>COLLAB</Text>
+            </Animated.View>
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.stamp, styles.stampPass, { opacity: pan.interpolate({ inputRange: [-110, -20], outputRange: [1, 0], extrapolate: 'clamp' }) }]}
+            >
+              <Text style={[styles.stampText, { color: PASS }]}>PASS</Text>
+            </Animated.View>
+          </Animated.View>
 
           <LinearGradient colors={['rgba(243,233,216,0)', 'rgba(243,233,216,0.95)']} style={styles.fade} pointerEvents="none" />
           <View style={styles.actions} pointerEvents="box-none">
-            <ActionButton kind="pass" onPress={() => decide('pass')} disabled={acting} />
-            <ActionButton kind="like" onPress={() => decide('like')} disabled={acting} />
+            <ActionButton kind="pass" onPress={() => flyOut('pass')} disabled={acting} />
+            <ActionButton kind="like" onPress={() => flyOut('like')} disabled={acting} />
           </View>
         </View>
       ) : !error && more.length > 0 ? (
@@ -598,6 +654,18 @@ const useStyles = makeStyles((colors) => ({
     shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
+  stamp: {
+    position: 'absolute',
+    top: 150,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 3,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+  },
+  stampLike: { left: 34, borderColor: '#4BA3C7', transform: [{ rotate: '-12deg' }] },
+  stampPass: { right: 34, borderColor: PASS, transform: [{ rotate: '12deg' }] },
+  stampText: { fontFamily: fonts.heading, fontSize: 28, letterSpacing: 1.5 },
   cardClip: { borderRadius: 28, overflow: 'hidden' },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 120 },
   error: { fontFamily: fonts.body, fontSize: 14, color: colors.red, textAlign: 'center', marginTop: 12 },

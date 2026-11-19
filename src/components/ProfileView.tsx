@@ -66,11 +66,20 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
       return picked.length ? picked.map((o) => o.label) : [optionFor(fam).label];
     }),
     ...(profile.instrumentsSpecific ?? []),
-    ...(profile.daws ?? []).filter((d) => d !== 'daw:other').map((d) => optionFor(d).label),
   ];
+  // DAWs aren't instruments: show them as one "Producer · Logic Pro" chip.
+  const dawNames = (profile.daws ?? []).filter((d) => d !== 'daw:other').map((d) => optionFor(d).label);
+  const producer = dawNames.length || profile.daws?.length ? `Producer${dawNames.length ? ` · ${dawNames.join(', ')}` : ''}` : null;
+  const playsTitle = instruments.length
+    ? producer
+      ? isSelf ? 'You play & produce' : 'Plays & produces'
+      : isSelf ? 'You play' : 'Plays'
+    : isSelf ? 'You produce' : 'Produces';
+  if (producer) instruments.push(producer);
   const isGroup = profile.profileKind === 'group';
   const intents = (profile.intents ?? []).map((i) => optionFor(i).label);
-  const experience = profile.experience ? optionFor(profile.experience).label : null;
+  // On its own "Pro" reads like a goal, so say what it is.
+  const experience = profile.experience ? `${optionFor(profile.experience).label}${profile.experience === 'pro' ? ' level' : ''}` : null;
   const soundLine = [...(tastes ?? []).map((t) => optionFor(t).label), ...(profile.soundsCustom ?? [])]
     .slice(0, 3)
     .join(' · ')
@@ -188,7 +197,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
         ) : null}
 
         {intents.length > 0 || experience ? (
-          <Section title={isSelf ? 'You’re here to' : 'Here to'}>
+          <Section title={intents.length ? (isSelf ? 'You’re here to' : 'Here to') : 'Experience'}>
             <View style={styles.chips}>
               {intents.map((t) => (
                 <View key={t} style={[styles.chip, { backgroundColor: accent, borderColor: accent }]}>
@@ -213,7 +222,7 @@ export function ProfileView({ profile, distanceLabel, reasons, heroAccessory, be
           : null}
 
         {instruments.length > 0 ? (
-          <Section title={profile.instruments?.length ? (isSelf ? 'You play' : 'Plays') : 'Works in'}>
+          <Section title={playsTitle}>
             <ChipRow items={instruments} />
           </Section>
         ) : null}
