@@ -41,7 +41,7 @@ function meta(html: string, prop: string) {
 
 async function fetchPreview(url: string, platform: string): Promise<LinkPreview | null> {
   // Design previews run offline: show sample artwork.
-  if (process.env.EXPO_PUBLIC_SHOT_PHOTOS === '1') return { image: '/shots/flyer.jpg', author: 'Maya Brooks' };
+  if (process.env.EXPO_PUBLIC_SHOT_PHOTOS === '1') return { image: '/shots/cover.jpg', author: 'Maya Brooks' };
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), 8000);
   try {

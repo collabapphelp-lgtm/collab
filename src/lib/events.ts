@@ -408,7 +408,7 @@ function PREVIEW_POSTED(): EventOccurrence[] {
   const sample: PostedEvent = {
     title: 'Producer × Vocalist Mixer',
     type: 'meetup',
-    venue: 'Sample venue',
+    venue: 'The Loft LES',
     address: 'Lower East Side, New York, NY',
     neighborhood: 'Lower East Side',
     lat: 40.7187,

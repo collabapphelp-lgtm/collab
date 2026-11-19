@@ -26,7 +26,7 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
     lookingForDetails: { content: ['videographer'] },
     genres: ['rnb', 'hiphop', 'pop'],
     showcase: [
-      { type: 'media', source: 'link', url: 'https://open.spotify.com/track/demo1', platform: 'spotify', title: 'Velvet (demo)' },
+      { type: 'media', source: 'link', url: 'https://open.spotify.com/track/demo1', platform: 'spotify', title: 'Velvet' },
       { type: 'prompt', question: 'What I’m working on right now...', answer: 'Finishing a 5-song R&B EP. Two songs are written and need warm, late-night production.' },
       { type: 'prompt', question: 'My sound in 3 artists...', answer: 'Jazmine Sullivan, SZA, Daniel Caesar.' },
     ],
