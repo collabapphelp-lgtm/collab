@@ -110,6 +110,68 @@ function repeatsLabel(days: number[]) {
   return 'Every ' + days.map((d) => DAY_NAMES[d]).join(' & ');
 }
 
+/**
+ * Collab team edits to built-in listings (`eventOverrides/{eventId}`), applied on top of the code.
+ * null clears an optional field (cost, signUp, link, endTime).
+ */
+export type CuratedOverride = Partial<{
+  title: string;
+  type: EventType;
+  venue: string;
+  address: string;
+  neighborhood: string;
+  lat: number;
+  lng: number;
+  days: number[];
+  date: string;
+  time: string;
+  endTime: string | null;
+  cost: string | null;
+  signUp: string | null;
+  description: string;
+  link: string | null;
+  featured: boolean;
+  verified: boolean;
+}>;
+
+let overrideCache = new Map<string, CuratedOverride>();
+
+export async function loadCuratedOverrides(): Promise<Map<string, CuratedOverride>> {
+  if (UI_PREVIEW) return overrideCache;
+  const snap = await getDocs(collection(db, 'eventOverrides'));
+  overrideCache = new Map(snap.docs.map((d) => [d.id, d.data() as CuratedOverride]));
+  return overrideCache;
+}
+
+function withOverride<T extends { id: string }>(e: T): T {
+  const o = overrideCache.get(e.id);
+  if (!o) return e;
+  const out: Record<string, unknown> = { ...e };
+  for (const [k, v] of Object.entries(o)) {
+    if (k === 'editedAt' || k === 'editedBy') continue;
+    out[k] = v === null ? undefined : v;
+  }
+  return out as T;
+}
+
+/** A built-in listing as it currently stands (code + any team edits), for the edit screen. */
+export function curatedListing(eventId: string):
+  | { kind: 'weekly'; e: (typeof CURATED_EVENTS)[number]; edited: boolean }
+  | { kind: 'once'; e: (typeof CURATED_ONE_OFFS)[number]; edited: boolean }
+  | null {
+  const w = CURATED_EVENTS.find((x) => x.id === eventId);
+  if (w) return { kind: 'weekly', e: withOverride(w), edited: overrideCache.has(eventId) };
+  const o = CURATED_ONE_OFFS.find((x) => x.id === eventId);
+  if (o) return { kind: 'once', e: withOverride(o), edited: overrideCache.has(eventId) };
+  return null;
+}
+
+/** Preview builds have no backend: keep edits in memory so the flow can be clicked through. */
+export function setPreviewOverride(eventId: string, o: CuratedOverride | null) {
+  if (o) overrideCache.set(eventId, { ...overrideCache.get(eventId), ...o });
+  else overrideCache.delete(eventId);
+}
+
 /** Turns the curated list into dated listings for today and the next two weeks. */
 export function curatedOccurrences(now = new Date()): EventOccurrence[] {
   const out: EventOccurrence[] = [];
@@ -118,7 +180,8 @@ export function curatedOccurrences(now = new Date()): EventOccurrence[] {
   for (let i = 0; i < WINDOW_DAYS; i++) {
     const day = new Date(today);
     day.setDate(today.getDate() + i);
-    for (const e of CURATED_EVENTS) {
+    for (const base of CURATED_EVENTS) {
+      const e = withOverride(base);
       if (!e.days.includes(day.getDay())) continue;
       const start = at(day, e.time);
       let end = e.endTime ? at(day, e.endTime) : undefined;
@@ -150,7 +213,8 @@ export function curatedOccurrences(now = new Date()): EventOccurrence[] {
   }
   const last = new Date(today);
   last.setDate(today.getDate() + WINDOW_DAYS);
-  for (const e of CURATED_ONE_OFFS) {
+  for (const base of CURATED_ONE_OFFS) {
+    const e = withOverride(base);
     const [y, mo, d] = e.date.split('-').map(Number);
     const day = new Date(y, mo - 1, d);
     if (day < today || day >= last) continue;

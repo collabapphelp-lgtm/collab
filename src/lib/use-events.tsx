@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useAuth } from './auth-context';
-import { curatedOccurrences, loadHiddenCurated, loadPostedEvents, loadRsvps, setGoing, type EventOccurrence } from './events';
+import { curatedOccurrences, loadCuratedOverrides, loadHiddenCurated, loadPostedEvents, loadRsvps, setGoing, type EventOccurrence } from './events';
 
 type State = {
   /** Every listing from today through the next two weeks, soonest first. null while loading. */
@@ -29,6 +29,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     let error: string | null = null;
     // Curated listings are built in, so show them even if the network is down.
     const [posted, rsvps, hidden] = await Promise.all([
+      // Team edits to built-in listings are applied inside curatedOccurrences() below.
       loadPostedEvents(me).catch((e) => {
         console.warn('Loading posted events failed', e);
         error = 'Couldn’t load the latest events. Showing the regular listings.';
@@ -36,6 +37,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       }),
       loadRsvps().catch(() => new Map<string, string[]>()),
       loadHiddenCurated().catch(() => () => false),
+      loadCuratedOverrides().catch(() => null),
     ]);
     const now = Date.now();
     // Keep tonight's listings visible until they've had a few hours to wrap up.

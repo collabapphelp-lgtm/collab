@@ -91,6 +91,17 @@ export async function loadSubmissions(): Promise<{ pending: Submission[]; approv
 }
 
 /** Collab team: delete a posted event, or hide a built-in one (one date, or the whole series). */
+/** Collab team: edit any event. Built-in listings are saved as an override; `reset` restores the original. */
+export async function adminUpdateEvent(
+  eventId: string,
+  source: 'posted' | 'curated',
+  fields: Record<string, unknown> | null,
+  reset = false,
+) {
+  if (UI_PREVIEW) return;
+  await httpsCallable(fns(), 'adminUpdateEvent')({ eventId, source, fields, reset });
+}
+
 export async function adminDeleteEvent(eventId: string, source: 'posted' | 'curated', date?: string) {
   if (UI_PREVIEW) return;
   await httpsCallable(fns(), 'adminDeleteEvent')({ eventId, source, ...(date ? { date } : {}) });

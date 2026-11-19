@@ -213,6 +213,11 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if false;
     }
+    // Collab team edits to built-in listings (written by the adminUpdateEvent function).
+    match /eventOverrides/{eventId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
 
     match /rsvps/{rsvpId} {
       allow read: if signedIn();

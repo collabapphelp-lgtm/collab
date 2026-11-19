@@ -118,6 +118,85 @@ exports.adminDeleteEvent = onCall({ maxInstances: 2, memory: '256MiB' }, async (
   return { ok: true };
 });
 
+/**
+ * Collab team: edit any event.
+ * { eventId, source: 'posted' | 'curated', fields, reset? }
+ *   posted  → the event doc is updated (null clears an optional field).
+ *   curated → built-in listings live in the app's code, so edits are saved as an override in
+ *             `eventOverrides/{eventId}` that the app applies on top. `reset: true` removes it.
+ */
+const TYPES = ['open-mic', 'jam', 'show', 'meetup'];
+const str = (max, min = 0) => (v) => typeof v === 'string' && v.trim().length >= min && v.length <= max;
+const optStr = (max) => (v) => v === null || str(max)(v);
+const bool = (v) => typeof v === 'boolean';
+const hhmm = (v) => typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+const COMMON = {
+  title: str(80, 1),
+  type: (v) => TYPES.includes(v),
+  venue: str(80, 1),
+  address: str(140),
+  neighborhood: str(60),
+  lat: (v) => typeof v === 'number' && v > 40.45 && v < 40.95,
+  lng: (v) => typeof v === 'number' && v > -74.3 && v < -73.65,
+  description: str(1000),
+  cost: optStr(60),
+  signUp: optStr(120),
+  link: optStr(300),
+  featured: bool,
+};
+const POSTED = {
+  ...COMMON,
+  startsAt: (v) => typeof v === 'number' && v > 0,
+  endsAt: (v) => v === null || (typeof v === 'number' && v > 0),
+  capacity: (v) => v === null || (Number.isInteger(v) && v >= 1 && v <= 5000),
+  collabHosted: bool,
+};
+const CURATED = {
+  ...COMMON,
+  days: (v) => Array.isArray(v) && v.length > 0 && v.length <= 7 && v.every((d) => Number.isInteger(d) && d >= 0 && d <= 6),
+  date: (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v),
+  time: hhmm,
+  endTime: (v) => v === null || hhmm(v),
+  verified: bool,
+};
+
+exports.adminUpdateEvent = onCall({ maxInstances: 2, memory: '256MiB' }, async (request) => {
+  requireAdmin(request);
+  const { eventId, source, fields, reset } = request.data ?? {};
+  if (typeof eventId !== 'string' || !eventId || eventId.includes('/') || !['posted', 'curated'].includes(source)) {
+    throw new HttpsError('invalid-argument', 'Pick an event.');
+  }
+  const db = getFirestore();
+  if (source === 'curated' && reset) {
+    await db.doc(`eventOverrides/${eventId}`).delete();
+    return { ok: true };
+  }
+  if (!fields || typeof fields !== 'object') throw new HttpsError('invalid-argument', 'Nothing to save.');
+  const rules = source === 'posted' ? POSTED : CURATED;
+  const clean = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if (!rules[k]) continue;
+    if (!rules[k](v)) throw new HttpsError('invalid-argument', `Check the ${k} field.`);
+    clean[k] = typeof v === 'string' ? v.trim() : v;
+  }
+  if (!Object.keys(clean).length) throw new HttpsError('invalid-argument', 'Nothing to save.');
+  if (source === 'posted') {
+    const ref = db.doc(`events/${eventId}`);
+    if (!(await ref.get()).exists) throw new HttpsError('not-found', 'That event no longer exists.');
+    const update = {};
+    for (const [k, v] of Object.entries(clean)) update[k] = v === null ? FieldValue.delete() : v;
+    update.editedAt = FieldValue.serverTimestamp();
+    update.editedBy = request.auth.uid;
+    await ref.update(update);
+  } else {
+    await db.doc(`eventOverrides/${eventId}`).set(
+      { ...clean, editedAt: FieldValue.serverTimestamp(), editedBy: request.auth.uid },
+      { merge: true },
+    );
+  }
+  return { ok: true };
+});
+
 /** For the app: is this person on the Collab team, and how many events are waiting for review? */
 exports.teamStatus = onCall({ maxInstances: 3, memory: '256MiB' }, async (request) => {
   if (!request.auth || !adminUids().includes(request.auth.uid)) return { admin: false, pending: 0 };

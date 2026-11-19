@@ -197,11 +197,17 @@ export default function EventScreen() {
         ]);
       }
     };
-    if (team.admin && !mine) {
-      const options = ['Delete event (Collab team)', 'Cancel'];
+    // Collab team: full access to every listing (edit, flyer on their own posts, delete).
+    if (team.admin) {
+      const edit = () => router.push({ pathname: '/event/edit', params: { key: ev.key } });
+      const flyer = mine && ev.source === 'posted';
+      const options = ['Edit event', ...(flyer ? [ev.flyerURL ? 'Change flyer' : 'Add a flyer'] : []), 'Delete event', 'Cancel'];
+      const del = options.indexOf('Delete event');
       if (Platform.OS === 'ios') {
-        ActionSheetIOS.showActionSheetWithOptions({ options, destructiveButtonIndex: 0, cancelButtonIndex: 1 }, (i) => i === 0 && teamDelete());
-      } else teamDelete();
+        ActionSheetIOS.showActionSheetWithOptions({ options, destructiveButtonIndex: del, cancelButtonIndex: options.length - 1 }, (i) =>
+          i === 0 ? edit() : flyer && i === 1 ? addFlyer() : i === del ? (mine && ev.source === 'posted' ? remove() : teamDelete()) : null,
+        );
+      } else edit();
       return;
     }
     if (mine && ev.source === 'posted') {
