@@ -12,12 +12,14 @@ type Props = {
   start: Date | null;
   end?: Date | null;
   onChange: (start: Date, end: Date | null) => void;
+  /** About 80% of the normal size, centered (used in the event forms). */
+  compact?: boolean;
 };
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const dayMs = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 
-export function CalendarPicker({ min, max, mode, start, end, onChange }: Props) {
+export function CalendarPicker({ min, max, mode, start, end, onChange, compact }: Props) {
   const styles = useStyles();
   const colors = useColors();
   const [month, setMonth] = useState(() => {
@@ -51,7 +53,7 @@ export function CalendarPicker({ min, max, mode, start, end, onChange }: Props) 
   }
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, compact && styles.wrapCompact]}>
       <View style={styles.head}>
         <Pressable
           onPress={() => canPrev && setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
@@ -62,7 +64,7 @@ export function CalendarPicker({ min, max, mode, start, end, onChange }: Props) 
         >
           <Ionicons name="chevron-back" size={20} color={canPrev ? colors.text : colors.border} />
         </Pressable>
-        <Text style={styles.month}>{month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Text>
+        <Text style={[styles.month, compact && styles.monthCompact]}>{month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Text>
         <Pressable
           onPress={() => canNext && setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
           disabled={!canNext}
@@ -82,7 +84,7 @@ export function CalendarPicker({ min, max, mode, start, end, onChange }: Props) 
       </View>
       <View style={styles.grid}>
         {cells.map((d, i) => {
-          if (!d) return <View key={i} style={styles.cell} />;
+          if (!d) return <View key={i} style={[styles.cell, compact && styles.cellCompact]} />;
           const t = dayMs(d);
           const off = t < minMs || t > maxMs;
           const isStart = s === t;
@@ -90,16 +92,16 @@ export function CalendarPicker({ min, max, mode, start, end, onChange }: Props) 
           const inside = s !== null && e !== null && t > s && t < e;
           const picked = isStart || isEnd;
           return (
-            <View key={i} style={[styles.cell, inside && styles.band, isStart && e !== null && styles.bandStart, isEnd && styles.bandEnd]}>
+            <View key={i} style={[styles.cell, compact && styles.cellCompact, inside && styles.band, isStart && e !== null && styles.bandStart, isEnd && styles.bandEnd]}>
               <Pressable
                 onPress={() => !off && tap(d)}
                 disabled={off}
-                style={[styles.day, picked && styles.dayOn]}
+                style={[styles.day, compact && styles.dayCompact, picked && styles.dayOn]}
                 accessibilityRole="button"
                 accessibilityState={{ selected: picked, disabled: off }}
                 accessibilityLabel={d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               >
-                <Text style={[styles.dayText, t === todayMs && styles.today, off && styles.off, picked && styles.dayTextOn]}>{d.getDate()}</Text>
+                <Text style={[styles.dayText, compact && styles.dayTextCompact, t === todayMs && styles.today, off && styles.off, picked && styles.dayTextOn]}>{d.getDate()}</Text>
               </Pressable>
             </View>
           );
@@ -111,6 +113,11 @@ export function CalendarPicker({ min, max, mode, start, end, onChange }: Props) 
 
 const useStyles = makeStyles((colors) => ({
   wrap: { backgroundColor: colors.white, borderRadius: 18, padding: 12, gap: 6 },
+  wrapCompact: { width: '80%', alignSelf: 'center', padding: 10, gap: 4, borderRadius: 16 },
+  monthCompact: { fontSize: 14 },
+  cellCompact: { height: 34 },
+  dayCompact: { width: 30, height: 30, borderRadius: 15 },
+  dayTextCompact: { fontSize: 13 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6, paddingBottom: 4 },
   month: { fontFamily: fonts.bodySemibold, fontSize: 16, color: colors.text },
   row: { flexDirection: 'row' },

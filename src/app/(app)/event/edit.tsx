@@ -255,7 +255,7 @@ export default function EditEvent() {
             </Section>
           ) : (
             <Section title={day ? `Date · ${day.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}` : 'Date'}>
-              <CalendarPicker mode="single" min={minDay} max={maxDay} start={day} onChange={(d) => setDay(d)} />
+              <CalendarPicker compact mode="single" min={minDay} max={maxDay} start={day} onChange={(d) => setDay(d)} />
             </Section>
           )}
 

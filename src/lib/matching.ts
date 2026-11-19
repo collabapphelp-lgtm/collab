@@ -1,3 +1,4 @@
+import { neighborhoodFromLabel } from '@/lib/nyc-neighborhoods';
 import { DEFAULT_RADIUS_MILES, INSTRUMENT_TYPES } from './onboarding-data';
 import { canonicalList, lookingOptionFor, optionFor } from './labels';
 import type { UserProfile } from './types';
@@ -173,6 +174,9 @@ export function rankCandidates(me: UserProfile, others: UserProfile[]): { best: 
 
 export function formatDistance(miles: number | null, location?: string) {
   if (miles === null) return location ? location.split(',')[0] : 'Remote';
+  // NYC neighborhoods lead, since "2 mi away" alone says little in the city.
+  const hood = neighborhoodFromLabel(location);
+  if (hood) return miles < 1 ? `${hood.name} · under a mile` : `${hood.name} · ${Math.round(miles)} mi`;
   if (miles < 1) return 'Less than a mile away';
   if (miles < 100) return `${Math.round(miles)} mi away`;
   return location ? location.split(',')[0] : `${Math.round(miles)} mi away`;

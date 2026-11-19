@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Button } from '@/components/Button';
 import { CalendarPicker } from '@/components/CalendarPicker';
+import { clockText, TimeWheel } from '@/components/TimeWheel';
 import { searchPlaces, type Place } from '@/lib/places';
 import { Image } from 'expo-image';
 import { pickFlyer, type PickedFlyer } from '@/lib/flyer';
@@ -24,14 +25,6 @@ import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 const TYPES: EventType[] = ['open-mic', 'jam', 'show', 'meetup'];
 const DAYS_AHEAD = 90;
 
-/** Start times from 10 AM to 1:30 AM, every 30 minutes, as minutes after midnight. */
-const TIMES = Array.from({ length: 32 }, (_, i) => 600 + i * 30);
-const timeText = (mins: number) => {
-  const h = Math.floor(mins / 60) % 24;
-  const m = mins % 60;
-  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
-};
-
 export default function NewEvent() {
   const styles = useStyles();
   const colors = useColors();
@@ -40,7 +33,7 @@ export default function NewEvent() {
   const [type, setType] = useState<EventType | null>(null);
   const [title, setTitle] = useState('');
   const [day, setDay] = useState<Date | null>(null);
-  const [time, setTime] = useState<number | null>(null);
+  const [time, setTime] = useState<number>(1200); // 8 PM, when most of these happen
   const [venue, setVenue] = useState('');
   const [address, setAddress] = useState('');
   const [cost, setCost] = useState('');
@@ -96,9 +89,7 @@ export default function NewEvent() {
       ? 'Give it a name'
       : !day
         ? 'Pick a date'
-        : time === null
-          ? 'Pick a start time'
-          : !venue.trim() && !address.trim()
+        : !venue.trim() && !address.trim()
             ? 'Add the venue or the address'
             : description.trim().length < 10
               ? 'Add a short description'
@@ -121,7 +112,7 @@ export default function NewEvent() {
 
   async function submit() {
     setError(null);
-    if (missing || !type || !day || time === null || !user || !profile) return setError(missing);
+    if (missing || !type || !day || !user || !profile) return setError(missing);
     if (hasBlockedLanguage(title, venue, description, signUp, cost)) return setError(BLOCKED_LANGUAGE_MESSAGE);
     const url = link.trim() ? (/^https?:\/\//i.test(link.trim()) ? link.trim() : `https://${link.trim()}`) : undefined;
 
@@ -133,7 +124,8 @@ export default function NewEvent() {
         return setError('We couldn’t find that place in NYC. Pick it from the suggestions, or add the street address, like “177 Vanderbilt Ave, Brooklyn”.');
       }
       const start = new Date(day);
-      start.setMinutes(time);
+      // A start before 5 AM means late that night, so after midnight.
+      start.setMinutes(time < 300 ? time + 1440 : time);
       let flyerURL: string | undefined;
       if (flyer && !UI_PREVIEW) {
         setProgress(0);
@@ -204,18 +196,11 @@ export default function NewEvent() {
           </Section>
 
           <Section title={day ? `Date · ${day.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}` : 'Date'}>
-            <CalendarPicker mode="single" min={minDay} max={maxDay} start={day} onChange={(d) => setDay(d)} />
+            <CalendarPicker compact mode="single" min={minDay} max={maxDay} start={day} onChange={(d) => setDay(d)} />
           </Section>
 
-          <Section title="Starts at">
-            {/* Opens scrolled to the evening, when most of these happen. */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.hRow} contentOffset={{ x: 1240, y: 0 }}>
-              {TIMES.map((t) => (
-                <Pressable key={t} onPress={() => setTime(t)} style={[styles.timeChip, time === t && styles.chipOn]} accessibilityRole="button">
-                  <Text style={[styles.timeText, time === t && styles.textOn]}>{timeText(t)}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
+          <Section title={`Start time · ${clockText(time)}`}>
+            <TimeWheel value={time} onChange={setTime} />
           </Section>
 
           <Section title="Flyer" note="Optional, but events with a flyer or photo get a lot more attention.">

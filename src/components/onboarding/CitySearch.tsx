@@ -3,6 +3,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, Vi
 import * as Location from 'expo-location';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
+import { nearestNeighborhood, neighborhoodLabel } from '@/lib/nyc-neighborhoods';
 
 export type PickedCity = { label: string; lat: number; lng: number };
 
@@ -47,6 +48,9 @@ async function cityFromDevice(): Promise<PickedCity | 'denied' | null> {
   if (perm.status !== 'granted') return 'denied';
   const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
   const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+  // In NYC, go straight to the neighborhood (its center, not their exact spot).
+  const hood = nearestNeighborhood(here.lat, here.lng);
+  if (hood) return { label: neighborhoodLabel(hood), lat: hood.lat, lng: hood.lng };
 
   let place: Location.LocationGeocodedAddress | undefined;
   try {
