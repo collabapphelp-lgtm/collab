@@ -25,6 +25,13 @@
     ],
     "rewrites": [
       {
+        "source": "/s/**",
+        "function": {
+          "functionId": "sharePage",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "/cal/**",
         "function": {
           "functionId": "calendarFile",

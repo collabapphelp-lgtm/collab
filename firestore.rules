@@ -208,6 +208,24 @@ service cloud.firestore {
     }
 
     // rsvps/{occurrenceKey}__{uid}: "I'm going". Visible to every signed-in member (that's the point).
+    // Share links (collab-609ac.web.app/s/{id}): a snapshot of an event, or of your own profile,
+    // that the sharePage function shows to anyone with the link. Only the server reads them.
+    function validShare(d) {
+      return d.by == request.auth.uid
+        && d.kind in ['event', 'profile']
+        && (d.kind != 'profile' || d.uid == request.auth.uid)
+        && d.keys().hasOnly(['by', 'kind', 'at', 'uid', 'name', 'role', 'place', 'tags', 'lookingFor', 'photoURL',
+             'key', 'eventId', 'source', 'title', 'typeLabel', 'venue', 'address', 'neighborhood', 'start', 'end', 'cost', 'description', 'flyerURL'])
+        && (!('title' in d) || d.title.size() <= 120)
+        && (!('description' in d) || d.description.size() <= 1200)
+        && (!('name' in d) || d.name.size() <= 60)
+        && (!('tags' in d) || d.tags.size() <= 8);
+    }
+    match /shares/{shareId} {
+      allow create: if signedIn() && validShare(request.resource.data);
+      allow update: if signedIn() && resource.data.by == request.auth.uid && validShare(request.resource.data);
+    }
+
     // Built-in listings the Collab team took down (written only by the adminDeleteEvent function).
     match /hiddenEvents/{eventId} {
       allow read: if signedIn();

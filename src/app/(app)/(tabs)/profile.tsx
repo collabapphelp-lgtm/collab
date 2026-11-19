@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Animated, Easing, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { shareMyProfile } from '@/lib/share';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
@@ -103,6 +104,14 @@ export default function MyProfile() {
               >
                 <Ionicons name={dark ? 'sunny' : 'moon'} size={17} color="#17151F" />
               </Pressable>
+              <Pressable
+                onPress={() => shareMyProfile(profile).catch((err) => console.warn('Share failed', err))}
+                accessibilityRole="button"
+                accessibilityLabel="Share your profile"
+                style={styles.themeBtn}
+              >
+                <Ionicons name="share-outline" size={17} color="#17151F" />
+              </Pressable>
               <Pressable onPress={() => router.push('/edit')} accessibilityRole="button" style={styles.heroEdit}>
                 <Text style={styles.heroEditText}>Edit</Text>
               </Pressable>
@@ -180,7 +189,7 @@ const useStyles = makeStyles((colors) => ({
   },
   tip: {
     position: 'absolute',
-    right: 80,
+    right: 124,
     zIndex: 20,
     flexDirection: 'row',
     alignItems: 'center',

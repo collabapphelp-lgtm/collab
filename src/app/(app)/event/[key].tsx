@@ -9,6 +9,7 @@ import { Avatar } from '@/components/Avatar';
 import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/lib/auth-context';
+import { shareEvent } from '@/lib/share';
 import { deleteMyEvent, flyerShape, metaFor, setEventFlyer, whenLabel } from '@/lib/events';
 import { Image } from 'expo-image';
 import { FlyerLightbox } from '@/components/FlyerLightbox';
@@ -235,9 +236,22 @@ export default function EventScreen() {
               <View style={styles.backWrap}>
                 <BackButton />
               </View>
-              <Pressable onPress={more} hitSlop={10} style={styles.moreBtn} accessibilityRole="button" accessibilityLabel="More options">
-                <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
-              </Pressable>
+              <View style={styles.topBtns}>
+                {e.status !== 'pending' ? (
+                  <Pressable
+                    onPress={() => shareEvent(e, me).catch((err) => console.warn('Share failed', err))}
+                    hitSlop={10}
+                    style={styles.moreBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Share this event"
+                  >
+                    <Ionicons name="share-outline" size={19} color={colors.text} />
+                  </Pressable>
+                ) : null}
+                <Pressable onPress={more} hitSlop={10} style={styles.moreBtn} accessibilityRole="button" accessibilityLabel="More options">
+                  <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
+                </Pressable>
+              </View>
             </View>
             <View style={styles.heroBody}>
               <Text style={styles.heroType}>{(e.collabHosted ? 'Hosted by Collab' : meta.label).toUpperCase()}</Text>
@@ -461,6 +475,7 @@ const useStyles = makeStyles((colors) => ({
   hero: { paddingBottom: 26 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 4 },
   backWrap: { backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 20 },
+  topBtns: { flexDirection: 'row', gap: 10 },
   moreBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.85)', alignItems: 'center', justifyContent: 'center' },
   flyerWrap: { marginHorizontal: 22, marginTop: 20 },
   flyer: { width: '100%', borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.15)' },
