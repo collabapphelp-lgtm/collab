@@ -6,7 +6,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { flyerShape, TYPE_META } from '@/lib/events';
 import { Image } from 'expo-image';
 import { useEvents } from '@/lib/use-events';
-import { loadSubmissions, refreshTeam, reviewEvent, useTeam, type Submission } from '@/lib/team';
+import { loadSubmissions, refreshTeam, reviewEvent, setFeatured, useTeam, type Submission } from '@/lib/team';
 import { fonts, makeStyles, useColors } from '@/lib/theme';
 
 /** Collab team only: approve or reject events people posted, and take down live ones. */
@@ -19,6 +19,7 @@ export default function ReviewEvents() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [collab, setCollab] = useState<Record<string, boolean>>({});
+  const [feat, setFeat] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     setError(null);
@@ -37,7 +38,7 @@ export default function ReviewEvents() {
   async function decide(e: Submission, decision: 'approve' | 'reject' | 'remove') {
     setBusy(e.id);
     try {
-      await reviewEvent(e.id, decision, !!collab[e.id]);
+      await reviewEvent(e.id, decision, !!collab[e.id], !!feat[e.id]);
       await Promise.all([load(), refreshTeam()]);
       refreshEvents();
     } catch {
@@ -56,6 +57,18 @@ export default function ReviewEvents() {
         { text: decision === 'reject' ? 'Reject' : 'Take down', style: 'destructive', onPress: () => decide(e, decision) },
       ],
     );
+  }
+
+  // Live events: flip Featured right away (undo if it fails).
+  async function toggleFeatured(e: Submission, v: boolean) {
+    setFeat((f) => ({ ...f, [e.id]: v }));
+    try {
+      await setFeatured(e.id, v);
+      refreshEvents();
+    } catch {
+      setFeat((f) => ({ ...f, [e.id]: !v }));
+      Alert.alert('That didn’t go through', 'Check your connection and try again.');
+    }
   }
 
   if (checked && !admin) {
@@ -104,6 +117,10 @@ export default function ReviewEvents() {
               <Text style={styles.toggleText}>Collab event (gold styling)</Text>
               <Switch value={!!collab[e.id]} onValueChange={(v) => setCollab((c) => ({ ...c, [e.id]: v }))} />
             </View>
+            <View style={styles.toggle}>
+              <Text style={styles.toggleText}>Feature this (shows under Featured)</Text>
+              <Switch value={!!feat[e.id]} onValueChange={(v) => setFeat((f) => ({ ...f, [e.id]: v }))} />
+            </View>
             <View style={styles.buttons}>
               <Pressable onPress={() => confirm(e, 'reject')} disabled={!!busy} style={[styles.btn, styles.reject]} accessibilityRole="button">
                 <Text style={styles.rejectText}>Reject</Text>
@@ -114,9 +131,15 @@ export default function ReviewEvents() {
             </View>
           </>
         ) : (
-          <Pressable onPress={() => confirm(e, 'remove')} disabled={!!busy} style={styles.remove} accessibilityRole="button">
-            <Text style={styles.removeText}>Take down</Text>
-          </Pressable>
+          <>
+            <View style={styles.toggle}>
+              <Text style={styles.toggleText}>Feature this (shows under Featured)</Text>
+              <Switch value={feat[e.id] ?? !!e.featured} onValueChange={(v) => toggleFeatured(e, v)} />
+            </View>
+            <Pressable onPress={() => confirm(e, 'remove')} disabled={!!busy} style={styles.remove} accessibilityRole="button">
+              <Text style={styles.removeText}>Take down</Text>
+            </Pressable>
+          </>
         )}
       </View>
     );

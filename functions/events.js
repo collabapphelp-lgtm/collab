@@ -30,6 +30,7 @@ function shape(d) {
     hostName: e.hostName,
     status: e.status,
     collabHosted: !!e.collabHosted,
+    featured: !!e.featured,
     createdAt: e.createdAt?.toMillis?.() ?? null,
     flyerURL: e.flyerURL ?? null,
     flyerAspect: e.flyerAspect ?? null,
@@ -51,11 +52,14 @@ exports.eventSubmissions = onCall({ maxInstances: 2, memory: '256MiB' }, async (
   };
 });
 
-/** { id, decision: 'approve' | 'reject' | 'remove', collabHosted?: boolean } */
+/**
+ * { id, decision: 'approve' | 'reject' | 'remove' | 'feature', collabHosted?: boolean, featured?: boolean }
+ * 'feature' only flips the Featured flag on an event that's already live.
+ */
 exports.reviewEvent = onCall({ maxInstances: 2, memory: '256MiB' }, async (request) => {
   requireAdmin(request);
-  const { id, decision, collabHosted } = request.data ?? {};
-  if (typeof id !== 'string' || !['approve', 'reject', 'remove'].includes(decision)) {
+  const { id, decision, collabHosted, featured } = request.data ?? {};
+  if (typeof id !== 'string' || !['approve', 'reject', 'remove', 'feature'].includes(decision)) {
     throw new HttpsError('invalid-argument', 'Pick an event and a decision.');
   }
   const ref = getFirestore().doc(`events/${id}`);
@@ -63,10 +67,13 @@ exports.reviewEvent = onCall({ maxInstances: 2, memory: '256MiB' }, async (reque
   if (!snap.exists) throw new HttpsError('not-found', 'That event no longer exists.');
   if (decision === 'remove') {
     await ref.delete();
+  } else if (decision === 'feature') {
+    await ref.update({ featured: !!featured });
   } else {
     await ref.update({
       status: decision === 'approve' ? 'approved' : 'rejected',
       collabHosted: decision === 'approve' && !!collabHosted,
+      featured: decision === 'approve' && !!featured,
       reviewedAt: FieldValue.serverTimestamp(),
       reviewedBy: request.auth.uid,
     });

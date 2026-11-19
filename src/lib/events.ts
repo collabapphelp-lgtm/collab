@@ -143,6 +143,7 @@ export function curatedOccurrences(now = new Date()): EventOccurrence[] {
         link: e.link,
         repeats: repeatsLabel(e.days),
         collabHosted: false,
+        featured: !!e.featured,
         verified: e.verified,
       });
     }
@@ -172,6 +173,7 @@ export function curatedOccurrences(now = new Date()): EventOccurrence[] {
       description: e.description,
       link: e.link,
       collabHosted: false,
+      featured: !!e.featured,
       verified: e.verified,
     });
   }

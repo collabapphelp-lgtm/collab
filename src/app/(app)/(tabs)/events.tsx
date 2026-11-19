@@ -402,6 +402,7 @@ function Pill({
 function Badges({ e }: { e: EventOccurrence }) {
   const styles = useStyles();
   if (e.status === 'pending') return <Text style={[styles.badge, styles.badgePending]}>Pending review</Text>;
+  if (e.featured && !e.collabHosted) return <Text style={[styles.badge, styles.badgeFeatured]}>★ Featured</Text>;
   return null;
 }
 
@@ -583,6 +584,7 @@ const useStyles = makeStyles((colors) => ({
   rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' },
   badge: { fontFamily: fonts.bodySemibold, fontSize: 11, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full, overflow: 'hidden' },
   badgePending: { backgroundColor: '#F1F1F1', color: colors.textSecondary },
+  badgeFeatured: { backgroundColor: '#FFF3D6', color: '#9A6B00' },
   badgeSpots: { backgroundColor: '#E6F1F7', color: '#2F7FA6' },
   badgeFull: { backgroundColor: '#FBE3E1', color: '#B3412F' },
   going: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.blue },

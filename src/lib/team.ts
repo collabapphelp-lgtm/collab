@@ -22,6 +22,7 @@ export type Submission = {
   hostName: string;
   status: string;
   collabHosted: boolean;
+  featured?: boolean;
   flyerURL?: string | null;
   flyerAspect?: number | null;
 };
@@ -95,7 +96,12 @@ export async function adminDeleteEvent(eventId: string, source: 'posted' | 'cura
   await httpsCallable(fns(), 'adminDeleteEvent')({ eventId, source, ...(date ? { date } : {}) });
 }
 
-export async function reviewEvent(id: string, decision: 'approve' | 'reject' | 'remove', collabHosted = false) {
+export async function setFeatured(id: string, featured: boolean) {
   if (UI_PREVIEW) return;
-  await httpsCallable(fns(), 'reviewEvent')({ id, decision, collabHosted });
+  await httpsCallable(fns(), 'reviewEvent')({ id, decision: 'feature', featured });
+}
+
+export async function reviewEvent(id: string, decision: 'approve' | 'reject' | 'remove', collabHosted = false, featured = false) {
+  if (UI_PREVIEW) return;
+  await httpsCallable(fns(), 'reviewEvent')({ id, decision, collabHosted, featured });
 }
