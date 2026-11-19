@@ -9,6 +9,7 @@ import { Avatar, HeroPhoto } from '@/components/Avatar';
 import { cleanMediaTitle, detectPlatform, INSTRUMENT_TYPES } from '@/lib/onboarding-data';
 import { canonicalList, fullName, lookingOptionFor, optionFor, roleLine, shortLocation } from '@/lib/labels';
 import { accentFor } from '@/lib/accent';
+import { LinkCard } from '@/components/LinkCard';
 import type { ShowcaseItem, ShowcaseMedia, UserProfile } from '@/lib/types';
 import { fonts, radius, makeStyles, useColors } from '@/lib/theme';
 
@@ -338,7 +339,8 @@ function clock(sec: number) {
 
 /** The first track/video, big and dark, like a "now playing" card. */
 function FeaturedTrack({ item }: { item: ShowcaseMedia }) {
-  return isPlayable(item) ? <FeaturedAudio item={item} /> : <FeaturedLink item={item} />;
+  if (isPlayable(item)) return <FeaturedAudio item={item} />;
+  return item.source === 'link' ? <LinkCard item={item} featured /> : <FeaturedLink item={item} />;
 }
 
 function FeaturedLink({ item }: { item: ShowcaseMedia }) {
@@ -435,6 +437,7 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
   }
 
   if (isPlayable(item)) return <FeaturedAudio item={item} label="TRACK" />;
+  if (item.source === 'link') return <LinkCard item={item} />;
 
   const { kind, title } = mediaMeta(item);
   return (

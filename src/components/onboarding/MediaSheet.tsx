@@ -1,3 +1,5 @@
+import { LinkCard } from '@/components/LinkCard';
+import { spotifyKind } from '@/lib/link-preview';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -167,12 +169,15 @@ export function MediaSheet({ visible, onClose, onAdd }: Props) {
             keyboardType="url"
             textContentType="URL"
           />
-          {platform ? (
-            <Text style={styles.detected}>
-              {platform.emoji} {platform.label} link
-            </Text>
+          {normalized && platform && platform.platform !== 'link' && new URL(normalized).pathname.length > 8 ? (
+            <>
+              <LinkCard item={{ type: 'media', source: 'link', url: normalized, platform: platform.platform, title: title.trim() || undefined }} />
+              {spotifyKind(normalized) === 'artist' ? (
+                <Text style={styles.detected}>This shows your artist page. Want people to hear a song right away? Add the song’s link too.</Text>
+              ) : null}
+            </>
           ) : null}
-          <TextField label="Title" optional value={title} onChangeText={setTitle} placeholder="e.g. My latest single" />
+          <TextField label="Title" optional value={title} onChangeText={setTitle} placeholder="Leave blank to use the real title" />
           <ErrorText message={error} />
           <Button title="Add link" onPress={addLink} disabled={!url.trim()} />
         </>
