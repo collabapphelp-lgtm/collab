@@ -8,13 +8,14 @@ import { LinearGradient } from '@/components/ThemedGradient';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { EventsMap, inArea, MAP_SUPPORTED, type MapArea } from '@/components/EventsMap';
+import { useAuth } from '@/lib/auth-context';
 import { useTeam } from '@/lib/team';
 import { dayHeading, metaFor, timeLabel, WINDOW_DAYS, ymd, type EventOccurrence } from '@/lib/events';
 import { useEvents } from '@/lib/use-events';
 import { fonts, radius, shadow, makeStyles, useColors } from '@/lib/theme';
 
 type When = 'going' | 'today' | 'tomorrow' | 'week' | 'dates' | 'all';
-type Kind = 'all' | 'featured' | 'open-mic' | 'jam' | 'collab' | 'other';
+type Kind = 'all' | 'mine' | 'featured' | 'open-mic' | 'jam' | 'collab' | 'other';
 
 // Left to right: All dates, Today, This week, then Pick dates (added after these).
 const WHEN: { value: When; label: string }[] = [
@@ -52,8 +53,10 @@ function inWhen(e: EventOccurrence, when: When) {
   return true;
 }
 
-function inKind(e: EventOccurrence, kind: Kind) {
+function inKind(e: EventOccurrence, kind: Kind, me?: string) {
   if (kind === 'all') return true;
+  // Events you posted, including ones still in review.
+  if (kind === 'mine') return !!me && e.host?.id === me;
   if (kind === 'featured') return e.collabHosted || !!e.featured;
   if (kind === 'collab') return e.collabHosted;
   if (kind === 'other') return !e.collabHosted && (e.type === 'show' || e.type === 'meetup');
@@ -65,9 +68,11 @@ export default function Events() {
   const colors = useColors();
   const { events, going, error, refresh, isGoing } = useEvents();
   const team = useTeam();
+  const { user } = useAuth();
   const [when, setWhen] = useState<When>('all');
   const [catOpen, setCatOpen] = useState(false);
   const [catX, setCatX] = useState(0);
+  const [kindScroll, setKindScroll] = useState(0);
   const [kind, setKind] = useState<Kind>('all');
   const [range, setRange] = useState<Range | null>(null);
   const [draft, setDraft] = useState<Range | null>(null);
@@ -92,8 +97,8 @@ export default function Events() {
         : when === 'dates' && range
           ? (events ?? []).filter((e) => inRange(e, range))
           : (events ?? []).filter((e) => inWhen(e, when))
-      ).filter((e) => inKind(e, kind)),
-    [events, mine, when, kind, range],
+      ).filter((e) => inKind(e, kind, user?.uid)),
+    [events, mine, when, kind, range, user?.uid],
   );
   // ...and, after "Search this area", only what's inside the part of the map you were looking at.
   const [mapArea, setMapArea] = useState<MapArea | null>(null);
@@ -182,8 +187,18 @@ export default function Events() {
 
         {/* All · Featured · Categories ▾ (the dropdown floats over the map). */}
         <View style={styles.kindWrap}>
-          <View style={styles.kindRow}>
+          {/* Scrolls sideways on narrow phones or when a long category is picked. */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.kindScroll}
+            contentContainerStyle={styles.kindRow}
+            scrollEventThrottle={16}
+            onScroll={(ev) => setKindScroll(ev.nativeEvent.contentOffset.x)}
+            onScrollBeginDrag={() => setCatOpen(false)}
+          >
             <Pill label="All" on={kind === 'all'} onPress={() => pickKind('all')} />
+            <Pill label="My events" on={kind === 'mine'} onPress={() => pickKind('mine')} />
             <Pill label="Featured" star on={kind === 'featured'} onPress={() => pickKind('featured')} />
             <View onLayout={(ev) => setCatX(ev.nativeEvent.layout.x)}>
               <Pill
@@ -193,9 +208,9 @@ export default function Events() {
                 onPress={() => setCatOpen((o) => !o)}
               />
             </View>
-          </View>
+          </ScrollView>
           {catOpen ? (
-            <View style={[styles.dropdown, { left: Math.min(20 + catX, width - 20 - 210) }]}>
+            <View style={[styles.dropdown, { left: Math.max(20, Math.min(catX - kindScroll, width - 20 - 210)) }]}>
               {KINDS.map((k, i) => {
                 const dot =
                   k.value === 'collab'
@@ -339,10 +354,14 @@ export default function Events() {
                   <>
                     <Text style={styles.emptyEmoji}>🎤</Text>
                     <Text style={styles.emptyTitle}>
-                      {kind === 'featured' ? 'No featured events right now' : `Nothing listed ${when === 'today' ? 'tonight' : 'yet'}`}
+                      {kind === 'mine'
+                        ? when === 'all' ? 'You haven’t posted any events yet' : 'None of your events fall on these dates'
+                        : kind === 'featured' ? 'No featured events right now' : `Nothing listed ${when === 'today' ? 'tonight' : 'yet'}`}
                     </Text>
                     <Text style={styles.emptyBody}>
-                      {when === 'today' ? 'Try “This week”, or ' : ''}post one: a jam at your studio, a listening session, a showcase.
+                      {kind === 'mine'
+                        ? 'Tap Create to post one. Events you make show up here, even while they’re in review.'
+                        : `${when === 'today' ? 'Try “This week”, or ' : ''}post one: a jam at your studio, a listening session, a showcase.`}
                     </Text>
                   </>
                 )}
@@ -503,8 +522,9 @@ const useStyles = makeStyles((colors) => ({
   postText: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.white },
   hScroll: { flexGrow: 0, flexShrink: 0 },
   segRow: { paddingHorizontal: 20, gap: 8, paddingBottom: 8 },
-  kindWrap: { zIndex: 10, paddingHorizontal: 20, paddingBottom: 12 },
-  kindRow: { flexDirection: 'row', gap: 8 },
+  kindWrap: { zIndex: 10, paddingBottom: 12 },
+  kindScroll: { flexGrow: 0 },
+  kindRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 20 },
   dropdown: {
     position: 'absolute',
     top: 42,
