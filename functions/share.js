@@ -9,7 +9,7 @@ const { onRequest } = require('firebase-functions/v2/https');
 const { getFirestore } = require('firebase-admin/firestore');
 
 const SITE = 'https://collab-609ac.web.app';
-// Swap for the App Store link once Collab is live.
+// The Join page sends iPhones to the App Store and Android visitors to the waitlist, and counts the visit.
 const GET_URL = `${SITE}/join?s=share`;
 
 const esc = (v) =>

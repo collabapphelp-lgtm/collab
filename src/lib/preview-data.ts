@@ -110,6 +110,7 @@ export const PREVIEW_PROFILES: (UserProfile & { likesYou?: boolean })[] = [
 // Already connected with the preview user, with a chat history (see connections.ts).
 PREVIEW_PROFILES.push({
   id: 'p6',
+  ...(process.env.EXPO_PUBLIC_SHOT_PHOTOS === '1' ? { photoURL: '/shots/priya.jpg' } : {}),
   firstName: 'Tasha',
   lastName: 'Reed',
   email: 'tasha@example.com',
@@ -123,6 +124,12 @@ PREVIEW_PROFILES.push({
   showcase: [
     { type: 'media', source: 'link', url: 'https://www.instagram.com/demo', platform: 'instagram', title: 'Westside visual' },
     { type: 'media', source: 'link', url: 'https://www.youtube.com/watch?v=demo', platform: 'youtube', title: 'Late Night (music video)' },
+    ...(process.env.EXPO_PUBLIC_SHOT_PHOTOS === '1'
+      ? ([
+          { type: 'media', source: 'upload', mediaKind: 'image', url: '/shots/maya.jpg', title: 'Maya Brooks, single cover shoot' },
+          { type: 'media', source: 'upload', mediaKind: 'image', url: '/shots/jordan.jpg', title: 'Jordan, studio session' },
+        ] as const)
+      : []),
     { type: 'prompt', question: 'My ideal shoot', answer: 'Golden hour on a rooftop, one camera, an artist who trusts the vision.' },
     { type: 'prompt', question: 'What I bring to a collab', answer: 'Treatment, shot list, color grade. You just show up and perform.' },
   ],
