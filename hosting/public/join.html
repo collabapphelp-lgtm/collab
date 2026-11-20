@@ -51,7 +51,9 @@ input{font:inherit;width:100%;padding:14px 16px;border:1px solid var(--line);bor
   var isAndroid = /android/i.test(ua);
   var isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var platform = isAndroid ? 'android' : isIOS ? 'ios' : 'other';
-  var source = new URLSearchParams(location.search).get('s') || 'direct';
+  // Sticker QR codes use short paths (/J/01, /J/A) so the codes stay small and easy to scan.
+  var short = /^\/j\/([a-z0-9-]{1,12})\/?$/i.exec(location.pathname);
+  var source = new URLSearchParams(location.search).get('s') || (short ? 'sticker-' + short[1].toLowerCase() : 'direct');
 
   // Phones see their own option first; computers see both.
   if (isAndroid) document.getElementById('ios').hidden = true;
@@ -65,10 +67,18 @@ input{font:inherit;width:100%;padding:14px 16px;border:1px solid var(--line);bor
   var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
                 set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
   if (new URLSearchParams(location.search).get('me') === '1') store.set('collab_team', '1');
+  var APP_STORE = 'https://apps.apple.com/app/id6831691859';
+  var counted = null;
   if (store.get('collab_team') !== '1') {
     var first = !store.get('collab_seen');
     store.set('collab_seen', '1');
-    post('visit', { s: source, platform: platform, first: first }).catch(function () {});
+    counted = post('visit', { s: source, platform: platform, first: first }).catch(function () {});
+  }
+  // iPhones coming from a link or QR code go straight to the App Store once the visit is counted
+  // (or after a moment, if counting is slow). ?stay=1 keeps the page, for checking it.
+  if (isIOS && !new URLSearchParams(location.search).get('stay')) {
+    var go = function () { location.replace(APP_STORE); };
+    Promise.race([counted || Promise.resolve(), new Promise(function (r) { setTimeout(r, 700); })]).then(go, go);
   }
 
   document.getElementById('wl').addEventListener('submit', function (e) {

@@ -25,6 +25,14 @@
     ],
     "rewrites": [
       {
+        "source": "/J/**",
+        "destination": "/join.html"
+      },
+      {
+        "source": "/j/**",
+        "destination": "/join.html"
+      },
+      {
         "source": "/s/**",
         "function": {
           "functionId": "sharePage",
