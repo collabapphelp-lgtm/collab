@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View, type TextInputInstance } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { friendlyAuthError } from '@/lib/auth-errors';
@@ -13,7 +13,9 @@ import { fonts, makeStyles } from '@/lib/theme';
 
 export default function Login() {
   const styles = useStyles();
-  const [email, setEmail] = useState('');
+  // Coming from sign-up with an email that already has an account: keep what they typed.
+  const params = useLocalSearchParams<{ email?: string }>();
+  const [email, setEmail] = useState(typeof params.email === 'string' ? params.email : '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

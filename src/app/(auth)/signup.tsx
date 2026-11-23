@@ -29,9 +29,10 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [exists, setExists] = useState(false);
 
+  const firstRef = useRef<TextInputInstance>(null);
   const lastRef = useRef<TextInputInstance>(null);
-  const emailRef = useRef<TextInputInstance>(null);
   const passwordRef = useRef<TextInputInstance>(null);
 
   async function pickPhoto() {
@@ -46,10 +47,11 @@ export default function Signup() {
 
   async function handleSignup() {
     setError(null);
-    if (!firstName.trim()) return setError('Add your first name so people know who you are.');
-    if (hasBlockedLanguage(firstName, lastName)) return setError(BLOCKED_LANGUAGE_MESSAGE);
+    setExists(false);
     if (!email.trim()) return setError('Enter your email.');
     if (password.length < 6) return setError('Use at least 6 characters for your password.');
+    if (!firstName.trim()) return setError('Add your first name so people know who you are.');
+    if (hasBlockedLanguage(firstName, lastName)) return setError(BLOCKED_LANGUAGE_MESSAGE);
 
     setSubmitting(true);
     setSignupInProgress(true);
@@ -78,7 +80,9 @@ export default function Signup() {
     } catch (e) {
       setSignupInProgress(false);
       setSubmitting(false);
-      setError(friendlyAuthError(e));
+      // Already signed up: point them to log in (with their email filled in) instead of a dead end.
+      if ((e as { code?: string })?.code === 'auth/email-already-in-use') setExists(true);
+      else setError(friendlyAuthError(e));
     }
   }
 
@@ -86,56 +90,20 @@ export default function Signup() {
     <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <BackButton />
-
-          <View style={styles.header}>
-            <Text style={styles.title}>Get started</Text>
-            <Text style={styles.subtitle}>Meet creatives who complement your sound, your style and your goals.</Text>
+          <View style={styles.headRow}>
+            <BackButton />
+            <Text style={styles.title}>Join Collab</Text>
           </View>
+          <Text style={styles.subtitle}>Meet creatives who complement your sound, your style and your goals.</Text>
 
           <SignupIntro />
 
-          <View style={styles.topRow}>
-            <Pressable onPress={pickPhoto} accessibilityRole="button" accessibilityLabel="Add a profile photo" style={styles.photo}>
-              {photoUri ? (
-                <Image source={{ uri: photoUri }} style={styles.photoImg} contentFit="cover" />
-              ) : (
-                <>
-                  <Text style={styles.photoIcon}>📷</Text>
-                  <Text style={styles.photoText}>Add photo</Text>
-                </>
-              )}
-            </Pressable>
-            <View style={styles.names}>
-              <TextField
-                label="First name"
-                value={firstName}
-                onChangeText={setFirstName}
-                autoComplete="given-name"
-                textContentType="givenName"
-                returnKeyType="next"
-                onSubmitEditing={() => lastRef.current?.focus()}
-              />
-              <TextField
-                ref={lastRef}
-                label="Last name"
-                optional
-                value={lastName}
-                onChangeText={setLastName}
-                autoComplete="family-name"
-                textContentType="familyName"
-                returnKeyType="next"
-                onSubmitEditing={() => emailRef.current?.focus()}
-              />
-            </View>
-          </View>
-
+          {/* Email first: anyone who already has an account finds out before typing anything else. */}
           <View style={styles.fields}>
             <TextField
-              ref={emailRef}
               label="Email"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => (setEmail(t), setExists(false))}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
@@ -152,11 +120,61 @@ export default function Signup() {
               autoComplete="new-password"
               textContentType="newPassword"
               placeholder="At least 6 characters"
-              returnKeyType="go"
-              onSubmitEditing={handleSignup}
+              returnKeyType="next"
+              onSubmitEditing={() => firstRef.current?.focus()}
             />
+            <View style={styles.nameRow}>
+              <View style={styles.flex1}>
+                <TextField
+                  ref={firstRef}
+                  label="First name"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  autoComplete="given-name"
+                  textContentType="givenName"
+                  returnKeyType="next"
+                  onSubmitEditing={() => lastRef.current?.focus()}
+                />
+              </View>
+              <View style={styles.flex1}>
+                <TextField
+                  ref={lastRef}
+                  label="Last name"
+                  optional
+                  value={lastName}
+                  onChangeText={setLastName}
+                  autoComplete="family-name"
+                  textContentType="familyName"
+                  returnKeyType="go"
+                  onSubmitEditing={handleSignup}
+                />
+              </View>
+            </View>
+            <Pressable onPress={pickPhoto} accessibilityRole="button" accessibilityLabel="Add a profile photo, optional" style={styles.photoRow}>
+              <View style={styles.photo}>
+                {photoUri ? (
+                  <Image source={{ uri: photoUri }} style={styles.photoImg} contentFit="cover" />
+                ) : (
+                  <Text style={styles.photoIcon}>📷</Text>
+                )}
+              </View>
+              <Text style={styles.photoText}>
+                {photoUri ? 'Change photo' : 'Add a photo'} <Text style={styles.photoOptional}>optional</Text>
+              </Text>
+            </Pressable>
           </View>
 
+          {exists ? (
+            <Pressable
+              onPress={() => router.replace({ pathname: '/login', params: { email: email.trim() } })}
+              style={styles.exists}
+              accessibilityRole="button"
+            >
+              <Text style={styles.existsText}>
+                You already have an account with this email. <Text style={styles.switchLink}>Log in instead</Text>
+              </Text>
+            </Pressable>
+          ) : null}
           <ErrorText message={error} />
 
           <View style={styles.footer}>
@@ -187,15 +205,19 @@ export default function Signup() {
 const useStyles = makeStyles((colors) => ({
   flex: { flex: 1, backgroundColor: colors.bg },
   content: { flexGrow: 1, padding: 24, gap: 20 },
-  header: { gap: 6, marginTop: 4 },
-  title: { fontFamily: fonts.heading, fontSize: 32, color: colors.text },
-  subtitle: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.textSecondary },
-  topRow: { flexDirection: 'row', gap: 16, alignItems: 'center' },
+  headRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  title: { flex: 1, fontFamily: fonts.heading, fontSize: 28, color: colors.text },
+  subtitle: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.textSecondary, marginTop: -8 },
+  nameRow: { flexDirection: 'row', gap: 12 },
+  flex1: { flex: 1 },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'flex-start' },
+  exists: { padding: 14, borderRadius: 14, backgroundColor: 'rgba(75,163,199,0.1)' },
+  existsText: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.text, textAlign: 'center' },
   photo: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    borderWidth: 2,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: colors.blue,
     backgroundColor: 'rgba(75,163,199,0.06)',
@@ -204,9 +226,9 @@ const useStyles = makeStyles((colors) => ({
     overflow: 'hidden',
   },
   photoImg: { width: '100%', height: '100%' },
-  photoIcon: { fontSize: 26 },
-  photoText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.blue, marginTop: 2 },
-  names: { flex: 1, gap: 12 },
+  photoIcon: { fontSize: 18 },
+  photoText: { fontFamily: fonts.bodyMedium, fontSize: 15, color: colors.blue },
+  photoOptional: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
   fields: { gap: 14 },
   footer: { marginTop: 'auto', gap: 16, alignItems: 'center' },
   switchText: { fontFamily: fonts.body, fontSize: 15, color: colors.textSecondary },
