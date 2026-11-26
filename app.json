@@ -78,7 +78,13 @@
         }
       ],
       "expo-maps",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.991980593637-tfhpstm5653fuus3s55b7de0v6r6rbnr"
+        }
+      ]
     ],
     "scheme": "collab",
     "experiments": {

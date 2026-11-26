@@ -22,7 +22,7 @@ import { auth } from './firebase';
  * stays hidden until both are filled in (and the plugin in app.json has the matching iosUrlScheme).
  */
 export const GOOGLE_WEB_CLIENT_ID = '991980593637-c63q3qi5p9m6sohh36uh2s1r1ihbo4lh.apps.googleusercontent.com';
-export const GOOGLE_IOS_CLIENT_ID = '';
+export const GOOGLE_IOS_CLIENT_ID = '991980593637-tfhpstm5653fuus3s55b7de0v6r6rbnr.apps.googleusercontent.com';
 export const googleReady = !!GOOGLE_WEB_CLIENT_ID && !!GOOGLE_IOS_CLIENT_ID && Platform.OS === 'ios';
 
 export type SocialSignIn = { user: User; firstName: string; lastName: string; photoURL: string | null };
