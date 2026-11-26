@@ -1,4 +1,5 @@
 import { deleteUser, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { reauthWithProvider, signInMethod } from './social-auth';
 import { collection, deleteDoc, doc, getDocs, query, where, writeBatch } from 'firebase/firestore';
 import { deleteObject, listAll, ref } from 'firebase/storage';
 import { auth, db, storage } from './firebase';
@@ -29,13 +30,17 @@ async function deleteStorageFolder(folder: string) {
  * Not removed here: other people's "like" records pointing at this account.
  * They reference a deleted profile and are ignored.
  */
-export async function deleteAccount(password: string) {
+export async function deleteAccount(password: string | null) {
   const user = auth.currentUser;
-  if (!user || !user.email) throw new Error('Not signed in');
+  if (!user) throw new Error('Not signed in');
   if (UI_PREVIEW) return;
 
-  // Firebase only allows deleting an account right after signing in, so confirm the password first.
-  await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+  // Firebase only allows deleting an account right after signing in, so confirm it's them first:
+  // their password, or the Apple/Google sheet for accounts made that way.
+  const method = signInMethod(user);
+  if (method === 'password' && user.email && password) await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+  else if (method === 'apple' || method === 'google') await reauthWithProvider(user, method);
+  else throw Object.assign(new Error('Confirm your password'), { code: 'auth/missing-password' });
   const me = user.uid;
 
   // 1. Conversations: delete the messages I sent and close the chat for the other person.
@@ -75,6 +80,7 @@ export async function deleteAccount(password: string) {
   await deleteStorageFolder(`profile-photos/${me}`);
   await deleteStorageFolder(`media/${me}`);
   await deleteStorageFolder(`voice/${me}`);
+  await deleteStorageFolder(`event-flyers/${me}`).catch(() => {});
 
   // 4. Push tokens, profile, then the login itself.
   await deleteMyEventData(me).catch(() => {});

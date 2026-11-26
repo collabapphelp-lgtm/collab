@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ErrorText';
 import { TextField } from '@/components/TextField';
 import { deleteAccount } from '@/lib/account';
+import { Cancelled, signInMethod } from '@/lib/social-auth';
 import { useAuth } from '@/lib/auth-context';
 import { friendlyAuthError } from '@/lib/auth-errors';
 import { fonts, radius, makeStyles } from '@/lib/theme';
@@ -20,24 +21,27 @@ const WHAT_GOES = [
 
 export default function DeleteAccount() {
   const styles = useStyles();
-  const { setDeletingAccount, signOutUser } = useAuth();
+  const { user, setDeletingAccount, signOutUser } = useAuth();
+  const method = signInMethod(user);
+  const needsPassword = method === 'password' || method === null;
   const [password, setPassword] = useState('');
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function confirm() {
-    if (!password) return setError('Enter your password to confirm.');
+    if (needsPassword && !password) return setError('Enter your password to confirm.');
     setError(null);
     setWorking(true);
     setDeletingAccount(true);
     try {
-      await deleteAccount(password);
+      await deleteAccount(needsPassword ? password : null);
       setDeletingAccount(false); // login is gone now, so the app returns to the welcome screen
       await signOutUser().catch(() => {});
     } catch (e) {
       setDeletingAccount(false);
       setWorking(false);
       const code = (e as { code?: string }).code ?? '';
+      if (e instanceof Cancelled) return;
       setError(
         code.startsWith('auth/')
           ? friendlyAuthError(e)
@@ -60,11 +64,15 @@ export default function DeleteAccount() {
               </Text>
             ))}
           </View>
-          <TextField label="Enter your password to confirm" value={password} onChangeText={setPassword} password autoComplete="current-password" textContentType="password" />
+          {needsPassword ? (
+            <TextField label="Enter your password to confirm" value={password} onChangeText={setPassword} password autoComplete="current-password" textContentType="password" />
+          ) : (
+            <Text style={styles.confirmNote}>You’ll confirm with {method === 'apple' ? 'Apple' : 'Google'} when you tap delete.</Text>
+          )}
           <ErrorText message={error} />
         </ScrollView>
         <View style={styles.footer}>
-          <Button title="Permanently delete my account" variant="danger" onPress={confirm} loading={working} disabled={!password} />
+          <Button title="Permanently delete my account" variant="danger" onPress={confirm} loading={working} disabled={needsPassword && !password} />
           <Button title="Keep my account" variant="secondary" onPress={() => router.back()} disabled={working} />
         </View>
       </KeyboardAvoidingView>
@@ -81,4 +89,5 @@ const useStyles = makeStyles((colors) => ({
   list: { gap: 8, padding: 16, borderRadius: radius.md, backgroundColor: 'rgba(229,75,75,0.06)' },
   item: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.text },
   footer: { paddingHorizontal: 24, paddingBottom: 8, gap: 10 },
+  confirmNote: { fontFamily: fonts.body, fontSize: 15, lineHeight: 21, color: colors.textSecondary },
 }));

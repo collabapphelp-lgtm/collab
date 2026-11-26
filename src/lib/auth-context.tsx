@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { signOutOfGoogle } from './social-auth';
 import { deleteField, doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { unregisterPush } from './push';
@@ -116,6 +117,7 @@ function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     profile,
     signOutUser: async () => {
       if (auth.currentUser) await unregisterPush(auth.currentUser.uid);
+      await signOutOfGoogle();
       await signOut(auth);
     },
     signupInProgress,

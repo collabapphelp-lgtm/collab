@@ -15,6 +15,7 @@ import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ErrorText';
 import { TextField } from '@/components/TextField';
 import { SignupIntro } from '@/components/SignupIntro';
+import { SocialSignIn } from '@/components/SocialSignIn';
 import { openLegal } from '@/lib/legal';
 import { fonts, makeStyles } from '@/lib/theme';
 import { BLOCKED_LANGUAGE_MESSAGE, hasBlockedLanguage } from '@/lib/moderation';
@@ -97,6 +98,8 @@ export default function Signup() {
           <Text style={styles.subtitle}>Meet creatives who complement your sound, your style and your goals.</Text>
 
           <SignupIntro />
+
+          <SocialSignIn onError={setError} />
 
           {/* Email first: anyone who already has an account finds out before typing anything else. */}
           <View style={styles.fields}>

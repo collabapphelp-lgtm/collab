@@ -7,6 +7,7 @@ import { auth } from '@/lib/firebase';
 import { friendlyAuthError } from '@/lib/auth-errors';
 import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
+import { SocialSignIn } from '@/components/SocialSignIn';
 import { ErrorText } from '@/components/ErrorText';
 import { TextField } from '@/components/TextField';
 import { fonts, makeStyles } from '@/lib/theme';
@@ -53,6 +54,8 @@ export default function Login() {
             <Text style={styles.title}>Welcome back</Text>
             <Text style={styles.subtitle}>Log in to pick up where you left off</Text>
           </View>
+
+          <SocialSignIn onError={setError} />
 
           <View style={styles.fields}>
             <TextField

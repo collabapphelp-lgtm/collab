@@ -16,7 +16,8 @@
       "bundleIdentifier": "com.kaamilajani.collab",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -76,7 +77,8 @@
           "isAndroidBackgroundLocationEnabled": false
         }
       ],
-      "expo-maps"
+      "expo-maps",
+      "expo-apple-authentication"
     ],
     "scheme": "collab",
     "experiments": {
